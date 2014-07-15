@@ -1,0 +1,2 @@
+true: debug
+"test_deriving_show.ml": use_deriving_show
