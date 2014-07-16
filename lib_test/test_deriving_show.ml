@@ -31,8 +31,13 @@ type t = int * string [@@deriving Show]
 let test_tuple ctxt =
   assert_equal ~printer "(1, \"foo\")" (show_t (1, "foo"))
 
+type z = a1 [@@deriving Show]
+let test_abstr ctxt =
+  assert_equal ~printer "1" (show_z 1)
+
 let suite = "Test deriving(Show)" >::: [
     "test_alias"   >:: test_alias;
     "test_variant" >:: test_variant;
     "test_tuple"   >:: test_tuple;
+    "test_abstr"   >:: test_abstr;
   ]

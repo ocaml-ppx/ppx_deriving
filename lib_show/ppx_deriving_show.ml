@@ -36,7 +36,10 @@ let () =
             Format.pp_print_string fmt ")"]
         end
       | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-        assert false (* app [%e Exp.ident (mangle_lid ~prefix:"pp_" lid)]] *)
+        app (Exp.ident { txt = mangle_lid ~prefix:"pp_" lid; loc = !default_loc })
+            ([%expr fmt] ::
+             (List.map (fun typ -> [%expr fun x -> [%e derive_typ [%expr x] typ]]) args) @
+             [expr])
       | { ptyp_desc = Ptyp_variant _ } -> assert false
       | { ptyp_desc = Ptyp_alias (typ', _) } -> derive_typ expr typ'
       | { ptyp_loc } ->
