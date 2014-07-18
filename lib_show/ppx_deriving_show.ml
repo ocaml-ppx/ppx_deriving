@@ -40,7 +40,25 @@ let () =
             ([%expr fmt] ::
              (List.map (fun typ -> [%expr fun x -> [%e derive_typ [%expr x] typ]]) args) @
              [expr])
-      | { ptyp_desc = Ptyp_variant _ } -> assert false
+      | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
+        let cases =
+          fields |> List.map (fun field ->
+            match field with
+            | Rtag (label, _, true (*empty*), []) ->
+              Exp.case (Pat.variant label None)
+                       [%expr Format.pp_print_string fmt [%e str ("`" ^ label)]]
+            | Rtag (label, _, false, [typ]) ->
+              Exp.case (Pat.variant label (Some (pvar "x")))
+                       [%expr Format.pp_print_string fmt [%e str ("`" ^ label ^ " ")];
+                              [%e derive_typ (evar "x") typ]]
+            | Rinherit ({ ptyp_desc = Ptyp_constr (tname, []) } as typ) ->
+              Exp.case (Pat.alias (Pat.type_ tname) (mknoloc "x"))
+                       (derive_typ (evar "x") typ)
+            | _ ->
+              raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
+                           (Ppx_deriving_host.string_of_core_type typ))
+        in
+        Exp.match_ expr cases
       | { ptyp_desc = Ptyp_alias (typ', _) } -> derive_typ expr typ'
       | { ptyp_loc } ->
         raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
@@ -57,9 +75,10 @@ let () =
               let result =
                 match List.mapi (fun i typ -> derive_typ (evar (argn i)) typ) pcd_args with
                 | [] -> [%expr Format.pp_print_string fmt [%e str name]]
+                | hd :: [] -> [%expr Format.pp_print_string fmt [%e str (name ^ " ")]; [%e hd]]
                 | hd :: tl ->
                   [%expr
-                    Format.pp_print_string fmt [%e str (name ^ "(")];
+                    Format.pp_print_string fmt [%e str (name ^ " (")];
                     [%e List.fold_left (fun exp exp' ->
                           [%expr [%e exp]; Format.pp_print_string fmt ", "; [%e exp']])
                         hd tl];
