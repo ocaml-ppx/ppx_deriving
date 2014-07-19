@@ -28,15 +28,15 @@ let test_variant ctxt =
   assert_equal ~printer "Bar (1, \"foo\")" (show_v (Bar (1, "foo")));
   assert_equal ~printer "Baz \"foo\""      (show_v (Baz "foo"))
 
-type pv = [ `Foo | `Bar of int * string ] [@@deriving Show]
+type pv1 = [ `Foo | `Bar of int * string ] [@@deriving Show]
 let test_poly ctxt =
-  assert_equal ~printer "`Foo"              (show_pv `Foo);
-  assert_equal ~printer "`Bar (1, \"foo\")" (show_pv (`Bar (1, "foo")))
+  assert_equal ~printer "`Foo"              (show_pv1 `Foo);
+  assert_equal ~printer "`Bar (1, \"foo\")" (show_pv1 (`Bar (1, "foo")))
 
-type pv' = [ `Baz | pv ] [@@deriving Show]
+type pv2 = [ `Baz | pv1 ] [@@deriving Show]
 let test_poly_inherit ctxt =
-  assert_equal ~printer "`Foo" (show_pv' `Foo);
-  assert_equal ~printer "`Baz" (show_pv' `Baz)
+  assert_equal ~printer "`Foo" (show_pv2 `Foo);
+  assert_equal ~printer "`Baz" (show_pv2 `Baz)
 
 type t = int * string [@@deriving Show]
 let test_tuple ctxt =
@@ -46,6 +46,13 @@ type z = a1 [@@deriving Show]
 let test_abstr ctxt =
   assert_equal ~printer "1" (show_z 1)
 
+type r = {
+  f1 : int;
+  f2 : string;
+} [@@deriving Show]
+let test_record ctxt =
+  assert_equal ~printer "{ f1 = 1; f2 = \"foo\" }" (show_r { f1 = 1; f2 = "foo" })
+
 let suite = "Test deriving(Show)" >::: [
     "test_alias"        >:: test_alias;
     "test_variant"      >:: test_variant;
@@ -53,4 +60,5 @@ let suite = "Test deriving(Show)" >::: [
     "test_abstr"        >:: test_abstr;
     "test_poly"         >:: test_poly;
     "test_poly_inherit" >:: test_poly_inherit;
+    "test_record"       >:: test_record;
   ]

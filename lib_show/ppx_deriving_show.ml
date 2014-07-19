@@ -88,7 +88,19 @@ let () =
           in
           [%expr fun fmt x -> [%e Exp.match_ (evar "x") cases]]
         | Ptype_record labels, _ ->
-          assert false
+          let labels =
+            labels |> List.map (fun { pld_name = { txt = name }; pld_type } ->
+              [%expr
+                Format.pp_print_string fmt [%e str (name ^ " = ")];
+                [%e derive_typ (Exp.field (evar "x") (mknoloc (Lident name))) pld_type]])
+          in
+          let hd, tl = match labels with hd :: tl -> hd, tl | _ -> assert false in
+          [%expr fun fmt x ->
+            Format.pp_print_string fmt "{ ";
+            [%e List.fold_left (fun exp exp' ->
+                  [%expr [%e exp]; Format.pp_print_string fmt "; "; [%e exp']])
+                hd tl];
+            Format.pp_print_string fmt " }"]
         | Ptype_abstract, None ->
           raise_errorf ~loc:ptype_loc "Cannot derive Show for fully abstract type"
         | Ptype_open, _ ->
