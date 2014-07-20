@@ -36,6 +36,6 @@ val string_of_core_type : Parsetree.core_type -> string
 val mangle_lid : ?prefix:string -> ?suffix:string -> Longident.t -> Longident.t
 
 (** [attr ~prefix name attrs] searches for an attribute [\[\@prefix.name\]]
-    in [attrs] if any attribute with name starting with {v \@prefix v} exists,
+    in [attrs] if any attribute with name starting with [\@prefix] exists,
     or [\[\@name\]] otherwise. *)
 val attr : prefix:string -> string -> attributes -> attribute option

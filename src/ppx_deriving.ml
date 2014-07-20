@@ -30,10 +30,15 @@ let attr ~prefix name attrs =
     String.length str >= String.length prefix &&
       String.sub str 0 (String.length prefix) = prefix
   in
+  let try_prefix prefix f =
+    if List.exists (fun ({ txt }, _) -> starts txt prefix) attrs
+    then prefix
+    else f ()
+  in
   let name =
-    if List.exists (fun ({ txt }, _) -> starts txt (prefix^".")) attrs
-    then prefix ^ "." ^ name
-    else name
+    try_prefix ("deriving."^prefix^".") (fun () ->
+      try_prefix (prefix^".") (fun () ->
+        name))
   in
   try Some (List.find (fun ({ txt }, _) -> txt = name) attrs)
   with Not_found -> None
