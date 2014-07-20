@@ -13,11 +13,11 @@ let () =
   Ppx_deriving.register "Show" (fun options type_decls ->
     let argn i = Printf.sprintf "a%d" i in
     let rec expr_of_typ expr typ =
-      match Ppx_deriving.attr ~prefix "format" typ.ptyp_attributes with
+      match Ppx_deriving.attr ~prefix "printer" typ.ptyp_attributes with
       | Some (_, PStr [{ pstr_desc = Pstr_eval (printer, _) }]) ->
         [%expr [%e printer] fmt [%e expr]]
       | Some ({ loc }, _) ->
-        raise_errorf ~loc "Invalid [@%s.format] syntax" prefix
+        raise_errorf ~loc "Invalid [@%s.printer] syntax" prefix
       | None ->
         let format x = [%expr Format.fprintf fmt [%e str x] [%e expr]] in
         match typ with

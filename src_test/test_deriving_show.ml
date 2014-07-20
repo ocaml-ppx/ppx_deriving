@@ -64,7 +64,7 @@ let test_abstr ctxt =
 
 type file = {
   name : string;
-  perm : int     [@format fun fmt -> Format.fprintf fmt "0o%03o"];
+  perm : int     [@printer fun fmt -> Format.fprintf fmt "0o%03o"];
 }
 [@@deriving Show]
 let test_custom ctxt =
