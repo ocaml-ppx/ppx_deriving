@@ -17,23 +17,31 @@ Usage
 
 From a user's perspective, _ppx_deriving_ is triggered by a `[@@deriving Plugin]` annotation attached to a type declaration in structure or signature:
 
-    type point2d = float * float
-    [@@deriving Show]
+``` ocaml
+type point2d = float * float
+[@@deriving Show]
+```
 
 It's possible to invoke several plugins by separating their names with commas:
 
-    type point3d = float * float * float
-    [@@deriving Show, Eq]
+``` ocaml
+type point3d = float * float * float
+[@@deriving Show, Eq]
+```
 
 It's possible to pass options to a plugin by appending a record to plugin's name:
 
-    type t = string
-    [@@deriving Compare { suffix = "_t" }]
+``` ocaml
+type t = string
+[@@deriving Compare { suffix = "_t" }]
+```
 
 It's possible to make _ppx_deriving_ ignore a missing plugin rather than raising an error by passing an `optional = true` option, for example, to enable conditional compilation:
 
-    type addr = string * int
-    [@@deriving Json { optional = true }]
+``` ocaml
+type addr = string * int
+[@@deriving Json { optional = true }]
+```
 
 Plugin conventions
 ------------------
@@ -49,18 +57,19 @@ Plugin: Show
 
 _Show_ derives a function that inspects a value; that is, pretty-prints it with OCaml syntax. However, _Show_ offers more insight into the structure of values than the Obj-based pretty printers (e.g. `Printexc`), and more flexibility than the toplevel printer.
 
+``` ocaml
+# module M = struct
+  type t = int * string [@@deriving Show]
+end;;
+module M : sig
+  type t = [ `A | `B of int ]
+  val pp_t : Format.formatter -> [< `A | `B of int ] -> unit
+  val show_t : [< `A | `B of int ] -> string
+end
 
-    # module M = struct
-      type t = int * string [@@deriving Show]
-    end;;
-    module M : sig
-      type t = [ `A | `B of int ]
-      val pp_t : Format.formatter -> [< `A | `B of int ] -> unit
-      val show_t : [< `A | `B of int ] -> string
-    end
-
-    # M.show_t (`B 1);;
-    - : bytes = "`B 1"
+# M.show_t (`B 1);;
+- : bytes = "`B 1"
+```
 
 _Show_ supports tuples, records, normal and polymorphic variants, builtin types `int`, `int32`, `int64`, `nativeint`, `float`, `bool`, `char`, `string`, `bytes` and their `Mod.t` aliases, and abstract types. For abstract type `t`, _Show_ expects to find a `pp_t` function in the same module, as it itself would generate.
 
