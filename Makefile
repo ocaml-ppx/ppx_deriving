@@ -9,6 +9,8 @@ test: build
 clean:
 	ocamlbuild -clean
 
+.PHONY: build test doc clean
+
 gh-pages: doc
 	git clone `git config --get remote.origin.url` .gh-pages --reference .
 	git -C .gh-pages checkout --orphan gh-pages
