@@ -6,8 +6,9 @@ open Parsetree
 
 (** A type of deriving functions. A deriving function accepts a list of
     options and a type declaration item ([type t = .. and t' = ..]), and
-    returns a list of items to be appended after the type declaration item. *)
-type deriver = (string * expression) list -> type_declaration list -> structure
+    returns a list of items to be appended after the type declaration item
+    in structure and signature. *)
+type deriver = (string * expression) list -> type_declaration list -> structure * signature
 
 (** [register name fn] registers a deriving function [fn] as [name].
     For automatic dynlinking to work, a module [Foo] must register itself

@@ -42,10 +42,6 @@ type t = int * string [@@deriving Show]
 let test_tuple ctxt =
   assert_equal ~printer "(1, \"foo\")" (show_t (1, "foo"))
 
-type z = a1 [@@deriving Show]
-let test_abstr ctxt =
-  assert_equal ~printer "1" (show_z 1)
-
 type r = {
   f1 : int;
   f2 : string;
@@ -53,12 +49,25 @@ type r = {
 let test_record ctxt =
   assert_equal ~printer "{ f1 = 1; f2 = \"foo\" }" (show_r { f1 = 1; f2 = "foo" })
 
+module M : sig
+  type t = int [@@deriving Show]
+end = struct
+  type t = int [@@deriving Show]
+end
+
+let test_module ctxt =
+  assert_equal ~printer "1" (M.show_t 1)
+
+type z = M.t [@@deriving Show]
+let test_abstr ctxt =
+  assert_equal ~printer "1" (show_z 1)
+
 let suite = "Test deriving(Show)" >::: [
     "test_alias"        >:: test_alias;
     "test_variant"      >:: test_variant;
     "test_tuple"        >:: test_tuple;
-    "test_abstr"        >:: test_abstr;
     "test_poly"         >:: test_poly;
     "test_poly_inherit" >:: test_poly_inherit;
     "test_record"       >:: test_record;
+    "test_abstr"        >:: test_abstr;
   ]

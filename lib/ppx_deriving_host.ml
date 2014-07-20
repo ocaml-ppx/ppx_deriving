@@ -1,7 +1,7 @@
 open Longident
 open Parsetree
 
-type deriver = (string * expression) list -> type_declaration list -> structure
+type deriver = (string * expression) list -> type_declaration list -> structure * signature
 
 let registry : (string, deriver) Hashtbl.t
              = Hashtbl.create 16
