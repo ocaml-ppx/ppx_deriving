@@ -1,6 +1,6 @@
 version = "%%VERSION%%"
 description = "Type-driven code generation"
-ppx = "ppx_deriving"
+ppx = "./ppx_deriving"
 
 package "api" (
   version = "%%VERSION%%"

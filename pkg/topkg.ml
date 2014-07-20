@@ -56,9 +56,10 @@ module type Pkg = sig
          [Filename.basename path].} *)
 
   val lib : field
-  val bin : ?auto:bool -> field 
-  (** If [auto] is true (defaults to false) generates 
-      [path ^ ".native"] if {!Env.native} is [true] and 
+  val lib_exec : ?auto:bool -> field
+  val bin : ?auto:bool -> field
+  (** If [auto] is true (defaults to false) generates
+      [path ^ ".native"] if {!Env.native} is [true] and
       [path ^ ".byte"] if {!Env.native} is [false]. *)
   val sbin : ?auto:bool -> field (** See {!bin}. *) 
   val toplevel : field
@@ -253,10 +254,11 @@ module Pkg : Pkg = struct
       src, dst
     in
     mvs ~drop_exts:bin_drops field ?cond ?dst src 
-      
+
   let bin = bin_mvs "bin"
   let sbin = bin_mvs "sbin"
-      
+  let lib_exec = bin_mvs "lib"
+
   let describe pkg ~builder mvs =
     let mvs = List.sort compare (List.flatten mvs) in
     let btool, bdir = match builder with
