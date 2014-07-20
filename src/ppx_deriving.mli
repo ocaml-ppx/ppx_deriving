@@ -40,3 +40,27 @@ val mangle_lid : ?prefix:string -> ?suffix:string -> Longident.t -> Longident.t
     or [\[\@prefix.name\]] if any attribute with name starting with [\@prefix] exists,
     or [\[\@name\]] otherwise. *)
 val attr : prefix:string -> string -> attributes -> attribute option
+
+(** [poly_fun_of_type_decl type_ expr] wraps [expr] into [fun poly_N -> ...] for every
+    type parameter ['N] present in [type_]. For example, if [type_] refers to
+    [type ('a, 'b) map], [expr] will be wrapped into [fun poly_a poly_b -> [%e expr]].
+
+    [_] parameters are ignored.  *)
+val poly_fun_of_type_decl : type_declaration -> expression -> expression
+
+(** [poly_apply_of_type_decl type_ expr] wraps [expr] into [expr poly_N] for every
+    type parameter ['N] present in [type_]. For example, if [type_] refers to
+    [type ('a, 'b) map], [expr] will be wrapped into [[%e expr] poly_a poly_b].
+
+    [_] parameters are ignored. *)
+val poly_apply_of_type_decl : type_declaration -> expression -> expression
+
+(** [poly_arrow_of_type_decl ~fn type_ typ] wraps [typ] in an arrow with [fn "N"]
+    as argument for every type parameter ['N] present in [type_]. For example, if
+    [type_] refers to [type ('a, 'b) map] and [fn] is
+    [fun name -> [%type: [%t Typ.constr (lid name) []] -> string]],
+    [typ] will be wrapped into [('a -> string) -> ('b -> string) -> [%t typ]].
+
+    [_] parameters are ignored. *)
+val poly_arrow_of_type_decl : fn:(string -> core_type) ->
+                               type_declaration -> core_type -> core_type

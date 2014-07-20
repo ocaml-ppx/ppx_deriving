@@ -52,7 +52,7 @@ It is expected that all _ppx_deriving_ plugins will follow the same conventions,
 
   * There may be additional attributes attached to the AST. In case of a plugin named `Eq` and attributes named `compare` and `skip`, the plugin must recognize all of `compare`, `skip`, `eq.compare`, `eq.skip`, `deriving.eq.compare` and `deriving.eq.skip` annotations. However, if it detects that at least one namespaced (e.g. `eq.compare` or `deriving.eq.compare`) attribute is present, it must not look at any attributes located within a different namespace. As a result, different plugins can avoid interference even if they share attribute names.
 
-  * If a type is polymorphic, the generated functions accept an argument for every type variable before all other arguments.
+  * If a type is parametric, the generated functions accept an argument for every type variable before all other arguments.
 
 Plugin: Show
 ------------

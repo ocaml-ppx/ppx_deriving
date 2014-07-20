@@ -71,6 +71,11 @@ let test_custom ctxt =
   assert_equal ~printer "{ name = \"dir\"; perm = 0o755 }"
                         (show_file { name = "dir"; perm = 0o755 })
 
+type 'a pt = { v : 'a } [@@deriving Show]
+let test_parametric ctxt =
+  assert_equal ~printer "{ v = 1 }"
+                        (show_pt (fun fmt -> Format.fprintf fmt "%d") { v = 1 })
+
 let suite = "Test deriving(Show)" >::: [
     "test_alias"        >:: test_alias;
     "test_variant"      >:: test_variant;
@@ -80,4 +85,5 @@ let suite = "Test deriving(Show)" >::: [
     "test_record"       >:: test_record;
     "test_abstr"        >:: test_abstr;
     "test_custom"       >:: test_custom;
+    "test_parametric"   >:: test_parametric;
   ]

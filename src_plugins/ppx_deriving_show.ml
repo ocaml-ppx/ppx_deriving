@@ -66,14 +66,17 @@ let () =
                              (Ppx_deriving.string_of_core_type typ))
           in
           Exp.match_ expr cases
-        | { ptyp_desc = Ptyp_alias (typ', _) } -> expr_of_typ expr typ'
+        | { ptyp_desc = Ptyp_var name } ->
+          Exp.apply (evar ("poly_"^name)) ["", evar "fmt"; "", expr]
+        | { ptyp_desc = Ptyp_alias (typ', _) } ->
+          expr_of_typ expr typ'
         | { ptyp_loc } ->
           raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
                        (Ppx_deriving.string_of_core_type typ)
     in
-    let expr_of_type { ptype_name = { txt = name }; ptype_kind; ptype_manifest; ptype_loc } =
+    let expr_of_type ({ ptype_name = { txt = name }; ptype_loc } as type_) =
       let prettyprinter =
-        match ptype_kind, ptype_manifest with
+        match type_.ptype_kind, type_.ptype_manifest with
         | Ptype_abstract, Some manifest ->
           [%expr fun fmt x -> [%e expr_of_typ (evar "x") manifest]]
         | Ptype_variant constrs, _ ->
@@ -113,9 +116,13 @@ let () =
         | Ptype_open, _ ->
           raise_errorf ~loc:ptype_loc "Cannot derive Show for open type"
       in
-      let stringprinter = [%expr fun x -> Format.asprintf "%a" [%e evar ("pp_"^name)] x] in
-      [Vb.mk (pvar ("pp_"^name))   prettyprinter;
-       Vb.mk (pvar ("show_"^name)) stringprinter;]
+      let stringprinter =
+        [%expr fun x ->
+          Format.asprintf "%a" [%e Ppx_deriving.poly_apply_of_type_decl type_ (evar ("pp_"^name))] x]
+      in
+      let polymorphize  = Ppx_deriving.poly_fun_of_type_decl type_ in
+      [Vb.mk (pvar ("pp_"^name))   (polymorphize prettyprinter);
+       Vb.mk (pvar ("show_"^name)) (polymorphize stringprinter);]
     in
     let sig_of_type { ptype_name = { txt = name }; ptype_params } =
       let typ = Typ.constr (lid name) (List.map fst ptype_params) in

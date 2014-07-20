@@ -1,6 +1,8 @@
 open Longident
 open Location
 open Parsetree
+open Ast_helper
+open Ast_convenience
 
 type deriver = (string * expression) list -> type_declaration list -> structure * signature
 
@@ -42,3 +44,22 @@ let attr ~prefix name attrs =
   in
   try Some (List.find (fun ({ txt }, _) -> txt = name) attrs)
   with Not_found -> None
+
+let fold_type fn accum { ptype_params }=
+  List.fold_left (fun accum (param, _) ->
+      match param with
+      | { ptyp_desc = Ptyp_any } -> accum
+      | { ptyp_desc = Ptyp_var name } ->
+        fn accum name
+      | _ -> assert false)
+    accum ptype_params
+
+let poly_fun_of_type_decl type_decl expr =
+  fold_type (fun expr name -> Exp.fun_ "" None (pvar ("poly_"^name)) expr) expr type_decl
+
+let poly_apply_of_type_decl type_decl expr =
+  fold_type (fun expr name -> Exp.apply expr ["", evar ("poly_"^name)]) expr type_decl
+
+let poly_arrow_of_type_decl ~fn type_decl typ =
+  fold_type (fun typ name -> Typ.arrow "" (fn name) typ) typ type_decl
+
