@@ -1,4 +1,5 @@
-true: warn(@5@8@10@11@12@14@23@24@26@29@40)
+true: warn(@5@8@10@11@12@14@23@24@26@29@40), bin_annot
 "data": -traverse
-# OASIS_START
-# OASIS_STOP
+
+<src/*.{ml,mli,byte,native}>: package(dynlink), package(compiler-libs.common), package(ppx_tools.metaquot), package(findlib)
+<src_{show}/*.{ml,mli}>: package(compiler-libs.common), package(ppx_tools.metaquot), use_ppx_deriving

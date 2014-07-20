@@ -1,4 +1,4 @@
-(** Public API of [ppx_deriving] executable *)
+(** Public API of [ppx_deriving] executable. *)
 
 open Parsetree
 

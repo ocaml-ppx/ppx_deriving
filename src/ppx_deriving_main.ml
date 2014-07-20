@@ -6,23 +6,31 @@ open Ast_mapper
 open Ast_helper
 open Ast_convenience
 
-let raise_errorf = Ppx_deriving_host.raise_errorf
+let raise_errorf = Ppx_deriving.raise_errorf
 
 let string_of_lident lid =
   String.concat "." (Longident.flatten lid)
 
 let load_deriver loc name =
   let libname = String.lowercase name in
-  let filename = Printf.sprintf "@ppx_deriving_%s/ppx_deriving_%s.cmo" libname libname in
-  let filename = Dynlink.adapt_filename filename in
-  let filepath =
-    try  Findlib.resolve_path filename
-    with Fl_package_base.No_such_package _ ->
-      raise_errorf ~loc "Cannot locate findlib package ppx_deriving_%s" libname
+  let try_expand filename =
+    let filename = Dynlink.adapt_filename filename in
+    try  Some (filename, Findlib.resolve_path filename)
+    with Fl_package_base.No_such_package _ -> None
+  in
+  let filename, filepath =
+    match try_expand (Printf.sprintf "@ppx_deriving_%s/ppx_deriving_%s.cmo" libname libname) with
+    | Some x -> x
+    | None ->
+      match try_expand (Printf.sprintf "@ppx_deriving.%s/ppx_deriving_%s.cmo" libname libname) with
+      | Some x -> x
+      | None ->
+        raise_errorf ~loc "Cannot locate findlib package ppx_deriving.%s or ppx_deriving_%s"
+                          libname libname
   in
   try
     Dynlink.loadfile filepath;
-    begin match Ppx_deriving_host.lookup name with
+    begin match Ppx_deriving.lookup name with
     | Some deriver -> deriver
     | None -> raise_errorf ~loc "Expected %s to define a deriver %s" filename name
     end
@@ -55,7 +63,7 @@ let derive typ_decls pstr_loc item fn =
       in
       let name, loc = String.concat "_" (Longident.flatten name.txt), name.loc in
       let deriver =
-        match Ppx_deriving_host.lookup name with
+        match Ppx_deriving.lookup name with
         | Some deriver -> deriver
         | None -> load_deriver loc name
       in

@@ -58,16 +58,12 @@ Plugin: Show
 _Show_ derives a function that inspects a value; that is, pretty-prints it with OCaml syntax. However, _Show_ offers more insight into the structure of values than the Obj-based pretty printers (e.g. `Printexc`), and more flexibility than the toplevel printer.
 
 ``` ocaml
-# module M = struct
-  type t = int * string [@@deriving Show]
-end;;
-module M : sig
-  type t = [ `A | `B of int ]
-  val pp_t : Format.formatter -> [< `A | `B of int ] -> unit
-  val show_t : [< `A | `B of int ] -> string
-end
+# type t = [ `A | `B of int ] [@@deriving Show];;
+type t = [ `A | `B of i ]
+val pp_t : Format.formatter -> [< `A | `B of i ] -> unit = <fun>
+val show_t : [< `A | `B of i ] -> bytes = <fun>
 
-# M.show_t (`B 1);;
+# show_t (`B 1);;
 - : bytes = "`B 1"
 ```
 
@@ -86,4 +82,4 @@ TBD
 License
 -------
 
-_ppx_deriving_ is distributed under the terms of [MIT license](LICENSE.txt)
+_ppx_deriving_ is distributed under the terms of [MIT license](LICENSE.txt).

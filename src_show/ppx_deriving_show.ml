@@ -5,11 +5,11 @@ open Parsetree
 open Ast_helper
 open Ast_convenience
 
-let raise_errorf = Ppx_deriving_host.raise_errorf
-let mangle_lid = Ppx_deriving_host.mangle_lid
+let raise_errorf = Ppx_deriving.raise_errorf
+let mangle_lid = Ppx_deriving.mangle_lid
 
 let () =
-  Ppx_deriving_host.register "Show" (fun options type_decls ->
+  Ppx_deriving.register "Show" (fun options type_decls ->
     let argn i = Printf.sprintf "a%d" i in
     let rec expr_of_typ expr typ =
       let format x = [%expr Format.fprintf fmt [%e str x] [%e expr]] in
@@ -56,13 +56,13 @@ let () =
                        (expr_of_typ (evar "x") typ)
             | _ ->
               raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
-                           (Ppx_deriving_host.string_of_core_type typ))
+                           (Ppx_deriving.string_of_core_type typ))
         in
         Exp.match_ expr cases
       | { ptyp_desc = Ptyp_alias (typ', _) } -> expr_of_typ expr typ'
       | { ptyp_loc } ->
         raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
-                     (Ppx_deriving_host.string_of_core_type typ)
+                     (Ppx_deriving.string_of_core_type typ)
     in
     let expr_of_type { ptype_name = { txt = name }; ptype_kind; ptype_manifest; ptype_loc } =
       let prettyprinter =

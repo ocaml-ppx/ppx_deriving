@@ -1,0 +1,36 @@
+version = "%%VERSION%%"
+description = "Type-driven code generation"
+ppx = "ppx_deriving"
+
+package "api" (
+  version = "%%VERSION%%"
+  description = "Plugin API for ppx_deriving"
+  requires = "dynlink compiler-libs.common ppx_tools.metaquot findlib"
+  archive(byte) = "ppx_deriving.cma"
+  archive(byte, plugin) = "ppx_deriving.cma"
+  archive(native) = "ppx_deriving.cmxa"
+  archive(native, plugin) = "ppx_deriving.cmxs"
+  exists_if = "ppx_deriving.cma"
+)
+
+package "main" (
+  version = "%%VERSION%%"
+  description = "Runner for ppx_deriving"
+  requires = "ppx_deriving.api"
+  archive(byte) = "ppx_deriving_main.cma"
+  archive(byte, plugin) = "ppx_deriving_main.cma"
+  archive(native) = "ppx_deriving_main.cmxa"
+  archive(native, plugin) = "ppx_deriving_main.cmxs"
+  exists_if = "ppx_deriving_main.cma"
+)
+
+package "show" (
+  version = "%%VERSION%%"
+  description = "[@@deriving Show]"
+  requires = "ppx_deriving.api"
+  archive(byte) = "ppx_deriving_show.cma"
+  archive(byte, plugin) = "ppx_deriving_show.cma"
+  archive(native) = "ppx_deriving_show.cmxa"
+  archive(native, plugin) = "ppx_deriving_show.cmxs"
+  exists_if = "ppx_deriving_show.cma"
+)
