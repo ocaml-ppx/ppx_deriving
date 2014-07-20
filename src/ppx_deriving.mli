@@ -25,12 +25,17 @@ val lookup : string -> deriver option
 val raise_errorf : ?sub:Location.error list -> ?if_highlight:string ->
                    ?loc:Location.t -> ('a, unit, bytes, 'b) format4 -> 'a
 
-(** {6 AST manipulation} *)
-
 (** [string_of_core_type typ] unparses [typ], omitting any attributes. *)
 val string_of_core_type : Parsetree.core_type -> string
+
+(** {6 AST manipulation} *)
 
 (** [mangle_lid ~prefix ~suffix lid] adds [prefix] and [suffix] to the last
     component of [lid], e.g. [mangle_lid ~prefix:"pp_"] applied to [A.foo]
     results in [A.pp_foo]. *)
 val mangle_lid : ?prefix:string -> ?suffix:string -> Longident.t -> Longident.t
+
+(** [attr ~prefix name attrs] searches for an attribute [[@prefix.name]]
+    in [attrs] if any attribute with name starting with [@prefix.] exists,
+    or [[@name]] otherwise. *)
+val attr : prefix:string -> string -> attributes -> attribute option

@@ -1,4 +1,5 @@
 open Longident
+open Location
 open Parsetree
 
 type deriver = (string * expression) list -> type_declaration list -> structure * signature
@@ -23,3 +24,16 @@ let mangle_lid ?(prefix="") ?(suffix="") lid =
   | Lident s    -> Lident (prefix ^ s ^ suffix)
   | Ldot (p, s) -> Ldot (p, prefix ^ s ^ suffix)
   | Lapply _    -> assert false
+
+let attr ~prefix name attrs =
+  let starts str prefix =
+    String.length str >= String.length prefix &&
+      String.sub str 0 (String.length prefix) = prefix
+  in
+  let name =
+    if List.exists (fun ({ txt }, _) -> starts txt (prefix^".")) attrs
+    then prefix ^ "." ^ name
+    else name
+  in
+  try Some (List.find (fun ({ txt }, _) -> txt = name) attrs)
+  with Not_found -> None

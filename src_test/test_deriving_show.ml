@@ -62,6 +62,15 @@ type z = M.t [@@deriving Show]
 let test_abstr ctxt =
   assert_equal ~printer "1" (show_z 1)
 
+type file = {
+  name : string;
+  perm : int     [@format fun fmt -> Format.fprintf fmt "0o%03o"];
+}
+[@@deriving Show]
+let test_custom ctxt =
+  assert_equal ~printer "{ name = \"dir\"; perm = 0o755 }"
+                        (show_file { name = "dir"; perm = 0o755 })
+
 let suite = "Test deriving(Show)" >::: [
     "test_alias"        >:: test_alias;
     "test_variant"      >:: test_variant;
@@ -70,4 +79,5 @@ let suite = "Test deriving(Show)" >::: [
     "test_poly_inherit" >:: test_poly_inherit;
     "test_record"       >:: test_record;
     "test_abstr"        >:: test_abstr;
+    "test_custom"       >:: test_custom;
   ]

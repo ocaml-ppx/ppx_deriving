@@ -69,6 +69,17 @@ val show_t : [< `A | `B of i ] -> bytes = <fun>
 
 _Show_ supports tuples, records, normal and polymorphic variants, builtin types `int`, `int32`, `int64`, `nativeint`, `float`, `bool`, `char`, `string`, `bytes` and their `Mod.t` aliases, and abstract types. For abstract type `t`, _Show_ expects to find a `pp_t` function in the same module, as it itself would generate.
 
+_Show_ allows to specify custom formatters for types that override default behavior. A formatter for type `t` has a type `Format.formatter -> t -> unit`:
+
+``` ocaml
+# type file = {
+  name : string;
+  perm : int     [@format fun fmt -> Format.fprintf fmt "0o%03o"];
+} [@@deriving Show];;
+# show_file { name = "dir"; perm = 0o755 };;
+- : bytes = "{ name = \"dir\"; perm = 0o755 }"
+```
+
 Developing plugins
 ------------------
 
