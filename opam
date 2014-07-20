@@ -1,10 +1,7 @@
 opam-version: "1"
 maintainer: "Peter Zotov <whitequark@whitequark.org>"
 build: [
-  ["ocaml" "pkg/build.ml" "native=%{ocaml-native}%"
-                          "native-dynlink=%{ocaml-native-dynlink}%"]
-]
-remove: [
-  ["ocamlfind" "remove" "ppx_deriving"]
+  "ocaml" "pkg/build.ml" "native=%{ocaml-native}%"
+                         "native-dynlink=%{ocaml-native-dynlink}%"
 ]
 depends: ["base-bytes" "ocamlfind" "ppx_tools"]

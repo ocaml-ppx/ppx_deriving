@@ -6,6 +6,13 @@ test: build
 	ocamlbuild -use-ocamlfind -package oUnit -I src \
   					 src_test/test_ppx_deriving.byte --
 
+doc:
+	ocamlbuild -use-ocamlfind doc/api.docdir/index.html \
+						 -docflags -t -docflag "API reference for ppx_deriving" \
+						 -docflags '-colorize-code -short-functors -charset utf-8' \
+						 -docflags '-css-style style.css'
+	cp doc/style.css api.docdir/
+
 clean:
 	ocamlbuild -clean
 

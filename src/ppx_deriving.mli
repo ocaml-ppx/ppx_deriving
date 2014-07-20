@@ -2,7 +2,7 @@
 
 open Parsetree
 
-(** {6 Registration} *)
+(** {2 Registration} *)
 
 (** A type of deriving functions. A deriving function accepts a list of
     options and a type declaration item ([type t = .. and t' = ..]), and
@@ -18,7 +18,7 @@ val register : string -> deriver -> unit
 (** [lookup name] looks up a deriving function called [name]. *)
 val lookup : string -> deriver option
 
-(** {6 Error handling} *)
+(** {2 Error handling} *)
 
 (** [raise_error] is a shorthand for raising [Location.Error] with the result
     of [Location.errorf]. *)
@@ -28,14 +28,14 @@ val raise_errorf : ?sub:Location.error list -> ?if_highlight:string ->
 (** [string_of_core_type typ] unparses [typ], omitting any attributes. *)
 val string_of_core_type : Parsetree.core_type -> string
 
-(** {6 AST manipulation} *)
+(** {2 AST manipulation} *)
 
 (** [mangle_lid ~prefix ~suffix lid] adds [prefix] and [suffix] to the last
     component of [lid], e.g. [mangle_lid ~prefix:"pp_"] applied to [A.foo]
     results in [A.pp_foo]. *)
 val mangle_lid : ?prefix:string -> ?suffix:string -> Longident.t -> Longident.t
 
-(** [attr ~prefix name attrs] searches for an attribute [[@prefix.name]]
-    in [attrs] if any attribute with name starting with [@prefix.] exists,
-    or [[@name]] otherwise. *)
+(** [attr ~prefix name attrs] searches for an attribute [\[\@prefix.name\]]
+    in [attrs] if any attribute with name starting with {v \@prefix v} exists,
+    or [\[\@name\]] otherwise. *)
 val attr : prefix:string -> string -> attributes -> attribute option
