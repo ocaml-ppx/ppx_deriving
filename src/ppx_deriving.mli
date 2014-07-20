@@ -35,7 +35,8 @@ val string_of_core_type : Parsetree.core_type -> string
     results in [A.pp_foo]. *)
 val mangle_lid : ?prefix:string -> ?suffix:string -> Longident.t -> Longident.t
 
-(** [attr ~prefix name attrs] searches for an attribute [\[\@prefix.name\]]
-    in [attrs] if any attribute with name starting with [\@prefix] exists,
+(** [attr ~prefix name attrs] searches for an attribute [\[\@deriving.prefix.name\]]
+    in [attrs] if any attribute with name starting with [\@deriving.prefix] exists,
+    or [\[\@prefix.name\]] if any attribute with name starting with [\@prefix] exists,
     or [\[\@name\]] otherwise. *)
 val attr : prefix:string -> string -> attributes -> attribute option
