@@ -55,15 +55,14 @@ val poly_fun_of_type_decl : type_declaration -> expression -> expression
     [_] parameters are ignored. *)
 val poly_apply_of_type_decl : type_declaration -> expression -> expression
 
-(** [poly_arrow_of_type_decl ~fn type_ typ] wraps [typ] in an arrow with [fn "N"]
+(** [poly_arrow_of_type_decl fn type_ typ] wraps [typ] in an arrow with [fn [%type: 'N]]
     as argument for every type parameter ['N] present in [type_]. For example, if
-    [type_] refers to [type ('a, 'b) map] and [fn] is
-    [fun name -> [%type: [%t Typ.constr (lid name) []] -> string]],
+    [type_] refers to [type ('a, 'b) map] and [fn] is [fun var -> [%type: [%t var] -> string]],
     [typ] will be wrapped into [('a -> string) -> ('b -> string) -> [%t typ]].
 
     [_] parameters are ignored. *)
-val poly_arrow_of_type_decl : fn:(string -> core_type) ->
-                               type_declaration -> core_type -> core_type
+val poly_arrow_of_type_decl : (core_type -> core_type) ->
+                              type_declaration -> core_type -> core_type
 
 (** [fold_exprs ~unit fn exprs] folds [exprs] using head of [exprs] as initial
     accumulator value, or [unit] ([()] by default) if [exprs = []].

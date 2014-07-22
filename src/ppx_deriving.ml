@@ -60,8 +60,8 @@ let poly_fun_of_type_decl type_decl expr =
 let poly_apply_of_type_decl type_decl expr =
   fold_type (fun expr name -> Exp.apply expr ["", evar ("poly_"^name)]) expr type_decl
 
-let poly_arrow_of_type_decl ~fn type_decl typ =
-  fold_type (fun typ name -> Typ.arrow "" (fn name) typ) typ type_decl
+let poly_arrow_of_type_decl fn type_decl typ =
+  fold_type (fun typ name -> Typ.arrow "" (fn (Typ.var name)) typ) typ type_decl
 
 let fold_exprs ?(unit=[%expr ()]) fn exprs =
   match exprs with
