@@ -63,3 +63,14 @@ let poly_apply_of_type_decl type_decl expr =
 let poly_arrow_of_type_decl ~fn type_decl typ =
   fold_type (fun typ name -> Typ.arrow "" (fn name) typ) typ type_decl
 
+let fold_exprs ?(unit=[%expr ()]) fn exprs =
+  match exprs with
+  | [] -> unit
+  | [a] -> a
+  | hd::tl -> List.fold_left fn hd tl
+
+let seq_reduce x a b =
+  [%expr [%e a]; [%e x]; [%e b]]
+
+let binop_reduce x a b =
+  [%expr [%e x] [%e a] [%e b]]

@@ -64,3 +64,16 @@ val poly_apply_of_type_decl : type_declaration -> expression -> expression
     [_] parameters are ignored. *)
 val poly_arrow_of_type_decl : fn:(string -> core_type) ->
                                type_declaration -> core_type -> core_type
+
+(** [fold_exprs ~unit fn exprs] folds [exprs] using head of [exprs] as initial
+    accumulator value, or [unit] ([()] by default) if [exprs = []].
+
+    See also {!seq_reduce} and {!binop_reduce}. *)
+val fold_exprs : ?unit:expression -> (expression -> expression -> expression) ->
+                 expression list -> expression
+
+(** [seq_reduce] ≡ [fun x a b -> [%expr [%e a]; [%e x]; [%e b]]]. *)
+val seq_reduce : expression -> expression -> expression -> expression
+
+(** [binop_reduce] ≡ [fun x a b -> [%expr [%e x] [%e a] [%e b]]]. *)
+val binop_reduce : expression -> expression -> expression -> expression

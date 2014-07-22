@@ -11,14 +11,12 @@ let raise_errorf = Ppx_deriving.raise_errorf
 let () =
   Ppx_deriving.register "Show" (fun options type_decls ->
     let argn i = Printf.sprintf "a%d" i in
-    let rec expr_of_typ expr typ =
+    let rec expr_of_typ typ =
       match Ppx_deriving.attr ~prefix "printer" typ.ptyp_attributes with
-      | Some (_, PStr [{ pstr_desc = Pstr_eval (printer, _) }]) ->
-        [%expr [%e printer] fmt [%e expr]]
-      | Some ({ loc }, _) ->
-        raise_errorf ~loc "Invalid [@%s.printer] syntax" prefix
+      | Some (_, PStr [{ pstr_desc = Pstr_eval (printer, _) }]) -> [%expr [%e printer] fmt]
+      | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@%s.printer] syntax" prefix
       | None ->
-        let format x = [%expr Format.fprintf fmt [%e str x] [%e expr]] in
+        let format x = [%expr Format.fprintf fmt [%e str x]] in
         match typ with
         | [%type: int]    -> format "%d"
         | [%type: int32]     | [%type: Int32.t] -> format "%ldl"
@@ -28,24 +26,18 @@ let () =
         | [%type: bool]   -> format "%B"
         | [%type: char]   -> format "%C"
         | [%type: string] -> format "%S"
-        | [%type: bytes]  -> [%expr Format.fprintf fmt "%S" (Bytes.to_string [%e expr])]
+        | [%type: bytes]  -> [%expr fun x -> Format.fprintf fmt "%S" (Bytes.to_string x)]
         | { ptyp_desc = Ptyp_tuple typs } ->
-          begin match List.mapi (fun i typ -> expr_of_typ (evar (argn i)) typ) typs with
-          | [] -> assert false
-          | hd :: tl ->
-            [%expr
-              let [%p ptuple (List.mapi (fun i _ -> pvar (argn i)) typs)] = [%e expr] in
-              Format.pp_print_string fmt "(";
-              [%e List.fold_left (fun exp exp' ->
-                    [%expr [%e exp]; Format.pp_print_string fmt ", "; [%e exp']])
-                  hd tl];
-              Format.pp_print_string fmt ")"]
-          end
+          let args = List.mapi (fun i typ -> app (expr_of_typ typ) [evar (argn i)]) typs in
+          [%expr
+            fun [%p ptuple (List.mapi (fun i _ -> pvar (argn i)) typs)] ->
+            Format.pp_print_string fmt "(";
+            [%e args |> Ppx_deriving.(fold_exprs
+                    (seq_reduce [%expr Format.pp_print_string fmt ", "]))];
+            Format.pp_print_string fmt ")"]
         | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
           app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid ~prefix:"pp_" lid)))
-              ([%expr fmt] ::
-               (List.map (fun typ -> [%expr fun x -> [%e expr_of_typ [%expr x] typ]]) args) @
-               [expr])
+              ([%expr fmt] :: (List.map expr_of_typ args))
         | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
           let cases =
             fields |> List.map (fun field ->
@@ -56,69 +48,58 @@ let () =
               | Rtag (label, _, false, [typ]) ->
                 Exp.case (Pat.variant label (Some (pvar "x")))
                          [%expr Format.pp_print_string fmt [%e str ("`" ^ label ^ " ")];
-                                [%e expr_of_typ (evar "x") typ]]
+                                [%e expr_of_typ typ] x]
               | Rinherit ({ ptyp_desc = Ptyp_constr (tname, []) } as typ) ->
                 Exp.case (Pat.alias (Pat.type_ tname) (mknoloc "x"))
-                         (expr_of_typ (evar "x") typ)
+                         [%expr [%e expr_of_typ typ] x]
               | _ ->
                 raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
                              (Ppx_deriving.string_of_core_type typ))
           in
-          Exp.match_ expr cases
-        | { ptyp_desc = Ptyp_var name } ->
-          [%expr [%e evar ("poly_"^name)] fmt [%e expr]]
-        | { ptyp_desc = Ptyp_alias (typ', _) } ->
-          expr_of_typ expr typ'
+          Exp.function_ cases
+        | { ptyp_desc = Ptyp_var name } -> [%expr [%e evar ("poly_"^name)] fmt]
+        | { ptyp_desc = Ptyp_alias (typ, _) } -> expr_of_typ typ
         | { ptyp_loc } ->
           raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
                        (Ppx_deriving.string_of_core_type typ)
     in
-    let expr_of_type ({ ptype_name = { txt = name }; ptype_loc } as type_) =
+    let expr_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_) =
       let prettyprinter =
         match type_.ptype_kind, type_.ptype_manifest with
         | Ptype_abstract, Some manifest ->
-          [%expr fun fmt x -> [%e expr_of_typ (evar "x") manifest]]
+          [%expr fun fmt -> [%e expr_of_typ manifest]]
         | Ptype_variant constrs, _ ->
           let cases =
             constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args } ->
+              let args = List.mapi (fun i typ -> app (expr_of_typ typ) [evar (argn i)]) pcd_args in
               let result =
-                match List.mapi (fun i typ -> expr_of_typ (evar (argn i)) typ) pcd_args with
-                | [] -> [%expr Format.pp_print_string fmt [%e str name]]
-                | hd :: [] -> [%expr Format.pp_print_string fmt [%e str (name ^ " ")]; [%e hd]]
-                | hd :: tl ->
-                  [%expr
-                    Format.pp_print_string fmt [%e str (name ^ " (")];
-                    [%e List.fold_left (fun exp exp' ->
-                          [%expr [%e exp]; Format.pp_print_string fmt ", "; [%e exp']])
-                        hd tl];
-                    Format.pp_print_string fmt ")"]
+                match args with
+                | []   -> [%expr Format.pp_print_string fmt [%e str name]]
+                | [a]  -> [%expr Format.pp_print_string fmt [%e str (name ^ " ")]; [%e a]]
+                | args -> [%expr Format.pp_print_string fmt [%e str (name ^ " (")];
+                  [%e args |> Ppx_deriving.(fold_exprs
+                        (seq_reduce [%expr Format.pp_print_string fmt ", "]))];
+                  Format.pp_print_string fmt ")"]
               in
               Exp.case (pconstr name (List.mapi (fun i _ -> pvar (argn i)) pcd_args)) result)
           in
-          [%expr fun fmt x -> [%e Exp.match_ (evar "x") cases]]
+          [%expr fun fmt -> [%e Exp.function_ cases]]
         | Ptype_record labels, _ ->
-          let labels =
+          let fields =
             labels |> List.map (fun { pld_name = { txt = name }; pld_type } ->
-              [%expr
-                Format.pp_print_string fmt [%e str (name ^ " = ")];
-                [%e expr_of_typ (Exp.field (evar "x") (mknoloc (Lident name))) pld_type]])
+              [%expr Format.pp_print_string fmt [%e str (name ^ " = ")];
+                [%e expr_of_typ pld_type] [%e Exp.field (evar "x") (mknoloc (Lident name))]])
           in
-          let hd, tl = match labels with hd :: tl -> hd, tl | _ -> assert false in
           [%expr fun fmt x ->
             Format.pp_print_string fmt "{ ";
-            [%e List.fold_left (fun exp exp' ->
-                  [%expr [%e exp]; Format.pp_print_string fmt "; "; [%e exp']])
-                hd tl];
+            [%e fields |> Ppx_deriving.(fold_exprs
+                  (seq_reduce [%expr Format.pp_print_string fmt "; "]))];
             Format.pp_print_string fmt " }"]
-        | Ptype_abstract, None ->
-          raise_errorf ~loc:ptype_loc "Cannot derive Show for fully abstract type"
-        | Ptype_open, _ ->
-          raise_errorf ~loc:ptype_loc "Cannot derive Show for open type"
+        | Ptype_abstract, None -> raise_errorf ~loc "Cannot derive Show for fully abstract type"
+        | Ptype_open, _        -> raise_errorf ~loc "Cannot derive Show for open type"
       in
-      let stringprinter =
-        [%expr fun x ->
-          Format.asprintf "%a" [%e Ppx_deriving.poly_apply_of_type_decl type_ (evar ("pp_"^name))] x]
-      in
+      let pp_poly_apply = Ppx_deriving.poly_apply_of_type_decl type_ (evar ("pp_"^name)) in
+      let stringprinter = [%expr fun x -> Format.asprintf "%a" [%e pp_poly_apply] x] in
       let polymorphize  = Ppx_deriving.poly_fun_of_type_decl type_ in
       [Vb.mk (pvar ("pp_"^name))   (polymorphize prettyprinter);
        Vb.mk (pvar ("show_"^name)) (polymorphize stringprinter);]
