@@ -7,7 +7,6 @@ open Ast_convenience
 
 let prefix = "show"
 let raise_errorf = Ppx_deriving.raise_errorf
-let mangle_lid = Ppx_deriving.mangle_lid
 
 let () =
   Ppx_deriving.register "Show" (fun options type_decls ->
@@ -43,7 +42,7 @@ let () =
               Format.pp_print_string fmt ")"]
           end
         | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-          app (Exp.ident { txt = mangle_lid ~prefix:"pp_" lid; loc = !default_loc })
+          app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid ~prefix:"pp_" lid)))
               ([%expr fmt] ::
                (List.map (fun typ -> [%expr fun x -> [%e expr_of_typ [%expr x] typ]]) args) @
                [expr])
@@ -67,7 +66,7 @@ let () =
           in
           Exp.match_ expr cases
         | { ptyp_desc = Ptyp_var name } ->
-          Exp.apply (evar ("poly_"^name)) ["", evar "fmt"; "", expr]
+          [%expr [%e evar ("poly_"^name)] fmt [%e expr]]
         | { ptyp_desc = Ptyp_alias (typ', _) } ->
           expr_of_typ expr typ'
         | { ptyp_loc } ->

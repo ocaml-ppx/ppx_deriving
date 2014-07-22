@@ -34,3 +34,25 @@ package "show" (
   archive(native, plugin) = "ppx_deriving_show.cmxs"
   exists_if = "ppx_deriving_show.cma"
 )
+
+package "eq" (
+  version = "%%VERSION%%"
+  description = "[@@deriving Eq]"
+  requires = "ppx_deriving.api"
+  archive(byte) = "ppx_deriving_eq.cma"
+  archive(byte, plugin) = "ppx_deriving_eq.cma"
+  archive(native) = "ppx_deriving_eq.cmxa"
+  archive(native, plugin) = "ppx_deriving_eq.cmxs"
+  exists_if = "ppx_deriving_eq.cma"
+)
+
+package "compare" (
+  version = "%%VERSION%%"
+  description = "[@@deriving Compare]"
+  requires = "ppx_deriving.api"
+  archive(byte) = "ppx_deriving_compare.cma"
+  archive(byte, plugin) = "ppx_deriving_compare.cma"
+  archive(native) = "ppx_deriving_compare.cmxa"
+  archive(native, plugin) = "ppx_deriving_compare.cmxs"
+  exists_if = "ppx_deriving_compare.cma"
+)

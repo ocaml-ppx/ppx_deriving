@@ -33,7 +33,7 @@ It's possible to pass options to a plugin by appending a record to plugin's name
 
 ``` ocaml
 type t = string
-[@@deriving Compare { suffix = "_t" }]
+[@@deriving Ord { affix = "" }]
 ```
 
 It's possible to make _ppx_deriving_ ignore a missing plugin rather than raising an error by passing an `optional = true` option, for example, to enable conditional compilation:
@@ -71,7 +71,7 @@ val show_t : [< `A | `B of i ] -> bytes = <fun>
 
 _Show_ supports tuples, records, normal and polymorphic variants, builtin types `int`, `int32`, `int64`, `nativeint`, `float`, `bool`, `char`, `string`, `bytes` and their `Mod.t` aliases, and abstract types. For abstract type `t`, _Show_ expects to find a `pp_t` function in the same module, as it itself would generate.
 
-_Show_ allows to specify custom formatters for types that override default behavior. A formatter for type `t` has a type `Format.formatter -> t -> unit`:
+_Show_ allows to specify custom formatters for types to override default behavior. A formatter for type `t` has a type `Format.formatter -> t -> unit`:
 
 ``` ocaml
 # type file = {
@@ -80,6 +80,23 @@ _Show_ allows to specify custom formatters for types that override default behav
 } [@@deriving Show];;
 # show_file { name = "dir"; perm = 0o755 };;
 - : bytes = "{ name = \"dir\"; perm = 0o755 }"
+```
+
+Plugins: Eq and Ord
+-------------------
+
+_Eq_ derives a function comparing values by semantic equality; structural or physical depending on context. _Ord_ derives a function defining a total order for values, returning `-1`, `0` or `1`. They're similar to `Pervasives.(==)` and `Pervasives.compare`, but are faster, allow to customize the comparison rules, and never raise at runtime.
+
+``` ocaml
+TBD
+```
+
+_Eq_ and _Ord_ support tuples, records, normal and polymorphic variants, builtin types `int`, `int32`, `int64`, `nativeint`, `float`, `bool`, `char`, `string`, `bytes` and their `Mod.t` aliases, and abstract types. For builtin types, corresponding `Mod.compare` function (e.g. `String.compare` for `string`) is used for _Ord_, or properly monomorphized `(=)` for _Eq_. For abstract type `t`, _Eq_ and _Ord_ expect to find an `equal_t` or `compare_t` function in the same module, as _Eq_ or _Ord_ themselves would generate.
+
+_Eq_ and _Ord_ allow to specify custom comparison functions for types to override default behavior. A comparator for type `t` has a type `t -> t -> bool` for _Eq_ or `t -> t -> int` for _Ord_.
+
+``` ocaml
+TBD
 ```
 
 Developing plugins
