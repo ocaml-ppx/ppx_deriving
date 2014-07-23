@@ -120,7 +120,7 @@ Developing plugins
 
 TBD
 
-API documentation is available [online](http://whitequark.github.io/ppx_deriving/).
+API documentation is available [online](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html).
 
 Rationale
 ---------

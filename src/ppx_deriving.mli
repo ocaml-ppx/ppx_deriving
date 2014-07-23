@@ -23,7 +23,7 @@ val lookup : string -> deriver option
 (** [raise_error] is a shorthand for raising [Location.Error] with the result
     of [Location.errorf]. *)
 val raise_errorf : ?sub:Location.error list -> ?if_highlight:string ->
-                   ?loc:Location.t -> ('a, unit, bytes, 'b) format4 -> 'a
+                   ?loc:Location.t -> ('a, unit, string, 'b) format4 -> 'a
 
 (** [string_of_core_type typ] unparses [typ], omitting any attributes. *)
 val string_of_core_type : Parsetree.core_type -> string
