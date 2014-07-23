@@ -30,13 +30,11 @@ gh-pages: doc
 	rm -rf .gh-pages
 
 release:
-	make do-release VERSION=$(oasis query Version)
-
-do-release:
+	@if [ -z "$(VERSION)" ]; then echo "Usage: make release VERSION=1.0.0"; exit 1; fi
 	git checkout -B release
-	oasis setup
+	sed -i 's/%%VERSION%%/$(VERSION)/' pkg/META
 	git add .
-	git commit -m "Generate OASIS files."
+	git commit -m "Prepare for release."
 	git tag -a v$(VERSION) -m "Version $(VERSION)"
 	git checkout @{-1}
 	git branch -D release
