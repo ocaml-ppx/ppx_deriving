@@ -115,7 +115,7 @@ _Show_ allows to specify custom formatters for types to override default behavio
 Plugins: Eq and Ord
 -------------------
 
-_Eq_ derives a function comparing values by semantic equality; structural or physical depending on context. _Ord_ derives a function defining a total order for values, returning `-1`, `0` or `1`. They're similar to `Pervasives.(==)` and `Pervasives.compare`, but are faster, allow to customize the comparison rules, and never raise at runtime.
+_Eq_ derives a function comparing values by semantic equality; structural or physical depending on context. _Ord_ derives a function defining a total order for values, returning `-1`, `0` or `1`. They're similar to `Pervasives.(=)` and `Pervasives.compare`, but are faster, allow to customize the comparison rules, and never raise at runtime.
 
 ``` ocaml
 # type t = [ `A | `B of int ] [@@deriving Eq, Ord];;
