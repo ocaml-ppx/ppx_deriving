@@ -4,8 +4,5 @@ build: [
   "ocaml" "pkg/build.ml" "native=%{ocaml-native}%"
                          "native-dynlink=%{ocaml-native-dynlink}%"
 ]
-depends: [
-  "base-bytes"
-  "ocamlfind" {>= "1.5.0"}
-  "ppx_tools" {>= "0.99"}
-]
+depends: ["ocamlfind" "ppx_tools" {>= "0.99"}]
+ocaml-version: [>= "4.02.0"]
