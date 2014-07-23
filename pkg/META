@@ -46,13 +46,13 @@ package "eq" (
   exists_if = "ppx_deriving_eq.cma"
 )
 
-package "compare" (
+package "ord" (
   version = "%%VERSION%%"
-  description = "[@@deriving Compare]"
+  description = "[@@deriving Ord]"
   requires = "ppx_deriving.api"
-  archive(byte) = "ppx_deriving_compare.cma"
-  archive(byte, plugin) = "ppx_deriving_compare.cma"
-  archive(native) = "ppx_deriving_compare.cmxa"
-  archive(native, plugin) = "ppx_deriving_compare.cmxs"
-  exists_if = "ppx_deriving_compare.cma"
+  archive(byte) = "ppx_deriving_ord.cma"
+  archive(byte, plugin) = "ppx_deriving_ord.cma"
+  archive(native) = "ppx_deriving_ord.cmxa"
+  archive(native, plugin) = "ppx_deriving_ord.cmxs"
+  exists_if = "ppx_deriving_ord.cma"
 )

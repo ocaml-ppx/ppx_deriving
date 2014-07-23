@@ -89,15 +89,18 @@ Plugins: Eq and Ord
 _Eq_ derives a function comparing values by semantic equality; structural or physical depending on context. _Ord_ derives a function defining a total order for values, returning `-1`, `0` or `1`. They're similar to `Pervasives.(==)` and `Pervasives.compare`, but are faster, allow to customize the comparison rules, and never raise at runtime.
 
 ``` ocaml
-# type t = [ `A | `B of int ] [@@deriving Eq];;
+# type t = [ `A | `B of int ] [@@deriving Eq, Ord];;
 type t = [ `A | `B of int ]
 val equal_t : [> `A | `B of int ] -> [> `A | `B of int ] -> bool = <fun>
+val compare_t : [ `A | `B of int ] -> [ `A | `B of int ] -> int = <fun>
 # equal_t `A `A;;
 - : bool = true
 # equal_t `A (`B 1);;
 - : bool = false
-
-TBD
+# compare_t `A `A;;
+- : int = 0
+# compare_t (`B 1) (`B 2);;
+- : int = -1
 ```
 
 For variants, _Ord_ uses the definition order. For builtin types, properly monomorphized `(=)` is used for _Eq_, or corresponding `Mod.compare` function (e.g. `String.compare` for `string`) for _Ord_. For abstract type `t`, _Eq_ and _Ord_ expect to find an `equal_t` or `compare_t` function in the corresponding module.
@@ -107,14 +110,15 @@ _Eq_ and _Ord_ allow to specify custom comparison functions for types to overrid
 ``` ocaml
 # type file = {
   name : string [@equal fun a b -> String.(lowercase a = lowercase b)];
-  perm : int
-} [@@deriving Eq];;
+  perm : int    [@compare fun a b -> compare b a]
+} [@@deriving Eq, Ord];;
 type file = { name : bytes; perm : int; }
 val equal_file : file -> file -> bool = <fun>
+val compare_file : file -> file -> int = <fun>
 # equal_file { name = "foo"; perm = 0o644 } { name = "Foo"; perm = 0o644 };;
 - : bool = true
-
-TBD
+# compare_file { name = "a"; perm = 0o755 } { name = "a"; perm = 0o644 };;
+- : int = -1
 ```
 
 Developing plugins
