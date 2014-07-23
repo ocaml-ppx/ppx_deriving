@@ -68,7 +68,7 @@ module M :
 - : bytes = "FP_normal"
 ```
 
-The module is used to demonstrate that `show_fpclass` really accepts `Pervasives.fpclass`, and not just a shadowed, identically named type.
+The module is used to demonstrate that `show_fpclass` really accepts `Pervasives.fpclass`, and not just a shadowing, identically named type.
 
 The need to repeat the type definition may look tedious, but consider this: if the definition was automatically imported from the declaration point, how would you attach attributes to refine the behavior of the deriving plugin?
 
