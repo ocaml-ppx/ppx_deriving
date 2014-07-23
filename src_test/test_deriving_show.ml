@@ -20,7 +20,7 @@ let test_alias ctxt =
   assert_equal ~printer "true"    (show_a6 true);
   assert_equal ~printer "'a'"     (show_a7 'a');
   assert_equal ~printer "\"foo\"" (show_a8 "foo");
-  assert_equal ~printer "\"foo\"" (show_a9 "foo")
+  assert_equal ~printer "\"foo\"" (show_a9 (Bytes.of_string "foo"))
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving Show]
 let test_variant ctxt =

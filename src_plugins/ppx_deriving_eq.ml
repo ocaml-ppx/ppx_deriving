@@ -1,9 +1,9 @@
-open Longident
-open Location
-open Asttypes
-open Parsetree
-open Ast_helper
-open Ast_convenience
+open! Longident
+open! Location
+open! Asttypes
+open! Parsetree
+open! Ast_helper
+open! Ast_convenience
 
 let prefix = "eq"
 let raise_errorf = Ppx_deriving.raise_errorf

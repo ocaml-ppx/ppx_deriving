@@ -71,7 +71,7 @@ let derive typ_decls pstr_loc item fn =
     [item] deriver_exprs
 
 let mapper argv =
-  List.iter Dynlink.loadfile argv;
+  List.iter (fun f -> Dynlink.(loadfile (adapt_filename f))) argv;
   { default_mapper with
     structure = (fun mapper items ->
       let rec map_types items =

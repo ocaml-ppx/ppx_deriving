@@ -8,7 +8,7 @@ _ppx_deriving_ includes a set of useful plugins: Show, Eq, Ord.
 Installation
 ------------
 
-_ppx_deriving_ can be installed via [OPAM](http://opam.ocaml.org) (not yet):
+_ppx_deriving_ can be installed via [OPAM](http://opam.ocaml.org) (TBD):
 
     opam install ppx_deriving
 
@@ -36,7 +36,7 @@ type t = string
 [@@deriving Ord { affix = "" }]
 ```
 
-It's possible to make _ppx_deriving_ ignore a missing plugin rather than raising an error by passing an `optional = true` option, for example, to enable conditional compilation:
+It's possible to make _ppx_deriving_ ignore a missing plugin rather than raising an error by passing an `optional = true` option (TBD), for example, to enable conditional compilation:
 
 ``` ocaml
 type addr = string * int
@@ -118,14 +118,41 @@ TBD
 Developing plugins
 ------------------
 
-TBD
+This section only explains the tooling and best practices. Anyone aiming to implement their own deriving plugin is encouraged to explore the existing ones, e.g. [Eq](src_plugins/ppx_deriving_eq.ml) or [Show](src_plugins/ppx_deriving_show.ml).
 
-API documentation is available [online](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html).
+### Tooling and environment
 
-Rationale
----------
+A deriving plugin is expected packaged as a Findlib library. When encountering a statement of form `[@@deriving Foo]`, _ppx_deriving_ searches for library `ppx_deriving_foo` (the lowercase of plugin name) and then [dynlinks](http://caml.inria.fr/pub/docs/manual-ocaml/libref/Dynlink.html) the module `ppx_deriving_foo.cmo` (or `.cmxs`). The library should have a Findlib dependency on `ppx_deriving.api`.
 
-TBD
+The module must register itself using `Ppx_deriving.register "Foo"` during loading. The module must register one and only one deriver.
+
+It is possible to test the plugin without installing it by instructing _ppx_deriving_ to load it directly; the compiler should be invoked as `ocamlfind c -ppx 'ppx_deriving src/ppx_deriving_foo.cmo' ...`. The file extension is replaced with `.cmxs` automatically for native builds. This can be integrated with buildsystem, e.g.: [myocamlbuild.ml](myocamlbuild.ml#L9-L13).
+
+### Goals of the API
+
+_ppx_deriving_ is a thin wrapper over the ppx extension system. Indeed, it includes very little logic; the goal of the project is 1) to provide common reusable abstractions required by most, if not all, deriving plugins, and 2) encourage the deriving plugins to cooperate and to have as consistent user interface as possible.
+
+As such, _ppx_deriving_:
+
+  * Completely defines the syntax of `[@@deriving]` annotation and unifies the plugin discovery mechanism;
+  * Provides an unified, strict option parsing API to plugins (TBD);
+  * Provides helpers for parsing annotations to ensure that the plugins interoperate with each other and the rest of the ecosystem.
+
+### Using the API
+
+Complete API documentation is available [online](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html).
+
+The following is a list of tips for developers trying to use the ppx interface:
+
+  * Module paths overwhelm you? Open all of the following modules, they don't conflict with each other: `Longident`, `Location`, `Asttypes`, `Parsetree`, `Ast_helper`, `Ast_convenience`.
+  * Need to insert some ASTs? See [ppx_metaquot](https://github.com/alainfrisch/ppx_tools/blob/master/ppx_metaquot.ml); it's required by `ppx_deriving.api`.
+  * Need to display an error? Use `Ppx_deriving.raise_errorf ~loc "Cannot derive Foo: (error description)"` ([doc](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALraise_errorf)); keep it clear which deriving plugin raised the error!
+  * Need to derive a function name from a type name? Use [Ppx_deriving.mangle_lid](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALmangle_lid).
+  * Need to fetch an attribute from a node? Use `Ppx_deriving.attr ~prefix "foo" nod.nod_attributes` (doc)[http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALattr]); this takes care of interoperability.
+  * Put all functions derived from a set of type declarations into a single `let rec` block; this reflects the always-recursive nature of type definitions.
+  * Need to handle polymorphism? Use [Ppx_deriving.poly_fun_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpoly_fun_of_type_decl) for derived functions, [Ppx_deriving.poly_arrow_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpoly_arrow_of_type_decl) for signatures, and [Ppx_deriving.poly_apply_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpoly_apply_of_type_decl) for "forwarding" the arguments corresponding to type variables to another generated function.
+  * Need to apply a sequence or a binary operator to variant, tuple or record elements? Use [Ppx_deriving.fold_exprs](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALfold_exprs).
+  * Don't forget to invoke the option parser (TBD) even if you don't have any options. This way, it would display an error to the user.
 
 License
 -------

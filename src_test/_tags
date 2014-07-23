@@ -1,4 +1,4 @@
 true: debug
 "test_deriving_show.ml": use_deriving_show
 "test_deriving_eq.ml": use_deriving_eq
-"test_deriving_compare.ml": use_deriving_compare
+"test_deriving_ord.ml": use_deriving_ord

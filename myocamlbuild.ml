@@ -8,9 +8,9 @@ let () = dispatch (
 
     let flags_for name =
       flag ["ocaml"; "compile"; "use_deriving_" ^ name] &
-        S[A"-ppx"; A("src/ppx_deriving_main.native src_plugins/ppx_deriving_"^name^".cmxs")]
+        S[A"-ppx"; A("src/ppx_deriving_main.native src_plugins/ppx_deriving_"^name^".cmo")]
     in
-    List.iter flags_for ["show"; "eq"; "compare"];
+    List.iter flags_for ["show"; "eq"; "ord"];
 
     flag ["ocaml"; "compile"; "safe_string"] & A"-safe-string"
 
