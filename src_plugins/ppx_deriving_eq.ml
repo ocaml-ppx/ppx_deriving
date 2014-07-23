@@ -19,8 +19,7 @@ let () =
       and expr_of_typ typ =
         match Ppx_deriving.attr ~prefix "equal" typ.ptyp_attributes with
         | Some (_, PStr [{ pstr_desc = Pstr_eval (equal, _) }]) -> equal
-        | Some ({ loc }, _) ->
-          raise_errorf ~loc "Invalid [@%s.equal] syntax" prefix
+        | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.equal] syntax" prefix
         | None ->
           match typ with
           | [%type: int] | [%type: int32] | [%type: Int32.t]

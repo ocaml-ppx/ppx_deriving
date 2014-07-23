@@ -14,7 +14,7 @@ let () =
     let rec expr_of_typ typ =
       match Ppx_deriving.attr ~prefix "printer" typ.ptyp_attributes with
       | Some (_, PStr [{ pstr_desc = Pstr_eval (printer, _) }]) -> [%expr [%e printer] fmt]
-      | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@%s.printer] syntax" prefix
+      | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.printer] syntax" prefix
       | None ->
         let format x = [%expr Format.fprintf fmt [%e str x]] in
         match typ with
