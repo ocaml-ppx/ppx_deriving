@@ -43,6 +43,35 @@ type addr = string * int
 [@@deriving Json { optional = true }]
 ```
 
+### Working with existing types
+
+At first, it may look like _ppx_deriving_ requires complete control of the type declaration. However, a lesser-known OCaml feature allows to derive functions for any existing type. Using `Pervasives.fpclass` as an example, _Show_ can be derived as follows:
+
+``` ocaml
+# module M = struct
+  type fpclass = Pervasives.fpclass = FP_normal | FP_subnormal | FP_zero | FP_infinite | FP_nan
+  [@@deriving Show]
+end;;
+module M :
+  sig
+    type fpclass =
+      fpclass =
+        FP_normal
+      | FP_subnormal
+      | FP_zero
+      | FP_infinite
+      | FP_nan
+    val pp_fpclass : Format.formatter -> fpclass -> unit
+    val show_fpclass : fpclass -> bytes
+  end
+# M.show_fpclass FP_normal;;
+- : bytes = "FP_normal"
+```
+
+The module is used to demonstrate that `show_fpclass` really accepts `Pervasives.fpclass`, and not just a shadowed, identically named type.
+
+The need to repeat the type definition may look tedious, but consider this: if the definition was automatically imported from the declaration point, how would you attach attributes to refine the behavior of the deriving plugin?
+
 Plugin conventions
 ------------------
 
