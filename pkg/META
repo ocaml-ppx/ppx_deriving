@@ -1,9 +1,9 @@
-version = "%%VERSION%%"
+version = "0.1"
 description = "Type-driven code generation"
 ppx = "./ppx_deriving"
 
 package "api" (
-  version = "%%VERSION%%"
+  version = "0.1"
   description = "Plugin API for ppx_deriving"
   requires = "dynlink compiler-libs.common ppx_tools.metaquot findlib"
   archive(byte) = "ppx_deriving.cma"
@@ -14,7 +14,7 @@ package "api" (
 )
 
 package "main" (
-  version = "%%VERSION%%"
+  version = "0.1"
   description = "Runner for ppx_deriving"
   requires = "ppx_deriving.api"
   archive(byte) = "ppx_deriving_main.cma"
@@ -25,7 +25,7 @@ package "main" (
 )
 
 package "show" (
-  version = "%%VERSION%%"
+  version = "0.1"
   description = "[@@deriving Show]"
   requires = "ppx_deriving.api"
   archive(byte) = "ppx_deriving_show.cma"
@@ -36,7 +36,7 @@ package "show" (
 )
 
 package "eq" (
-  version = "%%VERSION%%"
+  version = "0.1"
   description = "[@@deriving Eq]"
   requires = "ppx_deriving.api"
   archive(byte) = "ppx_deriving_eq.cma"
@@ -47,7 +47,7 @@ package "eq" (
 )
 
 package "ord" (
-  version = "%%VERSION%%"
+  version = "0.1"
   description = "[@@deriving Ord]"
   requires = "ppx_deriving.api"
   archive(byte) = "ppx_deriving_ord.cma"
