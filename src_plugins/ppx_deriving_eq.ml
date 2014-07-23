@@ -1,9 +1,9 @@
-open! Longident
-open! Location
-open! Asttypes
-open! Parsetree
-open! Ast_helper
-open! Ast_convenience
+open Longident
+open Location
+open Asttypes
+open Parsetree
+open Ast_helper
+open Ast_convenience
 
 let prefix = "eq"
 let raise_errorf = Ppx_deriving.raise_errorf
@@ -47,7 +47,7 @@ let () =
                   Exp.case (pdup (fun var -> Pat.alias (Pat.type_ tname) (mknoloc var)))
                            (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
                 | _ ->
-                  raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
+                  raise_errorf ~loc:ptyp_loc "Cannot derive Eq for %s"
                                (Ppx_deriving.string_of_core_type typ))) @
               [Exp.case (pvar "_") [%expr false]]
             in
@@ -55,7 +55,7 @@ let () =
           | { ptyp_desc = Ptyp_var name } -> evar ("poly_"^name)
           | { ptyp_desc = Ptyp_alias (typ, _) } -> expr_of_typ typ
           | { ptyp_loc } ->
-            raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
+            raise_errorf ~loc:ptyp_loc "Cannot derive Eq for %s"
                          (Ppx_deriving.string_of_core_type typ)
       in
       let comparator =

@@ -158,13 +158,13 @@ The following is a list of tips for developers trying to use the ppx interface:
 
 _ppx_deriving_ is using Dynlink. This can be seen as controversional; here are the reasons for it being a superior solution:
 
-  * Dynlink allows to combine completely automatic discovery of plugins in both toplevel and batch compilation with strict control over annotation syntax. It is not currently possible to amend a ppx command line using another package in batch compilation, and it will never be possible to do that in toplevel.
+  * Dynlink allows to combine completely automatic discovery of plugins in both toplevel and batch compilation with strict control over annotation syntax. It is not currently possible to amend a ppx command line by requiring another package in batch compilation, and it will never be possible to do that in toplevel.
   * Having a single ppx responsible for `[@@deriving]` annotation means it's possible to error out when a deriving plugin is missing. It's still possible to forget to include `ppx_deriving` as a whole, but less likely so.
   * Having a single ppx that processes `[@@deriving]` annotation allows strict control over syntax.
   * Having a single ppx that processes `[@@deriving]` means that there is much less forking, the code doesn't pay for plugins it doesn't use, the plugins can stay plentiful & small, and all the ASTs are traversed exactly once.
   * After all else fails, or if the overhead of Dynlink is too high, it's possible to simply link `ppx_deriving_main.cmxa` with the required plugins without any additional OCaml code to get a combined executable.
 
-The only reason against Dynlink or the point single responsibility I can think of is an inability to write a deriving plugin completely independent from any other library. I do not see a reason this would be desirable.
+The only argument against Dynlink or the point single responsibility I can think of is an inability to write a deriving plugin completely independent from any other library. I do not see a reason this would be desirable.
 
 License
 -------
