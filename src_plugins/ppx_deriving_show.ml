@@ -27,6 +27,9 @@ let () =
         | [%type: char]   -> format "%C"
         | [%type: string] -> format "%S"
         | [%type: bytes]  -> [%expr fun x -> Format.fprintf fmt "%S" (Bytes.to_string x)]
+        | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
+          app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid ~prefix:"pp_" lid)))
+              ([%expr fmt] :: (List.map expr_of_typ args))
         | { ptyp_desc = Ptyp_tuple typs } ->
           let args = List.mapi (fun i typ -> app (expr_of_typ typ) [evar (argn i)]) typs in
           [%expr
@@ -35,9 +38,6 @@ let () =
             [%e args |> Ppx_deriving.(fold_exprs
                     (seq_reduce [%expr Format.pp_print_string fmt ", "]))];
             Format.pp_print_string fmt ")"]
-        | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-          app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid ~prefix:"pp_" lid)))
-              ([%expr fmt] :: (List.map expr_of_typ args))
         | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
           let cases =
             fields |> List.map (fun field ->

@@ -52,6 +52,8 @@ It is expected that all _ppx_deriving_ plugins will follow the same conventions,
 
   * There may be additional attributes attached to the AST. In case of a plugin named `Eq` and attributes named `compare` and `skip`, the plugin must recognize all of `compare`, `skip`, `eq.compare`, `eq.skip`, `deriving.eq.compare` and `deriving.eq.skip` annotations. However, if it detects that at least one namespaced (e.g. `eq.compare` or `deriving.eq.compare`) attribute is present, it must not look at any attributes located within a different namespace. As a result, different plugins can avoid interference even if they share attribute names.
 
+  * A typical plugin should handle tuples, records, normal and polymorphic variants, builtin types `int`, `int32`, `int64`, `nativeint`, `float`, `bool`, `char`, `string`, `bytes` and their `Mod.t` aliases, and abstract types. For builtin types, it should have customizable, sensible default behavior. For abstract types, it should expect to find the functions it would derive itself for that type.
+
   * If a type is parametric, the generated functions accept an argument for every type variable before all other arguments.
 
 Plugin: Show
@@ -68,7 +70,7 @@ val show_t : [< `A | `B of i ] -> bytes = <fun>
 - : bytes = "`B 1"
 ```
 
-_Show_ supports tuples, records, normal and polymorphic variants, builtin types `int`, `int32`, `int64`, `nativeint`, `float`, `bool`, `char`, `string`, `bytes` and their `Mod.t` aliases, and abstract types. For abstract type `t`, _Show_ expects to find a `pp_t` function in the same module, as it itself would generate.
+For abstract type `t`, _Show_ expects to find a `pp_t` function in the corresponding module.
 
 _Show_ allows to specify custom formatters for types to override default behavior. A formatter for type `t` has a type `Format.formatter -> t -> unit`:
 
@@ -98,9 +100,9 @@ val equal_t : [> `A | `B of int ] -> [> `A | `B of int ] -> bool = <fun>
 TBD
 ```
 
-_Eq_ and _Ord_ support tuples, records, normal and polymorphic variants, builtin types `int`, `int32`, `int64`, `nativeint`, `float`, `bool`, `char`, `string`, `bytes` and their `Mod.t` aliases, and abstract types. For builtin types, corresponding `Mod.compare` function (e.g. `String.compare` for `string`) is used for _Ord_, or properly monomorphized `(=)` for _Eq_. For abstract type `t`, _Eq_ and _Ord_ expect to find an `equal_t` or `compare_t` function in the same module, as _Eq_ or _Ord_ themselves would generate.
+For variants, _Ord_ uses the definition order. For builtin types, properly monomorphized `(=)` is used for _Eq_, or corresponding `Mod.compare` function (e.g. `String.compare` for `string`) for _Ord_. For abstract type `t`, _Eq_ and _Ord_ expect to find an `equal_t` or `compare_t` function in the corresponding module.
 
-_Eq_ and _Ord_ allow to specify custom comparison functions for types to override default behavior. A comparator for type `t` has a type `t -> t -> bool` for _Eq_ or `t -> t -> int` for _Ord_.
+_Eq_ and _Ord_ allow to specify custom comparison functions for types to override default behavior. A comparator for type `t` has a type `t -> t -> bool` for _Eq_ or `t -> t -> int` for _Ord_. If an _Ord_comparator returns a value outside -1..1 range, the behavior is unspecified.
 
 ``` ocaml
 # type file = {

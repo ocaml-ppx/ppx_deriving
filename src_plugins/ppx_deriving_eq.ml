@@ -26,13 +26,13 @@ let () =
           | [%type: int64] | [%type: Int64.t] | [%type: nativeint] | [%type: Nativeint.t]
           | [%type: float] | [%type: bool] | [%type: char] | [%type: string] | [%type: bytes] ->
             [%expr (fun (a:[%t typ]) b -> a = b)]
-          | { ptyp_desc = Ptyp_tuple typs } ->
-            [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
-              [%e exprsn typs |> Ppx_deriving.(fold_exprs (binop_reduce [%expr (&&)]))]]
           | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
             (* ppx_tools#10 *)
             let fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid ~prefix:"equal_" lid)) in
             (match args with [] -> fn | _ -> app fn (List.map expr_of_typ args))
+          | { ptyp_desc = Ptyp_tuple typs } ->
+            [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
+              [%e exprsn typs |> Ppx_deriving.(fold_exprs (binop_reduce [%expr (&&)]))]]
           | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
             let cases =
               (fields |> List.map (fun field ->
