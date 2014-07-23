@@ -104,14 +104,14 @@ let () =
       [Vb.mk (pvar ("pp_"^name))   (polymorphize prettyprinter);
        Vb.mk (pvar ("show_"^name)) (polymorphize stringprinter);]
     in
-    let sig_of_type ({ ptype_name = { txt = name }; ptype_params } as type_) =
-      let typ = Typ.constr (lid name) (List.map fst ptype_params) in
+    let sig_of_type type_ =
+      let typ = Ppx_deriving.typ_of_type_decl type_ in
       let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
             (fun var -> [%type: Format.formatter -> [%t var] -> unit]) type_ in
-      [Sig.value (Val.mk (mknoloc ("pp_"^name))
-                 (polymorphize [%type: Format.formatter -> [%t typ] -> unit]));
-       Sig.value (Val.mk (mknoloc ("show_"^name))
-                 (polymorphize [%type: [%t typ] -> string]))]
+      [Sig.value (Val.mk (mknoloc ("pp_"^type_.ptype_name.txt))
+                  (polymorphize [%type: Format.formatter -> [%t typ] -> unit]));
+       Sig.value (Val.mk (mknoloc ("show_"^type_.ptype_name.txt))
+                  (polymorphize [%type: [%t typ] -> string]))]
     in
     [Str.value Recursive (List.concat (List.map expr_of_type type_decls))],
     List.concat (List.map sig_of_type type_decls))

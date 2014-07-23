@@ -18,7 +18,7 @@ let test_simple ctxt =
   assert_equal ~printer true  (equal_a1 1 1);
   assert_equal ~printer false (equal_a1 1 2)
 
-(*type v = Foo | Bar of int * string | Baz of string [@@deriving Eq]
+type v = Foo | Bar of int * string | Baz of string [@@deriving Eq]
 
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving Eq]
 type pv2 = [ `Baz | pv1 ] [@@deriving Eq]
@@ -40,11 +40,17 @@ type z = M.t [@@deriving Eq]
 
 type file = {
   name : string;
-  perm : int;
-}
+  perm : int     [@equal (<>)];
+} [@@deriving Eq]
+let test_custom ctxt =
+  assert_equal ~printer false (equal_file { name = ""; perm = 1 }
+                                          { name = ""; perm = 1 });
+  assert_equal ~printer true  (equal_file { name = ""; perm = 1 }
+                                          { name = ""; perm = 2 })
 
-type 'a pt = { v : 'a } [@@deriving Eq] *)
+type 'a pt = { v : 'a } [@@deriving Eq]
 
 let suite = "Test deriving(Eq)" >::: [
     "test_simple" >:: test_simple;
+    "test_custom" >:: test_custom;
   ]

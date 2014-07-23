@@ -64,8 +64,12 @@ val poly_apply_of_type_decl : type_declaration -> expression -> expression
 val poly_arrow_of_type_decl : (core_type -> core_type) ->
                               type_declaration -> core_type -> core_type
 
+(** [typ_of_type_decl type_] constructs type [('a, 'b, ...) t] for type declaration
+    [type ('a, 'b, ...) t = ...]. *)
+val typ_of_type_decl : type_declaration -> core_type
+
 (** [fold_exprs ~unit fn exprs] folds [exprs] using head of [exprs] as initial
-    accumulator value, or [unit] ([()] by default) if [exprs = []].
+    accumulator value, or [unit] if [exprs = []].
 
     See also {!seq_reduce} and {!binop_reduce}. *)
 val fold_exprs : ?unit:expression -> (expression -> expression -> expression) ->

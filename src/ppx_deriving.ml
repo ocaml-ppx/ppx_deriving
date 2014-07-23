@@ -63,9 +63,12 @@ let poly_apply_of_type_decl type_decl expr =
 let poly_arrow_of_type_decl fn type_decl typ =
   fold_type (fun typ name -> Typ.arrow "" (fn (Typ.var name)) typ) typ type_decl
 
-let fold_exprs ?(unit=[%expr ()]) fn exprs =
+let typ_of_type_decl { ptype_name = { txt = name }; ptype_params } =
+  Typ.constr (mknoloc (Lident name)) (List.map fst ptype_params)
+
+let fold_exprs ?unit fn exprs =
   match exprs with
-  | [] -> unit
+  | [] -> (match unit with Some x -> x | None -> assert false)
   | [a] -> a
   | hd::tl -> List.fold_left fn hd tl
 
