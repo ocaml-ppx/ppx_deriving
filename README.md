@@ -3,7 +3,7 @@ ppx_deriving
 
 _ppx_deriving_ is a library that simplifies type-driven code generation that works on OCaml >=4.02.
 
-_ppx_deriving_ includes a set of useful plugins: Show, (hopefully more in near future).
+_ppx_deriving_ includes a set of useful plugins: Show, Eq, Ord.
 
 Installation
 ------------
@@ -64,7 +64,6 @@ _Show_ derives a function that inspects a value; that is, pretty-prints it with 
 type t = [ `A | `B of i ]
 val pp_t : Format.formatter -> [< `A | `B of i ] -> unit = <fun>
 val show_t : [< `A | `B of i ] -> bytes = <fun>
-
 # show_t (`B 1);;
 - : bytes = "`B 1"
 ```
@@ -88,6 +87,14 @@ Plugins: Eq and Ord
 _Eq_ derives a function comparing values by semantic equality; structural or physical depending on context. _Ord_ derives a function defining a total order for values, returning `-1`, `0` or `1`. They're similar to `Pervasives.(==)` and `Pervasives.compare`, but are faster, allow to customize the comparison rules, and never raise at runtime.
 
 ``` ocaml
+# type t = [ `A | `B of int ] [@@deriving Eq];;
+type t = [ `A | `B of int ]
+val equal_t : [> `A | `B of int ] -> [> `A | `B of int ] -> bool = <fun>
+# equal_t `A `A;;
+- : bool = true
+# equal_t `A (`B 1);;
+- : bool = false
+
 TBD
 ```
 
@@ -96,6 +103,15 @@ _Eq_ and _Ord_ support tuples, records, normal and polymorphic variants, builtin
 _Eq_ and _Ord_ allow to specify custom comparison functions for types to override default behavior. A comparator for type `t` has a type `t -> t -> bool` for _Eq_ or `t -> t -> int` for _Ord_.
 
 ``` ocaml
+# type file = {
+  name : string [@equal fun a b -> String.(lowercase a = lowercase b)];
+  perm : int
+} [@@deriving Eq];;
+type file = { name : bytes; perm : int; }
+val equal_file : file -> file -> bool = <fun>
+# equal_file { name = "foo"; perm = 0o644 } { name = "Foo"; perm = 0o644 };;
+- : bool = true
+
 TBD
 ```
 
