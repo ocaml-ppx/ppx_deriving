@@ -9,7 +9,7 @@ let prefix = "eq"
 let raise_errorf = Ppx_deriving.raise_errorf
 
 let () =
-  Ppx_deriving.register "Eq" (fun options type_decls ->
+  Ppx_deriving.register "Eq" (fun ~options ~path type_decls ->
     let expr_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_) =
       let argn kind = Printf.sprintf (match kind with `lhs -> "lhs%d" | `rhs -> "rhs%d") in
       let pattn side typs = List.mapi (fun i _ -> pvar (argn side i)) typs in

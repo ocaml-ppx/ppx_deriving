@@ -9,7 +9,7 @@ let prefix = "show"
 let raise_errorf = Ppx_deriving.raise_errorf
 
 let () =
-  Ppx_deriving.register "Show" (fun options type_decls ->
+  Ppx_deriving.register "Show" (fun ~options ~path type_decls ->
     let argn i = Printf.sprintf "a%d" i in
     let rec expr_of_typ typ =
       match Ppx_deriving.attr ~prefix "printer" typ.ptyp_attributes with

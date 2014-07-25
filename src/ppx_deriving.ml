@@ -4,7 +4,9 @@ open Parsetree
 open Ast_helper
 open Ast_convenience
 
-type deriver = (string * expression) list -> type_declaration list -> structure * signature
+type deriver = options:(string * expression) list ->
+               path:string list ->
+               type_declaration list -> structure * signature
 
 let registry : (string, deriver) Hashtbl.t
              = Hashtbl.create 16
@@ -20,6 +22,9 @@ let raise_errorf ?sub ?if_highlight ?loc message =
 
 let string_of_core_type ptyp =
   Format.asprintf "%a" Pprintast.core_type { ptyp with ptyp_attributes = [] }
+
+let expand_path ~path ident =
+  String.concat "." (path @ [ident])
 
 let mangle_lid ?(prefix="") ?(suffix="") lid =
   match lid with

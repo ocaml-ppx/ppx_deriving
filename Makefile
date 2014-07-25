@@ -3,8 +3,7 @@ build:
 
 test: build
 	rm _build/src_test/ -rf
-	ocamlbuild -use-ocamlfind -package oUnit -I src \
-  					 src_test/test_ppx_deriving.byte --
+	ocamlbuild -use-ocamlfind -I src src_test/test_ppx_deriving.byte --
 
 doc:
 	ocamlbuild -use-ocamlfind doc/api.docdir/index.html \

@@ -5,10 +5,18 @@ open Parsetree
 (** {2 Registration} *)
 
 (** A type of deriving functions. A deriving function accepts a list of
-    options and a type declaration item ([type t = .. and t' = ..]), and
+    [~options] and a type declaration item ([type t = .. and t' = ..]), and
     returns a list of items to be appended after the type declaration item
-    in structure and signature. *)
-type deriver = (string * expression) list -> type_declaration list -> structure * signature
+    in structure and signature.
+
+    [~path] contains the stack of modules for the type currently
+    being processed, with [[]] for toplevel phrases.
+
+    This value is based on [Location.input_name] and thus contains incorrect
+    information when used with -for-pack. See PR6497. *)
+type deriver = options:(string * expression) list ->
+               path:string list ->
+               type_declaration list -> structure * signature
 
 (** [register name fn] registers a deriving function [fn] as [name].
     For automatic dynlinking to work, a module [Foo] must register itself
@@ -29,6 +37,10 @@ val raise_errorf : ?sub:Location.error list -> ?if_highlight:string ->
 val string_of_core_type : Parsetree.core_type -> string
 
 (** {2 AST manipulation} *)
+
+(** [expand_path name] returns [name] with the [path] module path prepended,
+    e.g. [expand_path ["Foo";"M"] "t"] = ["Foo.M.t"] and [expand_path [] "t"] = ["t"] *)
+val expand_path : path:string list -> string -> string
 
 (** [mangle_lid ~prefix ~suffix lid] adds [prefix] and [suffix] to the last
     component of [lid], e.g. [mangle_lid ~prefix:"pp_"] applied to [A.foo]

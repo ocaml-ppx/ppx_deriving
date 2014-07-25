@@ -9,7 +9,7 @@ let prefix = "ord"
 let raise_errorf = Ppx_deriving.raise_errorf
 
 let () =
-  Ppx_deriving.register "Ord" (fun options type_decls ->
+  Ppx_deriving.register "Ord" (fun ~options ~path type_decls ->
     let expr_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_) =
       let argn kind = Printf.sprintf (match kind with `lhs -> "lhs%d" | `rhs -> "rhs%d") in
       let compare_reduce acc expr = [%expr match [%e expr] with (-1|1) as x -> x | _ -> [%e acc]] in
