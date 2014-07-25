@@ -24,9 +24,9 @@ let test_alias ctxt =
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving Show]
 let test_variant ctxt =
-  assert_equal ~printer "Foo"              (show_v Foo);
-  assert_equal ~printer "Bar (1, \"foo\")" (show_v (Bar (1, "foo")));
-  assert_equal ~printer "Baz \"foo\""      (show_v (Baz "foo"))
+  assert_equal ~printer "Test_deriving_show.Foo"              (show_v Foo);
+  assert_equal ~printer "Test_deriving_show.Bar (1, \"foo\")" (show_v (Bar (1, "foo")));
+  assert_equal ~printer "Test_deriving_show.Baz \"foo\""      (show_v (Baz "foo"))
 
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving Show]
 let test_poly ctxt =
@@ -47,7 +47,7 @@ type r = {
   f2 : string;
 } [@@deriving Show]
 let test_record ctxt =
-  assert_equal ~printer "{ f1 = 1; f2 = \"foo\" }" (show_r { f1 = 1; f2 = "foo" })
+  assert_equal ~printer "{ Test_deriving_show.f1 = 1; f2 = \"foo\" }" (show_r { f1 = 1; f2 = "foo" })
 
 module M : sig
   type t = int [@@deriving Show]
@@ -68,12 +68,12 @@ type file = {
 }
 [@@deriving Show]
 let test_custom ctxt =
-  assert_equal ~printer "{ name = \"dir\"; perm = 0o755 }"
+  assert_equal ~printer "{ Test_deriving_show.name = \"dir\"; perm = 0o755 }"
                         (show_file { name = "dir"; perm = 0o755 })
 
 type 'a pt = { v : 'a } [@@deriving Show]
 let test_parametric ctxt =
-  assert_equal ~printer "{ v = 1 }"
+  assert_equal ~printer "{ Test_deriving_show.v = 1 }"
                         (show_pt (fun fmt -> Format.fprintf fmt "%d") { v = 1 })
 
 let suite = "Test deriving(Show)" >::: [

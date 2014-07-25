@@ -70,24 +70,26 @@ let () =
           [%expr fun fmt -> [%e expr_of_typ manifest]]
         | Ptype_variant constrs, _ ->
           let cases =
-            constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args } ->
+            constrs |> List.map (fun { pcd_name = { txt = name' }; pcd_args } ->
+              let constr_name = Ppx_deriving.expand_path ~path name' in
               let args = List.mapi (fun i typ -> app (expr_of_typ typ) [evar (argn i)]) pcd_args in
               let result =
                 match args with
-                | []   -> [%expr Format.pp_print_string fmt [%e str name]]
-                | [a]  -> [%expr Format.pp_print_string fmt [%e str (name ^ " ")]; [%e a]]
-                | args -> [%expr Format.pp_print_string fmt [%e str (name ^ " (")];
+                | []   -> [%expr Format.pp_print_string fmt [%e str constr_name]]
+                | [a]  -> [%expr Format.pp_print_string fmt [%e str (constr_name ^ " ")]; [%e a]]
+                | args -> [%expr Format.pp_print_string fmt [%e str (constr_name ^ " (")];
                   [%e args |> Ppx_deriving.(fold_exprs
                         (seq_reduce [%expr Format.pp_print_string fmt ", "]))];
                   Format.pp_print_string fmt ")"]
               in
-              Exp.case (pconstr name (List.mapi (fun i _ -> pvar (argn i)) pcd_args)) result)
+              Exp.case (pconstr name' (List.mapi (fun i _ -> pvar (argn i)) pcd_args)) result)
           in
           [%expr fun fmt -> [%e Exp.function_ cases]]
         | Ptype_record labels, _ ->
           let fields =
-            labels |> List.map (fun { pld_name = { txt = name }; pld_type } ->
-              [%expr Format.pp_print_string fmt [%e str (name ^ " = ")];
+            labels |> List.mapi (fun i { pld_name = { txt = name }; pld_type } ->
+              let field_name = if i = 0 then Ppx_deriving.expand_path ~path name else name in
+              [%expr Format.pp_print_string fmt [%e str (field_name ^ " = ")];
                 [%e expr_of_typ pld_type] [%e Exp.field (evar "x") (mknoloc (Lident name))]])
           in
           [%expr fun fmt x ->

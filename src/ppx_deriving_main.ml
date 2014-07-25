@@ -79,9 +79,10 @@ let mapper argv =
       | "//toplevel//" -> []
       | filename -> [String.capitalize (Filename.(basename (chop_suffix filename ".ml")))]
   and with_module name f =
+    let old_nesting = !module_nesting in
     module_nesting := !module_nesting @ [name];
     let result = f () in
-    module_nesting := List.tl !module_nesting;
+    module_nesting := old_nesting;
     result
   in
   { default_mapper with
