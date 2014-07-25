@@ -33,6 +33,10 @@ val lookup : string -> deriver option
 val raise_errorf : ?sub:Location.error list -> ?if_highlight:string ->
                    ?loc:Location.t -> ('a, unit, string, 'b) format4 -> 'a
 
+(** [catch f] converts any exceptions registered with [Location.register_error_of_exn]
+    to [[%%ocaml.error]] extension nodes. *)
+val catch : (unit -> structure) -> structure
+
 (** [string_of_core_type typ] unparses [typ], omitting any attributes. *)
 val string_of_core_type : Parsetree.core_type -> string
 

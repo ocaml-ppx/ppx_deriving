@@ -20,6 +20,13 @@ let lookup name =
 let raise_errorf ?sub ?if_highlight ?loc message =
   Printf.kprintf (fun str -> raise (Location.Error (Location.error ?loc str))) message
 
+let catch f =
+  try f ()
+  with exn ->
+    match Location.error_of_exn exn with
+    | Some error -> [Str.extension (Ast_mapper.extension_of_error error)]
+    | None -> raise exn
+
 let string_of_core_type ptyp =
   Format.asprintf "%a" Pprintast.core_type { ptyp with ptyp_attributes = [] }
 

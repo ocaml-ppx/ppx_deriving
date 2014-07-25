@@ -112,5 +112,6 @@ let () =
       [Sig.value (Val.mk (mknoloc ("equal_"^type_.ptype_name.txt))
                   (polymorphize [%type: [%t typ] -> [%t typ] -> bool]))]
     in
-    [Str.value Recursive (List.concat (List.map expr_of_type type_decls))],
+    Ppx_deriving.catch (fun () ->
+      [Str.value Recursive (List.concat (List.map expr_of_type type_decls))]),
     List.concat (List.map sig_of_type type_decls))
