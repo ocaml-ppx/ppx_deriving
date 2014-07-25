@@ -3,12 +3,14 @@ ppx_deriving
 
 _ppx_deriving_ is a library that simplifies type-driven code generation that works on OCaml >=4.02.
 
-_ppx_deriving_ includes a set of useful plugins: Show, Eq, Ord.
+_ppx_deriving_ includes a set of useful plugins: Show, Eq, Ord, [Protobuf][].
+
+[protobuf]: https://github.com/whitequark/ppx_deriving_protobuf
 
 Installation
 ------------
 
-_ppx_deriving_ can be installed via [OPAM](http://opam.ocaml.org) (TBD):
+_ppx_deriving_ can be installed via [OPAM](https://opam.ocaml.org):
 
     opam install ppx_deriving
 
