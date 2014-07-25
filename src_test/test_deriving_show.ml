@@ -2,15 +2,18 @@ open OUnit2
 
 let printer = fun x -> x
 
-type a1 = int       [@@deriving Show]
-type a2 = int32     [@@deriving Show]
-type a3 = int64     [@@deriving Show]
-type a4 = nativeint [@@deriving Show]
-type a5 = float     [@@deriving Show]
-type a6 = bool      [@@deriving Show]
-type a7 = char      [@@deriving Show]
-type a8 = string    [@@deriving Show]
-type a9 = bytes     [@@deriving Show]
+type a1 = int        [@@deriving Show]
+type a2 = int32      [@@deriving Show]
+type a3 = int64      [@@deriving Show]
+type a4 = nativeint  [@@deriving Show]
+type a5 = float      [@@deriving Show]
+type a6 = bool       [@@deriving Show]
+type a7 = char       [@@deriving Show]
+type a8 = string     [@@deriving Show]
+type a9 = bytes      [@@deriving Show]
+type l  = int list   [@@deriving Show]
+type a  = int array  [@@deriving Show]
+type o  = int option [@@deriving Show]
 let test_alias ctxt =
   assert_equal ~printer "1"       (show_a1 1);
   assert_equal ~printer "1l"      (show_a2 1l);
@@ -20,7 +23,10 @@ let test_alias ctxt =
   assert_equal ~printer "true"    (show_a6 true);
   assert_equal ~printer "'a'"     (show_a7 'a');
   assert_equal ~printer "\"foo\"" (show_a8 "foo");
-  assert_equal ~printer "\"foo\"" (show_a9 (Bytes.of_string "foo"))
+  assert_equal ~printer "\"foo\"" (show_a9 (Bytes.of_string "foo"));
+  assert_equal ~printer "[1; 2; 3]" (show_l [1;2;3]);
+  assert_equal ~printer "[|1; 2; 3|]" (show_a [|1;2;3|]);
+  assert_equal ~printer "Some 1" (show_o (Some 1))
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving Show]
 let test_variant ctxt =

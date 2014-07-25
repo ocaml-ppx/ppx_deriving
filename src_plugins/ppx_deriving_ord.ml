@@ -32,6 +32,31 @@ let () =
           | [%type: int64] | [%type: Int64.t] | [%type: nativeint] | [%type: Nativeint.t]
           | [%type: float] | [%type: bool] | [%type: char] | [%type: string] | [%type: bytes] ->
             [%expr (fun (a:[%t typ]) b -> compare a b)]
+          | [%type: [%t? typ] list]  ->
+            [%expr
+              let rec loop x y =
+                match x, y with
+                | [], [] -> 0
+                | [], _ -> -1
+                | _, [] -> 1
+                | a :: x, b :: y ->
+                  [%e compare_reduce [%expr loop x y] [%expr [%e expr_of_typ typ] a b]]
+              in loop]
+          | [%type: [%t? typ] array] ->
+            [%expr fun x y ->
+              let rec loop i =
+                if i = Array.length x then 0
+                else [%e compare_reduce [%expr loop (i + 1)]
+                                        [%expr [%e expr_of_typ typ] x.(i) y.(i)]]
+              in
+              [%e compare_reduce [%expr loop 0] [%expr compare (Array.length x) (Array.length y)]]]
+          | [%type: [%t? typ] option] ->
+            [%expr fun x y ->
+              match x, y with
+              | None, None -> 0
+              | Some a, Some b -> [%e expr_of_typ typ] a b
+              | None, Some _ -> -1
+              | Some _, None -> 1]
           | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
             (* ppx_tools#10 *)
             let fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid ~prefix:"compare_" lid)) in

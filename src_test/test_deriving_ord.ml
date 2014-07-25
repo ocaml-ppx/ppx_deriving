@@ -4,15 +4,18 @@ open OUnit2
 
 let printer = string_of_int
 
-type a1 = int       [@@deriving Ord]
-type a2 = int32     [@@deriving Ord]
-type a3 = int64     [@@deriving Ord]
-type a4 = nativeint [@@deriving Ord]
-type a5 = float     [@@deriving Ord]
-type a6 = bool      [@@deriving Ord]
-type a7 = char      [@@deriving Ord]
-type a8 = string    [@@deriving Ord]
-type a9 = bytes     [@@deriving Ord]
+type a1 = int        [@@deriving Ord]
+type a2 = int32      [@@deriving Ord]
+type a3 = int64      [@@deriving Ord]
+type a4 = nativeint  [@@deriving Ord]
+type a5 = float      [@@deriving Ord]
+type a6 = bool       [@@deriving Ord]
+type a7 = char       [@@deriving Ord]
+type a8 = string     [@@deriving Ord]
+type a9 = bytes      [@@deriving Ord]
+type l  = int list   [@@deriving Ord]
+type a  = int array  [@@deriving Ord]
+type o  = int option [@@deriving Ord]
 
 let test_simple ctxt =
   assert_equal ~printer  (1) (compare_a1 1 0);

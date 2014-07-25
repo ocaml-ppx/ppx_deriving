@@ -4,15 +4,18 @@ open OUnit2
 
 let printer = string_of_bool
 
-type a1 = int       [@@deriving Eq]
-type a2 = int32     [@@deriving Eq]
-type a3 = int64     [@@deriving Eq]
-type a4 = nativeint [@@deriving Eq]
-type a5 = float     [@@deriving Eq]
-type a6 = bool      [@@deriving Eq]
-type a7 = char      [@@deriving Eq]
-type a8 = string    [@@deriving Eq]
-type a9 = bytes     [@@deriving Eq]
+type a1 = int        [@@deriving Eq]
+type a2 = int32      [@@deriving Eq]
+type a3 = int64      [@@deriving Eq]
+type a4 = nativeint  [@@deriving Eq]
+type a5 = float      [@@deriving Eq]
+type a6 = bool       [@@deriving Eq]
+type a7 = char       [@@deriving Eq]
+type a8 = string     [@@deriving Eq]
+type a9 = bytes      [@@deriving Eq]
+type l  = int list   [@@deriving Eq]
+type a  = int array  [@@deriving Eq]
+type o  = int option [@@deriving Eq]
 
 let test_simple ctxt =
   assert_equal ~printer true  (equal_a1 1 1);

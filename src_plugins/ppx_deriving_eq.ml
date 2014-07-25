@@ -26,6 +26,25 @@ let () =
           | [%type: int64] | [%type: Int64.t] | [%type: nativeint] | [%type: Nativeint.t]
           | [%type: float] | [%type: bool] | [%type: char] | [%type: string] | [%type: bytes] ->
             [%expr (fun (a:[%t typ]) b -> a = b)]
+          | [%type: [%t? typ] list]  ->
+            [%expr
+              let rec loop x y =
+                match x, y with
+                | [], [] -> true
+                | a :: x, b :: y -> [%e expr_of_typ typ] a b && loop x y
+                | _ -> false
+              in loop]
+          | [%type: [%t? typ] array] ->
+            [%expr fun x y ->
+              let rec loop i =
+                (i = Array.length x || [%e expr_of_typ typ] x.(i) y.(i)) && loop (i + 1)
+              in Array.length x = Array.length y && loop 0]
+          | [%type: [%t? typ] option] ->
+            [%expr fun x y ->
+              match x, y with
+              | None, None -> true
+              | Some a, Some b -> [%e expr_of_typ typ] a b
+              | _ -> false]
           | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
             (* ppx_tools#10 *)
             let fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid ~prefix:"equal_" lid)) in

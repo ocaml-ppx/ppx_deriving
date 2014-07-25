@@ -17,6 +17,14 @@ let () =
       | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.printer] syntax" prefix
       | None ->
         let format x = [%expr Format.fprintf fmt [%e str x]] in
+        let seq start finish fold typ =
+          [%expr fun x ->
+            Format.pp_print_string fmt [%e str start];
+            ignore ([%e fold] (fun sep x ->
+              if sep then Format.pp_print_string fmt "; ";
+              [%e expr_of_typ typ] x; true) false x);
+            Format.pp_print_string fmt [%e str finish];]
+        in
         match typ with
         | [%type: int]    -> format "%d"
         | [%type: int32]     | [%type: Int32.t] -> format "%ldl"
@@ -27,6 +35,13 @@ let () =
         | [%type: char]   -> format "%C"
         | [%type: string] -> format "%S"
         | [%type: bytes]  -> [%expr fun x -> Format.fprintf fmt "%S" (Bytes.to_string x)]
+        | [%type: [%t? typ] list]  -> seq "["   "]" [%expr List.fold_left]  typ
+        | [%type: [%t? typ] array] -> seq "[|" "|]" [%expr Array.fold_left] typ
+        | [%type: [%t? typ] option] ->
+          [%expr
+            function
+            | None -> Format.pp_print_string fmt "None"
+            | Some x -> Format.pp_print_string fmt "Some "; [%e expr_of_typ typ] x]
         | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
           app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid ~prefix:"pp_" lid)))
               ([%expr fmt] :: (List.map expr_of_typ args))

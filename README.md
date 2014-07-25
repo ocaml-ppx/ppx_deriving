@@ -81,7 +81,7 @@ It is expected that all _ppx_deriving_ plugins will follow the same conventions,
 
   * There may be additional attributes attached to the AST. In case of a plugin named `Eq` and attributes named `compare` and `skip`, the plugin must recognize all of `compare`, `skip`, `eq.compare`, `eq.skip`, `deriving.eq.compare` and `deriving.eq.skip` annotations. However, if it detects that at least one namespaced (e.g. `eq.compare` or `deriving.eq.compare`) attribute is present, it must not look at any attributes located within a different namespace. As a result, different plugins can avoid interference even if they share attribute names.
 
-  * A typical plugin should handle tuples, records, normal and polymorphic variants, builtin types `int`, `int32`, `int64`, `nativeint`, `float`, `bool`, `char`, `string`, `bytes` and their `Mod.t` aliases, and abstract types. For builtin types, it should have customizable, sensible default behavior. For abstract types, it should expect to find the functions it would derive itself for that type.
+  * A typical plugin should handle tuples, records, normal and polymorphic variants; builtin types: `int`, `int32`, `int64`, `nativeint`, `float`, `bool`, `char`, `string`, `bytes`, `list`, `array`, `option` and their `Mod.t` aliases; and abstract types. For builtin types, it should have customizable, sensible default behavior. For abstract types, it should expect to find the functions it would derive itself for that type.
 
   * If a type is parametric, the generated functions accept an argument for every type variable before all other arguments.
 
@@ -115,7 +115,7 @@ _Show_ allows to specify custom formatters for types to override default behavio
 Plugins: Eq and Ord
 -------------------
 
-_Eq_ derives a function comparing values by semantic equality; structural or physical depending on context. _Ord_ derives a function defining a total order for values, returning `-1`, `0` or `1`. They're similar to `Pervasives.(=)` and `Pervasives.compare`, but are faster, allow to customize the comparison rules, and never raise at runtime.
+_Eq_ derives a function comparing values by semantic equality; structural or physical depending on context. _Ord_ derives a function defining a total order for values, returning `-1`, `0` or `1`. They're similar to `Pervasives.(=)` and `Pervasives.compare`, but are faster, allow to customize the comparison rules, and never raise at runtime. _Eq_ and _Ord_ are short-circuiting.
 
 ``` ocaml
 # type t = [ `A | `B of int ] [@@deriving Eq, Ord];;
