@@ -60,17 +60,17 @@ let test_record ctxt =
   assert_equal ~printer "{ Test_deriving_show.f1 = 1; f2 = \"foo\" }" (show_r { f1 = 1; f2 = "foo" })
 
 module M : sig
-  type t = int [@@deriving Show]
+  type t = A [@@deriving Show]
 end = struct
-  type t = int [@@deriving Show]
+  type t = A [@@deriving Show]
 end
 
 let test_module ctxt =
-  assert_equal ~printer "1" (M.show_t 1)
+  assert_equal ~printer "Test_deriving_show.M.A" (M.show_t M.A)
 
 type z = M.t [@@deriving Show]
 let test_abstr ctxt =
-  assert_equal ~printer "1" (show_z 1)
+  assert_equal ~printer "Test_deriving_show.M.A" (show_z M.A)
 
 type file = {
   name : string;
@@ -86,6 +86,12 @@ let test_parametric ctxt =
   assert_equal ~printer "{ Test_deriving_show.v = 1 }"
                         (show_pt (fun fmt -> Format.fprintf fmt "%d") { v = 1 })
 
+module M' = struct
+  type t = M.t = A [@@deriving Show]
+end
+let test_alias_path ctxt =
+  assert_equal ~printer "M.A" (M'.show_t M'.A)
+
 let suite = "Test deriving(Show)" >::: [
     "test_alias"        >:: test_alias;
     "test_variant"      >:: test_variant;
@@ -97,4 +103,5 @@ let suite = "Test deriving(Show)" >::: [
     "test_abstr"        >:: test_abstr;
     "test_custom"       >:: test_custom;
     "test_parametric"   >:: test_parametric;
+    "test_alias_path"   >:: test_alias_path;
   ]

@@ -46,6 +46,14 @@ val string_of_core_type : Parsetree.core_type -> string
     e.g. [expand_path ["Foo";"M"] "t"] = ["Foo.M.t"] and [expand_path [] "t"] = ["t"] *)
 val expand_path : path:string list -> string -> string
 
+(** [path_of_type_decl ~path type_] returns [path] if [type_] does not have a manifest
+    or the manifest is not a constructor, and the module path of manifest otherwise.
+
+    [path_of_type_decl] is useful when determining the canonical path location
+    of fields and constructors; e.g. for [type bar = M.foo = A | B], it will return
+    [["M"]]. *)
+val path_of_type_decl : path:string list -> type_declaration -> string list
+
 (** [mangle_lid ~prefix ~suffix lid] adds [prefix] and [suffix] to the last
     component of [lid], e.g. [mangle_lid ~prefix:"pp_"] applied to [A.foo]
     results in [A.pp_foo]. *)

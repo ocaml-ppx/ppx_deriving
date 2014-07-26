@@ -27,11 +27,21 @@ let catch f =
     | Some error -> [Str.extension (Ast_mapper.extension_of_error error)]
     | None -> raise exn
 
-let string_of_core_type ptyp =
-  Format.asprintf "%a" Pprintast.core_type { ptyp with ptyp_attributes = [] }
+let string_of_core_type typ =
+  Format.asprintf "%a" Pprintast.core_type { typ with ptyp_attributes = [] }
 
 let expand_path ~path ident =
   String.concat "." (path @ [ident])
+
+let path_of_type_decl ~path type_decl =
+  match type_decl.ptype_manifest with
+  | Some { ptyp_desc = Ptyp_constr ({ txt = lid }, _) } ->
+    begin match lid with
+    | Lident _ -> []
+    | Ldot (lid, _) -> Longident.flatten lid
+    | Lapply _ -> assert false
+    end
+  | _ -> path
 
 let mangle_lid ?(prefix="") ?(suffix="") lid =
   match lid with

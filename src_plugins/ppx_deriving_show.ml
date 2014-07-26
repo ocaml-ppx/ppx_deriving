@@ -82,6 +82,7 @@ let () =
                        (Ppx_deriving.string_of_core_type typ)
     in
     let expr_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_) =
+      let path = Ppx_deriving.path_of_type_decl ~path type_ in
       let prettyprinter =
         match type_.ptype_kind, type_.ptype_manifest with
         | Ptype_abstract, Some manifest ->

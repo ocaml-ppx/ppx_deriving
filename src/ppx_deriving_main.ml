@@ -72,12 +72,16 @@ let derive path typ_decls pstr_loc item fn =
 
 let mapper argv =
   List.iter (fun f -> Dynlink.(loadfile (adapt_filename f))) argv;
+  let seen_toplevel = ref false in
   let module_nesting = ref [] in
   let set_module_nesting () =
-    module_nesting :=
-      match !Location.input_name with
-      | "//toplevel//" -> []
-      | filename -> [String.capitalize (Filename.(basename (chop_suffix filename ".ml")))]
+    if not !seen_toplevel then begin
+      seen_toplevel := true;
+      module_nesting :=
+        match !Location.input_name with
+        | "//toplevel//" -> []
+        | filename -> [String.capitalize (Filename.(basename (chop_suffix filename ".ml")))]
+    end
   and with_module name f =
     let old_nesting = !module_nesting in
     module_nesting := !module_nesting @ [name];
