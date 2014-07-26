@@ -26,13 +26,17 @@ let test_alias ctxt =
   assert_equal ~printer "\"foo\"" (show_a9 (Bytes.of_string "foo"));
   assert_equal ~printer "[1; 2; 3]" (show_l [1;2;3]);
   assert_equal ~printer "[|1; 2; 3|]" (show_a [|1;2;3|]);
-  assert_equal ~printer "Some 1" (show_o (Some 1))
+  assert_equal ~printer "Some (1)" (show_o (Some 1))
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving Show]
 let test_variant ctxt =
   assert_equal ~printer "Test_deriving_show.Foo"              (show_v Foo);
   assert_equal ~printer "Test_deriving_show.Bar (1, \"foo\")" (show_v (Bar (1, "foo")));
-  assert_equal ~printer "Test_deriving_show.Baz \"foo\""      (show_v (Baz "foo"))
+  assert_equal ~printer "Test_deriving_show.Baz (\"foo\")"    (show_v (Baz "foo"))
+
+type vn = Foo of int option [@@deriving Show]
+let test_variant_nest ctxt =
+  assert_equal ~printer "Test_deriving_show.Foo (Some (1))" (show_vn (Foo (Some 1)))
 
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving Show]
 let test_poly ctxt =
@@ -85,6 +89,7 @@ let test_parametric ctxt =
 let suite = "Test deriving(Show)" >::: [
     "test_alias"        >:: test_alias;
     "test_variant"      >:: test_variant;
+    "test_variant_nest" >:: test_variant_nest;
     "test_tuple"        >:: test_tuple;
     "test_poly"         >:: test_poly;
     "test_poly_inherit" >:: test_poly_inherit;

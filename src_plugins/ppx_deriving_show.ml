@@ -41,7 +41,10 @@ let () =
           [%expr
             function
             | None -> Format.pp_print_string fmt "None"
-            | Some x -> Format.pp_print_string fmt "Some "; [%e expr_of_typ typ] x]
+            | Some x ->
+              Format.pp_print_string fmt "Some (";
+              [%e expr_of_typ typ] x;
+              Format.pp_print_string fmt ")"]
         | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
           app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid ~prefix:"pp_" lid)))
               ([%expr fmt] :: (List.map expr_of_typ args))
@@ -91,8 +94,8 @@ let () =
               let result =
                 match args with
                 | []   -> [%expr Format.pp_print_string fmt [%e str constr_name]]
-                | [a]  -> [%expr Format.pp_print_string fmt [%e str (constr_name ^ " ")]; [%e a]]
-                | args -> [%expr Format.pp_print_string fmt [%e str (constr_name ^ " (")];
+                | args ->
+                  [%expr Format.pp_print_string fmt [%e str (constr_name ^ " (")];
                   [%e args |> Ppx_deriving.(fold_exprs
                         (seq_reduce [%expr Format.pp_print_string fmt ", "]))];
                   Format.pp_print_string fmt ")"]
