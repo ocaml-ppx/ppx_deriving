@@ -56,3 +56,25 @@ package "ord" (
   archive(native, plugin) = "ppx_deriving_ord.cmxs"
   exists_if = "ppx_deriving_ord.cma"
 )
+
+package "enum" (
+  version = "%%VERSION%%"
+  description = "[@@deriving Enum]"
+  requires = "ppx_deriving.api"
+  archive(byte) = "ppx_deriving_enum.cma"
+  archive(byte, plugin) = "ppx_deriving_enum.cma"
+  archive(native) = "ppx_deriving_enum.cmxa"
+  archive(native, plugin) = "ppx_deriving_enum.cmxs"
+  exists_if = "ppx_deriving_enum.cma"
+)
+
+package "bounded" (
+  version = "%%VERSION%%"
+  description = "[@@deriving Bounded]"
+  requires = "ppx_deriving.api "
+  archive(byte) = "ppx_deriving_bounded.cma"
+  archive(byte, plugin) = "ppx_deriving_bounded.cma"
+  archive(native) = "ppx_deriving_bounded.cmxa"
+  archive(native, plugin) = "ppx_deriving_bounded.cmxs"
+  exists_if = "ppx_deriving_bounded.cma"
+)

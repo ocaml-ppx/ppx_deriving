@@ -11,6 +11,12 @@ let raise_errorf = Ppx_deriving.raise_errorf
 let string_of_lident lid =
   String.concat "." (Longident.flatten lid)
 
+let dynlink ?(loc=Location.none) filename filepath =
+  try
+    Dynlink.loadfile filepath
+  with Dynlink.Error error ->
+    raise_errorf ~loc "Cannot load %s: %s" filename (Dynlink.error_message error)
+
 let load_deriver loc name =
   let libname = String.lowercase name in
   let try_expand filename =
@@ -28,14 +34,11 @@ let load_deriver loc name =
         raise_errorf ~loc "Cannot locate findlib package ppx_deriving.%s or ppx_deriving_%s"
                           libname libname
   in
-  try
-    Dynlink.loadfile filepath;
-    begin match Ppx_deriving.lookup name with
-    | Some deriver -> deriver
-    | None -> raise_errorf ~loc "Expected %s to define a deriver %s" filename name
-    end
-  with Dynlink.Error error ->
-    raise_errorf ~loc "Cannot load %s: %s" filename (Dynlink.error_message error)
+  dynlink ~loc filename filepath;
+  begin match Ppx_deriving.lookup name with
+  | Some deriver -> deriver
+  | None -> raise_errorf ~loc "Expected %s to define a deriver %s" filename name
+  end
 
 let derive path typ_decls pstr_loc item fn =
   let attributes = List.concat (List.map (fun { ptype_attributes = attrs } -> attrs) typ_decls) in
@@ -71,7 +74,7 @@ let derive path typ_decls pstr_loc item fn =
     [item] deriver_exprs
 
 let mapper argv =
-  List.iter (fun f -> Dynlink.(loadfile (adapt_filename f))) argv;
+  List.iter (fun file -> let file = Dynlink.adapt_filename file in dynlink file file) argv;
   let seen_toplevel = ref false in
   let module_nesting = ref [] in
   let set_module_nesting () =

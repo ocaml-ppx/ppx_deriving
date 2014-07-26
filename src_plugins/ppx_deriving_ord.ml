@@ -133,7 +133,7 @@ let () =
       [Vb.mk (pvar ("compare_"^name)) (polymorphize comparator)]
     in
     let sig_of_type type_ =
-      let typ = Ppx_deriving.typ_of_type_decl type_ in
+      let typ = Ppx_deriving.core_type_of_type_decl type_ in
       let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
               (fun var -> [%type: [%t var] -> [%t var] -> int]) type_ in
       [Sig.value (Val.mk (mknoloc ("compare_"^type_.ptype_name.txt))

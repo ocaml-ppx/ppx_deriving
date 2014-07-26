@@ -3,8 +3,11 @@
 
 _deriving_ is a library that simplifies type-driven code generation that works on OCaml >=4.02.
 
-_deriving_ includes a set of useful plugins: Show, Eq, Ord, [Protobuf][].
+_deriving_ includes a set of useful plugins: [Show][], [Eq][], [Ord][eq], [Enum][], [Bounded][enum], [Protobuf][].
 
+[show]: #plugin-show
+[eq]: #plugins-eq-and-ord
+[enum]: #plugins-enum-and-bounded
 [protobuf]: https://github.com/whitequark/ppx_deriving_protobuf
 
 Installation
@@ -31,7 +34,7 @@ type point3d = float * float * float
 [@@deriving Show, Eq]
 ```
 
-It's possible to pass options to a plugin by appending a record to plugin's name:
+It's possible to pass options to a plugin by appending a record to plugin's name (TBD):
 
 ``` ocaml
 type t = string
@@ -51,26 +54,26 @@ At first, it may look like _deriving_ requires complete control of the type decl
 
 ``` ocaml
 # module M = struct
-  type fpclass = Pervasives.fpclass = FP_normal | FP_subnormal | FP_zero | FP_infinite | FP_nan
+  type myfpclass = fpclass = FP_normal | FP_subnormal | FP_zero | FP_infinite | FP_nan
   [@@deriving Show]
 end;;
 module M :
   sig
-    type fpclass =
+    type myfpclass =
       fpclass =
         FP_normal
       | FP_subnormal
       | FP_zero
       | FP_infinite
       | FP_nan
-    val pp_fpclass : Format.formatter -> fpclass -> unit
-    val show_fpclass : fpclass -> bytes
+    val pp_myfpclass : Format.formatter -> fpclass -> unit
+    val show_myfpclass : fpclass -> bytes
   end
-# M.show_fpclass FP_normal;;
+# M.show_myfpclass FP_normal;;
 - : bytes = "FP_normal"
 ```
 
-The module is used to demonstrate that `show_fpclass` really accepts `Pervasives.fpclass`, and not just a shadowing, identically named type.
+The module is used to demonstrate that `show_myfpclass` really accepts `Pervasives.fpclass`, and not just `M.myfpclass`.
 
 The need to repeat the type definition may look tedious, but consider this: if the definition was automatically imported from the declaration point, how would you attach attributes to refine the behavior of the deriving plugin?
 
@@ -98,7 +101,7 @@ type t = [ `A | `B of i ]
 val pp_t : Format.formatter -> [< `A | `B of i ] -> unit = <fun>
 val show_t : [< `A | `B of i ] -> bytes = <fun>
 # show_t (`B 1);;
-- : bytes = "`B 1"
+- : bytes = "`B (1)"
 ```
 
 For abstract type `t`, _Show_ expects to find a `pp_t` function in the corresponding module.
@@ -151,6 +154,26 @@ val compare_file : file -> file -> int = <fun>
 # compare_file { name = "a"; perm = 0o755 } { name = "a"; perm = 0o644 };;
 - : int = -1
 ```
+
+Plugins: Enum and Bounded
+-------------------------
+
+_Enum_ and _Bounded_ are two related plugins that treat variants with argument-less constructors as enumerations with an integer value assigned to every constructor. _Enum_ derives functions to convert the variants to and from integers, and _Bounded_ derives minimal and maximal integer value.
+
+``` ocaml
+# type insn = Const | Push | Pop | Add [@@deriving Enum, Bounded];;
+type insn = Const | Push | Pop | Add
+val insn_to_enum : insn -> int = <fun>
+val insn_of_enum : int -> insn option = <fun>
+val min_insn : int = 0
+val max_insn : int = 3
+# insn_to_enum Pop;;
+- : int = 2
+# insn_of_enum 3;;
+- : insn option = Some Add
+```
+
+By default, the integer value associated is `0` for lexically first constructor, and increases by one for every next one. It is possible to set the value explicitly with `[@value 42]`; it will keep increasing from the specified value.
 
 Developing plugins
 ------------------

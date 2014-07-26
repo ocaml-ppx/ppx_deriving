@@ -1,5 +1,6 @@
 open Longident
 open Location
+open Asttypes
 open Parsetree
 open Ast_helper
 open Ast_convenience
@@ -18,7 +19,9 @@ let lookup name =
   with Not_found -> None
 
 let raise_errorf ?sub ?if_highlight ?loc message =
-  Printf.kprintf (fun str -> raise (Location.Error (Location.error ?loc str))) message
+  message |> Printf.kprintf (fun str ->
+    let err = Location.error ?sub ?if_highlight ?loc str in
+    raise (Location.Error err))
 
 let catch f =
   try f ()
@@ -29,6 +32,37 @@ let catch f =
 
 let string_of_core_type typ =
   Format.asprintf "%a" Pprintast.core_type { typ with ptyp_attributes = [] }
+
+module Arg = struct
+  let int expr =
+    match expr with
+    | { pexp_desc = Pexp_constant (Const_int n) } -> `Ok n
+    | _ -> `Error "integer"
+
+  let string expr =
+    match expr with
+    | { pexp_desc = Pexp_constant (Const_string (n, None)) } -> `Ok n
+    | _ -> `Error "string"
+
+  let enum values expr =
+    match expr with
+    | { pexp_desc = Pexp_variant (name, None) }
+      when List.mem name values -> `Ok name
+    | _ -> `Error (Printf.sprintf "one of: %s"
+                    (String.concat ", " (List.map (fun s -> "`"^s) values)))
+
+  let payload ~name conv attr =
+    match attr with
+    | None -> None
+    | Some ({ txt = attr_name }, PStr [{ pstr_desc = Pstr_eval (expr, []) }]) ->
+      begin match conv expr with
+      | `Ok v -> Some v
+      | `Error desc ->
+        raise_errorf ~loc:expr.pexp_loc "%s: invalid [@%s]: %s expected" name attr_name desc
+      end
+    | Some ({ txt = attr_name; loc }, _) ->
+      raise_errorf ~loc "%s: invalid [@%s]: value expected" name attr_name
+end
 
 let expand_path ~path ident =
   String.concat "." (path @ [ident])
@@ -85,7 +119,7 @@ let poly_apply_of_type_decl type_decl expr =
 let poly_arrow_of_type_decl fn type_decl typ =
   fold_type (fun typ name -> Typ.arrow "" (fn (Typ.var name)) typ) typ type_decl
 
-let typ_of_type_decl { ptype_name = { txt = name }; ptype_params } =
+let core_type_of_type_decl { ptype_name = { txt = name }; ptype_params } =
   Typ.constr (mknoloc (Lident name)) (List.map fst ptype_params)
 
 let fold_exprs ?unit fn exprs =

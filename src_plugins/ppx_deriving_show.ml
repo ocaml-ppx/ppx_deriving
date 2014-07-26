@@ -126,7 +126,7 @@ let () =
        Vb.mk (pvar ("show_"^name)) (polymorphize stringprinter);]
     in
     let sig_of_type type_ =
-      let typ = Ppx_deriving.typ_of_type_decl type_ in
+      let typ = Ppx_deriving.core_type_of_type_decl type_ in
       let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
             (fun var -> [%type: Format.formatter -> [%t var] -> unit]) type_ in
       [Sig.value (Val.mk (mknoloc ("pp_"^type_.ptype_name.txt))

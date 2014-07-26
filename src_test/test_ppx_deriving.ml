@@ -4,6 +4,8 @@ let suite = "Test ppx_deriving" >::: [
     Test_deriving_show.suite;
     Test_deriving_eq.suite;
     Test_deriving_ord.suite;
+    Test_deriving_enum.suite;
+    Test_deriving_bounded.suite;
   ]
 
 let _ =

@@ -262,7 +262,7 @@ module Pkg : Pkg = struct
   let describe pkg ~builder mvs =
     let mvs = List.sort compare (List.flatten mvs) in
     let btool, bdir = match builder with
-    | `OCamlbuild -> "ocamlbuild -use-ocamlfind -classic-display", "_build"
+    | `OCamlbuild -> "ocamlbuild -j 0 -use-ocamlfind -classic-display", "_build"
     | `Other (btool, bdir) -> btool, bdir
     in
     match Topkg.cmd with 

@@ -40,6 +40,44 @@ val catch : (unit -> structure) -> structure
 (** [string_of_core_type typ] unparses [typ], omitting any attributes. *)
 val string_of_core_type : Parsetree.core_type -> string
 
+(** {2 Option parsing} *)
+
+(** {!Arg} contains convenience functions that extract constants from
+    AST fragments, to be used when parsing options or [[\@attributes]]
+    attached to types, fields or constructors.
+
+    The [~name] argument is used in error messages and should receive
+    the name of the deriving plugin, e.g. ["Show"]. *)
+module Arg : sig
+  (** [int expr] extracts an integer constant from [expr], or returns
+      [`Error "integer"] if [expr] does not contain an integer constant. *)
+  val int : expression -> [ `Ok of int | `Error of string ]
+
+  (** [string expr] extracts a string constant from [expr], or returns
+      [`Error "string"] if [expr] does not contain a string constant. *)
+  val string : expression -> [ `Ok of string | `Error of string ]
+
+  (** [enum values expr] extracts a polymorphic variant constant from [expr],
+      or returns [`Error "one of: `a, `b, ..."] if [expr] does not contain
+      a variant included in [values]. *)
+  val enum : string list -> expression -> [ `Ok of string | `Error of string ]
+
+  (** [payload conv attr] extracts the expression from [attr] and converts
+      it with [conv], raising [Location.Error] if [attr] is not a structure with
+      a single expression or [conv] fails; or returns [None] if [attr] is [None].
+
+      Example usage:
+      {[
+let kind =
+  match Ppx_deriving.attr ~prefix:"index" "kind" pcd_attributes |>
+        Ppx_deriving.Arg.(payload ~name:"Ix" (enum ["flat"; "nested"])) with
+  | Some idx -> idx | None -> acc
+in ..
+      ]} *)
+  val payload : name:string -> (expression -> [ `Ok of 'a | `Error of string ]) ->
+                attribute option -> 'a option
+end
+
 (** {2 AST manipulation} *)
 
 (** [expand_path name] returns [name] with the [path] module path prepended,
@@ -88,9 +126,9 @@ val poly_apply_of_type_decl : type_declaration -> expression -> expression
 val poly_arrow_of_type_decl : (core_type -> core_type) ->
                               type_declaration -> core_type -> core_type
 
-(** [typ_of_type_decl type_] constructs type [('a, 'b, ...) t] for type declaration
-    [type ('a, 'b, ...) t = ...]. *)
-val typ_of_type_decl : type_declaration -> core_type
+(** [core_type_of_type_decl type_] constructs type [('a, 'b, ...) t] for
+    type declaration [type ('a, 'b, ...) t = ...]. *)
+val core_type_of_type_decl : type_declaration -> core_type
 
 (** [fold_exprs ~unit fn exprs] folds [exprs] using head of [exprs] as initial
     accumulator value, or [unit] if [exprs = []].
