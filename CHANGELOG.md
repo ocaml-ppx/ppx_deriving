@@ -4,7 +4,7 @@ Changelog
 0.2
 ---
 
-  * New plugins: Enum, Bounded.
+  * New plugins: Enum.
   * Added Ppx_deriving.(expand_path,path_of_type_decl,function_name,catch,Arg).
   * Renamed Ppx.deriving.(typ_of_type_decl→core_type_of_type_decl).
   * Change Ppx_deriving.deriver signature to pass ~options and ~path as labeled arguments.

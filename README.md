@@ -3,11 +3,11 @@
 
 _deriving_ is a library that simplifies type-driven code generation that works on OCaml >=4.02.
 
-_deriving_ includes a set of useful plugins: [Show][], [Eq][], [Ord][eq], [Enum][], [Bounded][enum], [Protobuf][].
+_deriving_ includes a set of useful plugins: [Show][], [Eq][], [Ord][eq], [Enum][], [Protobuf][].
 
 [show]: #plugin-show
 [eq]: #plugins-eq-and-ord
-[enum]: #plugins-enum-and-bounded
+[enum]: #plugin-enum
 [protobuf]: https://github.com/whitequark/ppx_deriving_protobuf#usage
 
 Installation
@@ -155,13 +155,13 @@ val compare_file : file -> file -> int = <fun>
 - : int = -1
 ```
 
-Plugins: Enum and Bounded
--------------------------
+Plugin: Enum
+------------
 
-_Enum_ and _Bounded_ are two related plugins that treat variants with argument-less constructors as enumerations with an integer value assigned to every constructor. _Enum_ derives functions to convert the variants to and from integers, and _Bounded_ derives minimal and maximal integer value.
+_Enum_ is a plugin that treats variants with argument-less constructors as enumerations with an integer value assigned to every constructor. _Enum_ derives functions to convert the variants to and from integers, and minimal and maximal integer value.
 
 ``` ocaml
-# type insn = Const | Push | Pop | Add [@@deriving Enum, Bounded];;
+# type insn = Const | Push | Pop | Add [@@deriving Enum];;
 type insn = Const | Push | Pop | Add
 val insn_to_enum : insn -> int = <fun>
 val insn_of_enum : int -> insn option = <fun>
