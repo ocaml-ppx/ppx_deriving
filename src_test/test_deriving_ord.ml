@@ -32,13 +32,13 @@ let test_variant ctxt =
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving Ord]
 type pv2 = [ `Baz | pv1 ] [@@deriving Ord]
 
-type t = int * string [@@deriving Ord]
+type ty = int * string [@@deriving Ord]
 let test_complex ctxt =
-  assert_equal ~printer (0)  (compare_t (0, "a") (0, "a"));
-  assert_equal ~printer (1)  (compare_t (1, "a") (0, "a"));
-  assert_equal ~printer (-1) (compare_t (0, "a") (1, "a"));
-  assert_equal ~printer (-1) (compare_t (0, "a") (0, "b"));
-  assert_equal ~printer (1)  (compare_t (0, "b") (0, "a"))
+  assert_equal ~printer (0)  (compare_ty (0, "a") (0, "a"));
+  assert_equal ~printer (1)  (compare_ty (1, "a") (0, "a"));
+  assert_equal ~printer (-1) (compare_ty (0, "a") (1, "a"));
+  assert_equal ~printer (-1) (compare_ty (0, "a") (0, "b"));
+  assert_equal ~printer (1)  (compare_ty (0, "b") (0, "a"))
 
 type r = {
   f1 : int;

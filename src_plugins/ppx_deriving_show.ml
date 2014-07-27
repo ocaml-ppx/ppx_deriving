@@ -46,7 +46,7 @@ let () =
               [%e expr_of_typ typ] x;
               Format.pp_print_string fmt ")"]
         | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-          app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid ~prefix:"pp_" lid)))
+          app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid)))
               ([%expr fmt] :: (List.map expr_of_typ args))
         | { ptyp_desc = Ptyp_tuple typs } ->
           let args = List.mapi (fun i typ -> app (expr_of_typ typ) [evar (argn i)]) typs in
@@ -81,10 +81,10 @@ let () =
           raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
                        (Ppx_deriving.string_of_core_type typ)
     in
-    let expr_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_) =
-      let path = Ppx_deriving.path_of_type_decl ~path type_ in
+    let expr_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_decl) =
+      let path = Ppx_deriving.path_of_type_decl ~path type_decl in
       let prettyprinter =
-        match type_.ptype_kind, type_.ptype_manifest with
+        match type_decl.ptype_kind, type_decl.ptype_manifest with
         | Ptype_abstract, Some manifest ->
           [%expr fun fmt -> [%e expr_of_typ manifest]]
         | Ptype_variant constrs, _ ->
@@ -119,19 +119,22 @@ let () =
         | Ptype_abstract, None -> raise_errorf ~loc "Cannot derive Show for fully abstract type"
         | Ptype_open, _        -> raise_errorf ~loc "Cannot derive Show for open type"
       in
-      let pp_poly_apply = Ppx_deriving.poly_apply_of_type_decl type_ (evar ("pp_"^name)) in
+      let pp_poly_apply = Ppx_deriving.poly_apply_of_type_decl type_decl (evar
+                            (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl)) in
       let stringprinter = [%expr fun x -> Format.asprintf "%a" [%e pp_poly_apply] x] in
-      let polymorphize  = Ppx_deriving.poly_fun_of_type_decl type_ in
-      [Vb.mk (pvar ("pp_"^name))   (polymorphize prettyprinter);
-       Vb.mk (pvar ("show_"^name)) (polymorphize stringprinter);]
+      let polymorphize  = Ppx_deriving.poly_fun_of_type_decl type_decl in
+      [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl))
+                   (polymorphize prettyprinter);
+       Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl))
+                   (polymorphize stringprinter);]
     in
-    let sig_of_type type_ =
-      let typ = Ppx_deriving.core_type_of_type_decl type_ in
+    let sig_of_type type_decl =
+      let typ = Ppx_deriving.core_type_of_type_decl type_decl in
       let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
-            (fun var -> [%type: Format.formatter -> [%t var] -> unit]) type_ in
-      [Sig.value (Val.mk (mknoloc ("pp_"^type_.ptype_name.txt))
+            (fun var -> [%type: Format.formatter -> [%t var] -> unit]) type_decl in
+      [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl))
                   (polymorphize [%type: Format.formatter -> [%t typ] -> unit]));
-       Sig.value (Val.mk (mknoloc ("show_"^type_.ptype_name.txt))
+       Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl))
                   (polymorphize [%type: [%t typ] -> string]))]
     in
     Ppx_deriving.catch (fun () ->

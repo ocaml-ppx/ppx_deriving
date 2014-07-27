@@ -92,10 +92,16 @@ val expand_path : path:string list -> string -> string
     [["M"]]. *)
 val path_of_type_decl : path:string list -> type_declaration -> string list
 
-(** [mangle_lid ~prefix ~suffix lid] adds [prefix] and [suffix] to the last
-    component of [lid], e.g. [mangle_lid ~prefix:"pp_"] applied to [A.foo]
-    results in [A.pp_foo]. *)
-val mangle_lid : ?prefix:string -> ?suffix:string -> Longident.t -> Longident.t
+(** [mangle_type_decl ~fixpoint affix type_] derives a function name from [type_] name
+    by doing nothing if [type_] is named [fixpoint] (["t"] by default), or
+    appending or prepending [affix] via an underscore. *)
+val mangle_type_decl : ?fixpoint:string -> [ `Prefix of string | `Suffix of string ] ->
+                       type_declaration -> string
+
+(** [mangle_lid ~fixpoint affix lid] does the same as {!mangle_type_decl}, but for
+    the last component of [lid]. *)
+val mangle_lid : ?fixpoint:string -> [ `Prefix of string | `Suffix of string ] ->
+                 Longident.t -> Longident.t
 
 (** [attr ~prefix name attrs] searches for an attribute [\[\@deriving.prefix.name\]]
     in [attrs] if any attribute with name starting with [\@deriving.prefix] exists,

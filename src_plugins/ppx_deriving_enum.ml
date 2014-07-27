@@ -29,13 +29,17 @@ let () =
           Exp.case (pint value) (constr "Some" [expr name])) mappings @
         [Exp.case (Pat.any ()) (constr "None" [])]
       in
-      [Vb.mk (pvar (name^"_to_enum")) (Exp.function_ to_enum_cases);
-       Vb.mk (pvar (name^"_of_enum")) (Exp.function_ from_enum_cases)]
+      [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Suffix "to_enum") type_decl))
+             (Exp.function_ to_enum_cases);
+       Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Suffix "of_enum") type_decl))
+             (Exp.function_ from_enum_cases)]
     in
-    let sig_of_type ({ ptype_name = { txt = name } } as type_decl) =
+    let sig_of_type type_decl =
       let typ = Ppx_deriving.core_type_of_type_decl type_decl in
-      [Sig.value (Val.mk (mknoloc (name^"_to_enum")) [%type: [%t typ] -> int]);
-       Sig.value (Val.mk (mknoloc (name^"_of_enum")) [%type: int -> [%t typ] option])]
+      [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Suffix "to_enum") type_decl))
+                 [%type: [%t typ] -> int]);
+       Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Suffix "of_enum") type_decl))
+                 [%type: int -> [%t typ] option])]
     in
     Ppx_deriving.catch (fun () ->
       [Str.value Recursive (List.concat (List.map expr_of_type type_decls))]),

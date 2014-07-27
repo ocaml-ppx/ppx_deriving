@@ -77,10 +77,19 @@ let path_of_type_decl ~path type_decl =
     end
   | _ -> path
 
-let mangle_lid ?(prefix="") ?(suffix="") lid =
+let mangle ?(fixpoint="t") affix name =
+  match name = fixpoint, affix with
+  | true,  (`Prefix x | `Suffix x) -> x
+  | false, `Prefix x -> x ^ "_" ^ name
+  | false, `Suffix x -> name ^ "_" ^ x
+
+let mangle_type_decl ?fixpoint affix { ptype_name = { txt = name } } =
+  mangle ?fixpoint affix name
+
+let mangle_lid ?fixpoint affix lid =
   match lid with
-  | Lident s    -> Lident (prefix ^ s ^ suffix)
-  | Ldot (p, s) -> Ldot (p, prefix ^ s ^ suffix)
+  | Lident s    -> Lident (mangle ?fixpoint affix s)
+  | Ldot (p, s) -> Ldot (p, mangle ?fixpoint affix s)
   | Lapply _    -> assert false
 
 let attr ~prefix name attrs =

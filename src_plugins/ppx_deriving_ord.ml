@@ -10,7 +10,7 @@ let raise_errorf = Ppx_deriving.raise_errorf
 
 let () =
   Ppx_deriving.register "Ord" (fun ~options ~path type_decls ->
-    let expr_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_) =
+    let expr_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_decl) =
       let argn kind = Printf.sprintf (match kind with `lhs -> "lhs%d" | `rhs -> "rhs%d") in
       let compare_reduce acc expr = [%expr match [%e expr] with (-1|1) as x -> x | _ -> [%e acc]] in
       let wildcard_case int_cases =
@@ -59,7 +59,7 @@ let () =
               | Some _, None -> 1]
           | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
             (* ppx_tools#10 *)
-            let fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid ~prefix:"compare_" lid)) in
+            let fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "compare") lid)) in
             (match args with [] -> fn | _ -> app fn (List.map expr_of_typ args))
           | { ptyp_desc = Ptyp_tuple typs } ->
             [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
@@ -101,7 +101,7 @@ let () =
                          (Ppx_deriving.string_of_core_type typ)
       in
       let comparator =
-        match type_.ptype_kind, type_.ptype_manifest with
+        match type_decl.ptype_kind, type_decl.ptype_manifest with
         | Ptype_abstract, Some manifest -> expr_of_typ manifest
         | Ptype_variant constrs, _ ->
           let int_cases =
@@ -129,14 +129,15 @@ let () =
         | Ptype_open, _ ->
           raise_errorf ~loc "Cannot derive Ord for open type"
       in
-      let polymorphize = Ppx_deriving.poly_fun_of_type_decl type_ in
-      [Vb.mk (pvar ("compare_"^name)) (polymorphize comparator)]
+      let polymorphize = Ppx_deriving.poly_fun_of_type_decl type_decl in
+      [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix "compare") type_decl))
+             (polymorphize comparator)]
     in
-    let sig_of_type type_ =
-      let typ = Ppx_deriving.core_type_of_type_decl type_ in
+    let sig_of_type type_decl =
+      let typ = Ppx_deriving.core_type_of_type_decl type_decl in
       let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
-              (fun var -> [%type: [%t var] -> [%t var] -> int]) type_ in
-      [Sig.value (Val.mk (mknoloc ("compare_"^type_.ptype_name.txt))
+              (fun var -> [%type: [%t var] -> [%t var] -> int]) type_decl in
+      [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "compare") type_decl))
                   (polymorphize [%type: [%t typ] -> [%t typ] -> int]))]
     in
     Ppx_deriving.catch (fun () ->

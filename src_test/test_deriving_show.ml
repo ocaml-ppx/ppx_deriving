@@ -48,9 +48,9 @@ let test_poly_inherit ctxt =
   assert_equal ~printer "`Foo" (show_pv2 `Foo);
   assert_equal ~printer "`Baz" (show_pv2 `Baz)
 
-type t = int * string [@@deriving Show]
+type ty = int * string [@@deriving Show]
 let test_tuple ctxt =
-  assert_equal ~printer "(1, \"foo\")" (show_t (1, "foo"))
+  assert_equal ~printer "(1, \"foo\")" (show_ty (1, "foo"))
 
 type r = {
   f1 : int;
@@ -66,7 +66,7 @@ end = struct
 end
 
 let test_module ctxt =
-  assert_equal ~printer "Test_deriving_show.M.A" (M.show_t M.A)
+  assert_equal ~printer "Test_deriving_show.M.A" (M.show M.A)
 
 type z = M.t [@@deriving Show]
 let test_abstr ctxt =
@@ -90,7 +90,7 @@ module M' = struct
   type t = M.t = A [@@deriving Show]
 end
 let test_alias_path ctxt =
-  assert_equal ~printer "M.A" (M'.show_t M'.A)
+  assert_equal ~printer "M.A" (M'.show M'.A)
 
 let suite = "Test deriving(Show)" >::: [
     "test_alias"        >:: test_alias;

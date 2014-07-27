@@ -26,7 +26,7 @@ type v = Foo | Bar of int * string | Baz of string [@@deriving Eq]
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving Eq]
 type pv2 = [ `Baz | pv1 ] [@@deriving Eq]
 
-type t = int * string [@@deriving Eq]
+type ty = int * string [@@deriving Eq]
 
 type r = {
   f1 : int;

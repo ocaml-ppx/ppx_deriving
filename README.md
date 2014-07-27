@@ -8,7 +8,7 @@ _deriving_ includes a set of useful plugins: [Show][], [Eq][], [Ord][eq], [Enum]
 [show]: #plugin-show
 [eq]: #plugins-eq-and-ord
 [enum]: #plugins-enum-and-bounded
-[protobuf]: https://github.com/whitequark/ppx_deriving_protobuf
+[protobuf]: https://github.com/whitequark/ppx_deriving_protobuf#usage
 
 Installation
 ------------
@@ -207,10 +207,11 @@ The following is a list of tips for developers trying to use the ppx interface:
   * Module paths overwhelm you? Open all of the following modules, they don't conflict with each other: `Longident`, `Location`, `Asttypes`, `Parsetree`, `Ast_helper`, `Ast_convenience`.
   * Need to insert some ASTs? See [ppx_metaquot](https://github.com/alainfrisch/ppx_tools/blob/master/ppx_metaquot.ml); it's required by `ppx_deriving.api`.
   * Need to display an error? Use `Ppx_deriving.raise_errorf ~loc "Cannot derive Foo: (error description)"` ([doc](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALraise_errorf)); keep it clear which deriving plugin raised the error!
-  * Need to derive a function name from a type name? Use [Ppx_deriving.mangle_lid](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALmangle_lid).
+  * Need to derive a function name from a type name? Use [Ppx_deriving.mangle_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALmangle_type_decl) and [Ppx_deriving.mangle_lid](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALmangle_lid).
   * Need to fetch an attribute from a node? Use `Ppx_deriving.attr ~prefix "foo" nod.nod_attributes` ([doc](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALattr)); this takes care of interoperability.
   * Put all functions derived from a set of type declarations into a single `let rec` block; this reflects the always-recursive nature of type definitions.
   * Need to handle polymorphism? Use [Ppx_deriving.poly_fun_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpoly_fun_of_type_decl) for derived functions, [Ppx_deriving.poly_arrow_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpoly_arrow_of_type_decl) for signatures, and [Ppx_deriving.poly_apply_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpoly_apply_of_type_decl) for "forwarding" the arguments corresponding to type variables to another generated function.
+  * Need to display a full path to a type, e.g. for an error message? Use [Ppx_deriving.path_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpath_of_type_decl).
   * Need to apply a sequence or a binary operator to variant, tuple or record elements? Use [Ppx_deriving.fold_exprs](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALfold_exprs).
   * Don't forget to invoke the option parser (TBD) even if you don't have any options. This way, it would display an error to the user.
   * Your structure generator is throwing an exception that prevents you from returning valid output for signatures? Use `Ppx_deriving.catch (fun () -> ...)` to convert it to a pure representation.
