@@ -1,7 +1,7 @@
 [@@deriving]
 ============
 
-_deriving_ is a library that simplifies type-driven code generation that works on OCaml >=4.02.
+_deriving_ is a library simplifying type-driven code generation on OCaml >=4.02.
 
 _deriving_ includes a set of useful plugins: [Show][], [Eq][], [Ord][eq], [Enum][], [Iter][], [Map][iter], [Fold][iter], [Protobuf][].
 
