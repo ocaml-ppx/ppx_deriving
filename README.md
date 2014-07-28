@@ -249,7 +249,6 @@ The following is a list of tips for developers trying to use the ppx interface:
   * Need to display a full path to a type, e.g. for an error message? Use [Ppx_deriving.path_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpath_of_type_decl).
   * Need to apply a sequence or a binary operator to variant, tuple or record elements? Use [Ppx_deriving.fold_exprs](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALfold_exprs).
   * Don't forget to invoke the option parser (TBD) even if you don't have any options. This way, it would display an error to the user.
-  * Your structure generator is throwing an exception that prevents you from returning valid output for signatures? Use `Ppx_deriving.catch (fun () -> ...)` to convert it to a pure representation.
 
 ### Dynlink rationale
 

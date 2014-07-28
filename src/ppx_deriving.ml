@@ -27,13 +27,6 @@ let raise_errorf ?sub ?if_highlight ?loc message =
     let err = Location.error ?sub ?if_highlight ?loc str in
     raise (Location.Error err))
 
-let catch f =
-  try f ()
-  with exn ->
-    match Location.error_of_exn exn with
-    | Some error -> [Str.extension (Ast_mapper.extension_of_error error)]
-    | None -> raise exn
-
 let string_of_core_type typ =
   Format.asprintf "%a" Pprintast.core_type { typ with ptyp_attributes = [] }
 
