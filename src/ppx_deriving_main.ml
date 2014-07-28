@@ -77,70 +77,66 @@ let derive path typ_decls pstr_loc item fn =
       items @ (fn (deriver ~options ~path:(!path) typ_decls)))
     [item] deriver_exprs
 
+let module_from_input_name () =
+  match !Location.input_name with
+  | "//toplevel//" -> []
+  | filename -> [String.capitalize (Filename.(basename (chop_suffix filename ".ml")))]
+
 let mapper argv =
   List.iter (fun file -> dynlink (Dynlink.adapt_filename file)) argv;
-  let seen_toplevel = ref false in
   let module_nesting = ref [] in
-  let set_module_nesting () =
-    if not !seen_toplevel then begin
-      seen_toplevel := true;
-      module_nesting :=
-        match !Location.input_name with
-        | "//toplevel//" -> []
-        | filename -> [String.capitalize (Filename.(basename (chop_suffix filename ".ml")))]
-    end
-  and with_module name f =
+  let with_module name f =
     let old_nesting = !module_nesting in
     module_nesting := !module_nesting @ [name];
     let result = f () in
     module_nesting := old_nesting;
     result
   in
+  let rec structure mapper items =
+    match items with
+    | { pstr_desc = Pstr_type typ_decls; pstr_loc } as item :: rest when
+        List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
+      Ast_helper.with_default_loc pstr_loc (fun () ->
+        derive module_nesting typ_decls pstr_loc item fst @ structure mapper rest)
+    | { pstr_desc = Pstr_module ({ pmb_name = { txt = name } } as mb) } as item :: rest ->
+      { item with pstr_desc = Pstr_module (
+          with_module name (fun () -> mapper.module_binding mapper mb)) }
+        :: structure mapper rest
+    | { pstr_desc = Pstr_recmodule mbs } as item :: rest ->
+      { item with pstr_desc = Pstr_recmodule (
+          mbs |> List.map (fun ({ pmb_name = { txt = name } } as mb) ->
+            with_module name (fun () -> mapper.module_binding mapper mb))) }
+        :: structure mapper rest
+    | { pstr_loc } as item :: rest ->
+      mapper.structure_item mapper item :: structure mapper rest
+    | [] -> []
+  in
+  let rec signature mapper items =
+    match items with
+    | { psig_desc = Psig_type typ_decls; psig_loc } as item :: rest when
+        List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
+      Ast_helper.with_default_loc psig_loc (fun () ->
+        derive module_nesting typ_decls psig_loc item snd @ signature mapper rest)
+    | { psig_desc = Psig_module ({ pmd_name = { txt = name } } as md) } as item :: rest ->
+      { item with psig_desc = Psig_module (
+          with_module name (fun () -> mapper.module_declaration mapper md)) }
+        :: signature mapper rest
+    | { psig_desc = Psig_recmodule mds } as item :: rest ->
+      { item with psig_desc = Psig_recmodule (
+          mds |> List.map (fun ({ pmd_name = { txt = name } } as md) ->
+            with_module name (fun () -> mapper.module_declaration mapper md))) }
+        :: signature mapper rest
+    | { psig_loc } as item :: rest ->
+      mapper.signature_item mapper item :: signature mapper rest
+    | [] -> []
+  in
   { default_mapper with
     structure = (fun mapper items ->
-      set_module_nesting ();
-      let rec map_types items =
-        match items with
-        | { pstr_desc = Pstr_type typ_decls; pstr_loc } as item :: rest when
-            List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
-          Ast_helper.with_default_loc pstr_loc (fun () ->
-            derive module_nesting typ_decls pstr_loc item fst @ map_types rest)
-        | { pstr_desc = Pstr_module ({ pmb_name = { txt = name } } as mb) } as item :: rest ->
-          { item with pstr_desc = Pstr_module (
-              with_module name (fun () -> mapper.module_binding mapper mb)) }
-            :: map_types rest
-        | { pstr_desc = Pstr_recmodule mbs } as item :: rest ->
-          { item with pstr_desc = Pstr_recmodule (
-              mbs |> List.map (fun ({ pmb_name = { txt = name } } as mb) ->
-                with_module name (fun () -> mapper.module_binding mapper mb))) }
-            :: map_types rest
-        | { pstr_loc } as item :: rest ->
-          mapper.structure_item mapper item :: map_types rest
-        | [] -> []
-      in
-      map_types items);
+      module_nesting := module_from_input_name ();
+      structure { mapper with structure; signature } items);
     signature = (fun mapper items ->
-      set_module_nesting ();
-      let rec map_types items =
-        match items with
-        | { psig_desc = Psig_type typ_decls; psig_loc } as item :: rest when
-            List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
-          Ast_helper.with_default_loc psig_loc (fun () ->
-            derive module_nesting typ_decls psig_loc item snd @ map_types rest)
-        | { psig_desc = Psig_module ({ pmd_name = { txt = name } } as md) } as item :: rest ->
-          { item with psig_desc = Psig_module (
-              with_module name (fun () -> mapper.module_declaration mapper md)) }
-            :: map_types rest
-        | { psig_desc = Psig_recmodule mds } as item :: rest ->
-          { item with psig_desc = Psig_recmodule (
-              mds |> List.map (fun ({ pmd_name = { txt = name } } as md) ->
-                with_module name (fun () -> mapper.module_declaration mapper md))) }
-            :: map_types rest
-        | { psig_loc } as item :: rest ->
-          mapper.signature_item mapper item :: map_types rest
-        | [] -> []
-      in
-      map_types items)
+      module_nesting := module_from_input_name ();
+      signature { mapper with structure; signature } items)
   }
 
 let () =
