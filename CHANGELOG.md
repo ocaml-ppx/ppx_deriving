@@ -4,7 +4,7 @@ Changelog
 0.2
 ---
 
-  * New plugins: Enum, Iter, Map.
+  * New plugins: Enum, Iter, Map, Fold.
   * All plugins: don't concatenate affix if type is named `t`.
   * Add [%derive.Foo:] shorthand.
   * Show, Eq, Ord: add support for list, array, option.
