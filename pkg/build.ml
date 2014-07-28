@@ -13,6 +13,7 @@ let () =
     Pkg.lib ~exts:Exts.library "src_plugins/ppx_deriving_ord";
     Pkg.lib ~exts:Exts.library "src_plugins/ppx_deriving_enum";
     Pkg.lib ~exts:Exts.library "src_plugins/ppx_deriving_iter";
+    Pkg.lib ~exts:Exts.library "src_plugins/ppx_deriving_map";
     Pkg.doc "README.md";
     Pkg.doc "LICENSE.txt";
     Pkg.doc "CHANGELOG.md"; ]

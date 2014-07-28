@@ -47,7 +47,8 @@ let () =
               Format.pp_print_string fmt ")"]
         | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
           app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid)))
-              ([%expr fmt] :: (List.map expr_of_typ args))
+              ((List.map (fun typ -> [%expr fun fmt -> [%e expr_of_typ typ]]) args) @
+               [[%expr fmt]])
         | { ptyp_desc = Ptyp_tuple typs } ->
           let args = List.mapi (fun i typ -> app (expr_of_typ typ) [evar (argn i)]) typs in
           [%expr

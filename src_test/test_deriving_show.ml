@@ -86,6 +86,9 @@ let test_parametric ctxt =
   assert_equal ~printer "{ Test_deriving_show.v = 1 }"
                         (show_pt (fun fmt -> Format.fprintf fmt "%d") { v = 1 })
 
+type 'a btree = Node of 'a btree * 'a * 'a btree | Leaf
+[@@deriving Show]
+
 module M' = struct
   type t = M.t = A [@@deriving Show]
 end

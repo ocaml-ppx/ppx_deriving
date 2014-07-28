@@ -78,3 +78,14 @@ package "iter" (
   archive(native, plugin) = "ppx_deriving_iter.cmxs"
   exists_if = "ppx_deriving_iter.cma"
 )
+
+package "map" (
+  version = "%%VERSION%%"
+  description = "[@@deriving Map]"
+  requires = "ppx_deriving.api "
+  archive(byte) = "ppx_deriving_map.cma"
+  archive(byte, plugin) = "ppx_deriving_map.cma"
+  archive(native) = "ppx_deriving_map.cmxa"
+  archive(native, plugin) = "ppx_deriving_map.cmxs"
+  exists_if = "ppx_deriving_map.cma"
+)

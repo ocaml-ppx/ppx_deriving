@@ -6,6 +6,7 @@ let suite = "Test ppx_deriving" >::: [
     Test_deriving_ord.suite;
     Test_deriving_enum.suite;
     Test_deriving_iter.suite;
+    Test_deriving_map.suite;
   ]
 
 let _ =
