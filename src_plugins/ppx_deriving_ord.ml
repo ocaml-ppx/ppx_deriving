@@ -10,7 +10,7 @@ let raise_errorf = Ppx_deriving.raise_errorf
 
 let () =
   Ppx_deriving.register "Ord" (fun ~options ~path type_decls ->
-    let expr_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_decl) =
+    let struct_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_decl) =
       let argn kind = Printf.sprintf (match kind with `lhs -> "lhs%d" | `rhs -> "rhs%d") in
       let compare_reduce acc expr = [%expr match [%e expr] with (-1|1) as x -> x | _ -> [%e acc]] in
       let wildcard_case int_cases =
@@ -141,6 +141,6 @@ let () =
                   (polymorphize [%type: [%t typ] -> [%t typ] -> int]))]
     in
     Ppx_deriving.catch (fun () ->
-      [Str.value Recursive (List.concat (List.map expr_of_type type_decls))]),
+      [Str.value Recursive (List.concat (List.map struct_of_type type_decls))]),
     List.concat (List.map sig_of_type type_decls))
 

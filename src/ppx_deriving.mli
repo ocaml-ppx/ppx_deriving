@@ -109,6 +109,10 @@ val mangle_lid : ?fixpoint:string -> [ `Prefix of string | `Suffix of string ] -
     or [\[\@name\]] otherwise. *)
 val attr : prefix:string -> string -> attributes -> attribute option
 
+(** [free_vars_in_core_type typ] returns unique free variables in [typ] in
+    lexical order. *)
+val free_vars_in_core_type : core_type -> string list
+
 (** [poly_fun_of_type_decl type_ expr] wraps [expr] into [fun poly_N -> ...] for every
     type parameter ['N] present in [type_]. For example, if [type_] refers to
     [type ('a, 'b) map], [expr] will be wrapped into [fun poly_a poly_b -> [%e expr]].
@@ -144,7 +148,7 @@ val fold_exprs : ?unit:expression -> (expression -> expression -> expression) ->
                  expression list -> expression
 
 (** [seq_reduce] ≡ [fun x a b -> [%expr [%e a]; [%e x]; [%e b]]]. *)
-val seq_reduce : expression -> expression -> expression -> expression
+val seq_reduce : ?sep:expression -> expression -> expression -> expression
 
 (** [binop_reduce] ≡ [fun x a b -> [%expr [%e x] [%e a] [%e b]]]. *)
 val binop_reduce : expression -> expression -> expression -> expression

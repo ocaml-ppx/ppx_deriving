@@ -68,13 +68,13 @@ package "enum" (
   exists_if = "ppx_deriving_enum.cma"
 )
 
-package "bounded" (
+package "iter" (
   version = "%%VERSION%%"
-  description = "[@@deriving Bounded]"
+  description = "[@@deriving Iter]"
   requires = "ppx_deriving.api "
-  archive(byte) = "ppx_deriving_bounded.cma"
-  archive(byte, plugin) = "ppx_deriving_bounded.cma"
-  archive(native) = "ppx_deriving_bounded.cmxa"
-  archive(native, plugin) = "ppx_deriving_bounded.cmxs"
-  exists_if = "ppx_deriving_bounded.cma"
+  archive(byte) = "ppx_deriving_iter.cma"
+  archive(byte, plugin) = "ppx_deriving_iter.cma"
+  archive(native) = "ppx_deriving_iter.cmxa"
+  archive(native, plugin) = "ppx_deriving_iter.cmxs"
+  exists_if = "ppx_deriving_iter.cma"
 )

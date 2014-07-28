@@ -119,6 +119,27 @@ let fold_type fn accum { ptype_params }=
       | _ -> assert false)
     accum ptype_params
 
+let free_vars_in_core_type typ =
+  let rec free_in typ =
+    match typ with
+    | { ptyp_desc = Ptyp_any } -> []
+    | { ptyp_desc = Ptyp_var name } -> [name]
+    | { ptyp_desc = Ptyp_arrow (_, x, y) } -> free_in x @ free_in y
+    | { ptyp_desc = (Ptyp_tuple xs | Ptyp_constr (_, xs)) } ->
+      List.map free_in xs |> List.concat
+    | { ptyp_desc = Ptyp_alias (x, name) } -> [name] @ free_in x
+    | { ptyp_desc = Ptyp_poly (bound, x) } ->
+      List.filter (fun y -> not (List.mem y bound)) (free_in x)
+    | _ -> assert false
+  in
+  let rec uniq acc lst =
+    match lst with
+    | a :: b :: lst when a = b -> uniq (a :: acc) lst
+    | x :: lst -> uniq (x :: acc) lst
+    | [] -> acc
+  in
+  List.rev (uniq [] (free_in typ))
+
 let poly_fun_of_type_decl type_decl expr =
   fold_type (fun expr name -> Exp.fun_ "" None (pvar ("poly_"^name)) expr) expr type_decl
 
@@ -137,8 +158,10 @@ let fold_exprs ?unit fn exprs =
   | [a] -> a
   | hd::tl -> List.fold_left fn hd tl
 
-let seq_reduce x a b =
-  [%expr [%e a]; [%e x]; [%e b]]
+let seq_reduce ?sep a b =
+  match sep with
+  | Some x -> [%expr [%e a]; [%e x]; [%e b]]
+  | None -> [%expr [%e a]; [%e b]]
 
 let binop_reduce x a b =
   [%expr [%e x] [%e a] [%e b]]

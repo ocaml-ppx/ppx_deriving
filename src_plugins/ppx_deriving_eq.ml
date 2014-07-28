@@ -10,7 +10,7 @@ let raise_errorf = Ppx_deriving.raise_errorf
 
 let () =
   Ppx_deriving.register "Eq" (fun ~options ~path type_decls ->
-    let expr_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_decl) =
+    let struct_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_decl) =
       let argn kind = Printf.sprintf (match kind with `lhs -> "lhs%d" | `rhs -> "rhs%d") in
       let pattn side typs = List.mapi (fun i _ -> pvar (argn side i)) typs in
       let rec exprsn typs =
@@ -114,5 +114,5 @@ let () =
                   (polymorphize [%type: [%t typ] -> [%t typ] -> bool]))]
     in
     Ppx_deriving.catch (fun () ->
-      [Str.value Recursive (List.concat (List.map expr_of_type type_decls))]),
+      [Str.value Recursive (List.concat (List.map struct_of_type type_decls))]),
     List.concat (List.map sig_of_type type_decls))

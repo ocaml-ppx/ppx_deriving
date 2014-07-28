@@ -54,7 +54,7 @@ let () =
             fun [%p ptuple (List.mapi (fun i _ -> pvar (argn i)) typs)] ->
             Format.pp_print_string fmt "(";
             [%e args |> Ppx_deriving.(fold_exprs
-                    (seq_reduce [%expr Format.pp_print_string fmt ", "]))];
+                    (seq_reduce ~sep:[%expr Format.pp_print_string fmt ", "]))];
             Format.pp_print_string fmt ")"]
         | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
           let cases =
@@ -81,7 +81,7 @@ let () =
           raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
                        (Ppx_deriving.string_of_core_type typ)
     in
-    let expr_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_decl) =
+    let struct_of_type ({ ptype_name = { txt = name }; ptype_loc = loc } as type_decl) =
       let path = Ppx_deriving.path_of_type_decl ~path type_decl in
       let prettyprinter =
         match type_decl.ptype_kind, type_decl.ptype_manifest with
@@ -98,7 +98,7 @@ let () =
                 | args ->
                   [%expr Format.pp_print_string fmt [%e str (constr_name ^ " (")];
                   [%e args |> Ppx_deriving.(fold_exprs
-                        (seq_reduce [%expr Format.pp_print_string fmt ", "]))];
+                        (seq_reduce ~sep:[%expr Format.pp_print_string fmt ", "]))];
                   Format.pp_print_string fmt ")"]
               in
               Exp.case (pconstr name' (List.mapi (fun i _ -> pvar (argn i)) pcd_args)) result)
@@ -114,7 +114,7 @@ let () =
           [%expr fun fmt x ->
             Format.pp_print_string fmt "{ ";
             [%e fields |> Ppx_deriving.(fold_exprs
-                  (seq_reduce [%expr Format.pp_print_string fmt "; "]))];
+                  (seq_reduce ~sep:[%expr Format.pp_print_string fmt "; "]))];
             Format.pp_print_string fmt " }"]
         | Ptype_abstract, None -> raise_errorf ~loc "Cannot derive Show for fully abstract type"
         | Ptype_open, _        -> raise_errorf ~loc "Cannot derive Show for open type"
@@ -138,5 +138,5 @@ let () =
                   (polymorphize [%type: [%t typ] -> string]))]
     in
     Ppx_deriving.catch (fun () ->
-      [Str.value Recursive (List.concat (List.map expr_of_type type_decls))]),
+      [Str.value Recursive (List.concat (List.map struct_of_type type_decls))]),
     List.concat (List.map sig_of_type type_decls))
