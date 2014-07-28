@@ -9,5 +9,6 @@ true: warn(@5@8@10@11@12@14@23@24@26@29@40), bin_annot, safe_string
 "src_test/test_deriving_eq.ml": deriving(eq)
 "src_test/test_deriving_ord.ml": deriving(ord)
 "src_test/test_deriving_enum.ml": deriving(show,enum)
-"src_test/test_deriving_iter.ml": deriving(show,iter)
+"src_test/test_deriving_iter.ml": deriving(iter)
 "src_test/test_deriving_map.ml": deriving(show,map)
+"src_test/test_deriving_fold.ml": deriving(fold)

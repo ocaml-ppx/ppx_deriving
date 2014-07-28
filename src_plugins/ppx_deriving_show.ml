@@ -65,11 +65,12 @@ let () =
                 Exp.case (Pat.variant label None)
                          [%expr Format.pp_print_string fmt [%e str ("`" ^ label)]]
               | Rtag (label, _, false, [typ]) ->
-                Exp.case (Pat.variant label (Some (pvar "x")))
-                         [%expr Format.pp_print_string fmt [%e str ("`" ^ label ^ " ")];
-                                [%e expr_of_typ typ] x]
+                Exp.case (Pat.variant label (Some [%pat? x]))
+                         [%expr Format.pp_print_string fmt [%e str ("`" ^ label ^ " (")];
+                                [%e expr_of_typ typ] x;
+                                Format.pp_print_string fmt ")"]
               | Rinherit ({ ptyp_desc = Ptyp_constr (tname, []) } as typ) ->
-                Exp.case (Pat.alias (Pat.type_ tname) (mknoloc "x"))
+                Exp.case [%pat? [%p Pat.type_ tname] as x]
                          [%expr [%e expr_of_typ typ] x]
               | _ ->
                 raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"

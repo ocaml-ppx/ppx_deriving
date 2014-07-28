@@ -32,17 +32,17 @@ let () =
             | Rtag (label, _, true (*empty*), []) ->
               Exp.case (Pat.variant label None) [%expr ()]
             | Rtag (label, _, false, [typ]) ->
-              Exp.case (Pat.variant label (Some (pvar "x")))
+              Exp.case (Pat.variant label (Some [%pat? x]))
                        [%expr [%e expr_of_typ typ] x]
             | Rinherit ({ ptyp_desc = Ptyp_constr (tname, []) } as typ) ->
-              Exp.case (Pat.alias (Pat.type_ tname) (mknoloc "x"))
+              Exp.case [%pat? [%p Pat.type_ tname] as x]
                        [%expr [%e expr_of_typ typ] x]
             | _ ->
               raise_errorf ~loc:ptyp_loc "Cannot derive Iter for %s"
                            (Ppx_deriving.string_of_core_type typ))
         in
         Exp.function_ cases
-      | { ptyp_desc = Ptyp_var name } -> evar ("poly_"^name)
+      | { ptyp_desc = Ptyp_var name } -> [%expr ([%e evar ("poly_"^name)] : 'a -> unit)]
       | { ptyp_desc = Ptyp_alias (typ, name) } ->
         [%expr fun x -> [%e evar ("poly_"^name)] x; [%e expr_of_typ typ] x]
       | { ptyp_loc } ->

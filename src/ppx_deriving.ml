@@ -110,7 +110,7 @@ let attr ~prefix name attrs =
   try Some (List.find (fun ({ txt }, _) -> txt = name) attrs)
   with Not_found -> None
 
-let fold_type fn accum { ptype_params }=
+let fold_type_decl fn accum { ptype_params }=
   List.fold_left (fun accum (param, _) ->
       match param with
       | { ptyp_desc = Ptyp_any } -> accum
@@ -134,20 +134,34 @@ let free_vars_in_core_type typ =
   in
   let rec uniq acc lst =
     match lst with
-    | a :: b :: lst when a = b -> uniq (a :: acc) lst
+    | a :: b :: lst when a = b -> uniq acc (b :: lst)
     | x :: lst -> uniq (x :: acc) lst
     | [] -> acc
   in
   List.rev (uniq [] (free_in typ))
 
+let var_name_of_int i =
+  let letter = "abcdefghijklmnopqrstuvwxyz" in
+  let rec loop i =
+    if i < 26 then [letter.[i]] else letter.[i mod 26] :: loop (i / 26)
+  in
+  String.concat "" (List.map (String.make 1) (loop i))
+
+let fresh_var bound =
+  let rec loop i =
+    let var_name = var_name_of_int i in
+    if List.mem var_name bound then loop (i + 1) else var_name
+  in
+  loop 0
+
 let poly_fun_of_type_decl type_decl expr =
-  fold_type (fun expr name -> Exp.fun_ "" None (pvar ("poly_"^name)) expr) expr type_decl
+  fold_type_decl (fun expr name -> Exp.fun_ "" None (pvar ("poly_"^name)) expr) expr type_decl
 
 let poly_apply_of_type_decl type_decl expr =
-  fold_type (fun expr name -> Exp.apply expr ["", evar ("poly_"^name)]) expr type_decl
+  fold_type_decl (fun expr name -> Exp.apply expr ["", evar ("poly_"^name)]) expr type_decl
 
 let poly_arrow_of_type_decl fn type_decl typ =
-  fold_type (fun typ name -> Typ.arrow "" (fn (Typ.var name)) typ) typ type_decl
+  fold_type_decl (fun typ name -> Typ.arrow "" (fn (Typ.var name)) typ) typ type_decl
 
 let core_type_of_type_decl { ptype_name = { txt = name }; ptype_params } =
   Typ.constr (mknoloc (Lident name)) (List.map fst ptype_params)

@@ -31,10 +31,10 @@ let () =
             | Rtag (label, _, true (*empty*), []) ->
               Exp.case (Pat.variant label None) (Exp.variant label None)
             | Rtag (label, _, false, [typ]) ->
-              Exp.case (Pat.variant label (Some (pvar "x")))
+              Exp.case (Pat.variant label (Some [%pat? x]))
                        (Exp.variant label (Some [%expr [%e expr_of_typ typ] x]))
             | Rinherit ({ ptyp_desc = Ptyp_constr (tname, []) } as typ) ->
-              Exp.case (Pat.alias (Pat.type_ tname) (mknoloc "x"))
+              Exp.case [%pat? [%p Pat.type_ tname] as x]
                        [%expr [%e expr_of_typ typ] x]
             | _ ->
               raise_errorf ~loc:ptyp_loc "Cannot derive Map for %s"

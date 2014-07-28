@@ -40,8 +40,8 @@ let test_variant_nest ctxt =
 
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving Show]
 let test_poly ctxt =
-  assert_equal ~printer "`Foo"              (show_pv1 `Foo);
-  assert_equal ~printer "`Bar (1, \"foo\")" (show_pv1 (`Bar (1, "foo")))
+  assert_equal ~printer "`Foo"                (show_pv1 `Foo);
+  assert_equal ~printer "`Bar ((1, \"foo\"))" (show_pv1 (`Bar (1, "foo")))
 
 type pv2 = [ `Baz | pv1 ] [@@deriving Show]
 let test_poly_inherit ctxt =

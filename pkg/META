@@ -89,3 +89,14 @@ package "map" (
   archive(native, plugin) = "ppx_deriving_map.cmxs"
   exists_if = "ppx_deriving_map.cma"
 )
+
+package "fold" (
+  version = "%%VERSION%%"
+  description = "[@@deriving Fold]"
+  requires = "ppx_deriving.api "
+  archive(byte) = "ppx_deriving_fold.cma"
+  archive(byte, plugin) = "ppx_deriving_fold.cma"
+  archive(native) = "ppx_deriving_fold.cmxa"
+  archive(native, plugin) = "ppx_deriving_fold.cmxs"
+  exists_if = "ppx_deriving_fold.cma"
+)

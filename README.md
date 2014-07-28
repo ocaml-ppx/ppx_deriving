@@ -3,11 +3,12 @@
 
 _deriving_ is a library that simplifies type-driven code generation that works on OCaml >=4.02.
 
-_deriving_ includes a set of useful plugins: [Show][], [Eq][], [Ord][eq], [Enum][], [Protobuf][].
+_deriving_ includes a set of useful plugins: [Show][], [Eq][], [Ord][eq], [Enum][], [Iter][], [Map][iter], [Fold][iter] [Protobuf][].
 
 [show]: #plugin-show
 [eq]: #plugins-eq-and-ord
 [enum]: #plugin-enum
+[iter]: #plugins-iter-map-and-fold
 [protobuf]: https://github.com/whitequark/ppx_deriving_protobuf#usage
 
 Installation
@@ -38,7 +39,7 @@ It's possible to pass options to a plugin by appending a record to plugin's name
 
 ``` ocaml
 type t = string
-[@@deriving Ord { affix = "" }]
+[@@deriving Ord { affix = true }]
 ```
 
 It's possible to make _deriving_ ignore a missing plugin rather than raising an error by passing an `optional = true` option (TBD), for example, to enable conditional compilation:
@@ -98,9 +99,9 @@ _Show_ derives a function that inspects a value; that is, pretty-prints it with 
 ``` ocaml
 # type t = [ `A | `B of int ] [@@deriving Show];;
 type t = [ `A | `B of i ]
-val pp_t : Format.formatter -> [< `A | `B of i ] -> unit = <fun>
-val show_t : [< `A | `B of i ] -> bytes = <fun>
-# show_t (`B 1);;
+val pp : Format.formatter -> [< `A | `B of i ] -> unit = <fun>
+val show : [< `A | `B of i ] -> bytes = <fun>
+# show (`B 1);;
 - : bytes = "`B (1)"
 ```
 
@@ -125,15 +126,15 @@ _Eq_ derives a function comparing values by semantic equality; structural or phy
 ``` ocaml
 # type t = [ `A | `B of int ] [@@deriving Eq, Ord];;
 type t = [ `A | `B of int ]
-val equal_t : [> `A | `B of int ] -> [> `A | `B of int ] -> bool = <fun>
-val compare_t : [ `A | `B of int ] -> [ `A | `B of int ] -> int = <fun>
-# equal_t `A `A;;
+val equal : [> `A | `B of int ] -> [> `A | `B of int ] -> bool = <fun>
+val compare : [ `A | `B of int ] -> [ `A | `B of int ] -> int = <fun>
+# equal `A `A;;
 - : bool = true
-# equal_t `A (`B 1);;
+# equal `A (`B 1);;
 - : bool = false
-# compare_t `A `A;;
+# compare `A `A;;
 - : int = 0
-# compare_t (`B 1) (`B 2);;
+# compare (`B 1) (`B 2);;
 - : int = -1
 ```
 
@@ -174,6 +175,30 @@ val max_insn : int = 3
 ```
 
 By default, the integer value associated is `0` for lexically first constructor, and increases by one for every next one. It is possible to set the value explicitly with `[@value 42]`; it will keep increasing from the specified value.
+
+Plugins: Iter, Map and Fold
+---------------------------
+
+_Iter_, _Map_ and _Fold_ are three closely related plugins that generate code for traversing polymorphic data structures in lexical order and applying a user-specified action to all values corresponding to type variables.
+
+``` ocaml
+# type 'a btree = Node of 'a btree * 'a * 'a btree | Leaf [@@deriving Iter, Map, Fold];;
+type 'a btree = Node of 'a btree * 'a * 'a btree | Leaf
+val iter_btree : ('a -> unit) -> 'a btree -> unit = <fun>
+val map_btree : ('a -> 'b) -> 'a btree -> 'b btree = <fun>
+val fold_btree : ('a -> 'b -> 'a) -> 'a -> 'b btree -> 'a = <fun>
+# let tree = (Node (Node (Leaf, 0, Leaf), 1, Node (Leaf, 2, Leaf)));;
+val tree : int btree = Node (Node (Leaf, 0, Leaf), 1, Node (Leaf, 2, Leaf))
+# iter_btree (Printf.printf "%d\n") tree;;
+0
+1
+2
+- : unit = ()
+# map_btree ((+) 1) tree;;
+- : int btree = Node (Node (Leaf, 1, Leaf), 2, Node (Leaf, 3, Leaf))
+# fold_btree (+) 0 tree;;
+- : int = 3
+```
 
 Developing plugins
 ------------------

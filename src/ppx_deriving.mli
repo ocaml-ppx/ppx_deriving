@@ -113,6 +113,14 @@ val attr : prefix:string -> string -> attributes -> attribute option
     lexical order. *)
 val free_vars_in_core_type : core_type -> string list
 
+(** [fresh_var bound] returns a fresh variable name not present in [bound].
+    The name is selected in alphabetical succession. *)
+val fresh_var : string list -> string
+
+(** [fold_type_decl fn accum type_] folds over all type variable (i.e. not
+    wildcard) parameters in [type_]. *)
+val fold_type_decl : ('a -> string -> 'a) -> 'a -> type_declaration -> 'a
+
 (** [poly_fun_of_type_decl type_ expr] wraps [expr] into [fun poly_N -> ...] for every
     type parameter ['N] present in [type_]. For example, if [type_] refers to
     [type ('a, 'b) map], [expr] will be wrapped into [fun poly_a poly_b -> [%e expr]].
