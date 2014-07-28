@@ -71,7 +71,7 @@ package "enum" (
 package "iter" (
   version = "%%VERSION%%"
   description = "[@@deriving Iter]"
-  requires = "ppx_deriving.api "
+  requires = "ppx_deriving.api"
   archive(byte) = "ppx_deriving_iter.cma"
   archive(byte, plugin) = "ppx_deriving_iter.cma"
   archive(native) = "ppx_deriving_iter.cmxa"
@@ -82,7 +82,7 @@ package "iter" (
 package "map" (
   version = "%%VERSION%%"
   description = "[@@deriving Map]"
-  requires = "ppx_deriving.api "
+  requires = "ppx_deriving.api"
   archive(byte) = "ppx_deriving_map.cma"
   archive(byte, plugin) = "ppx_deriving_map.cma"
   archive(native) = "ppx_deriving_map.cmxa"
@@ -93,7 +93,7 @@ package "map" (
 package "fold" (
   version = "%%VERSION%%"
   description = "[@@deriving Fold]"
-  requires = "ppx_deriving.api "
+  requires = "ppx_deriving.api"
   archive(byte) = "ppx_deriving_fold.cma"
   archive(byte, plugin) = "ppx_deriving_fold.cma"
   archive(native) = "ppx_deriving_fold.cmxa"

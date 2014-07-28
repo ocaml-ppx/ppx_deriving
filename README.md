@@ -3,7 +3,7 @@
 
 _deriving_ is a library that simplifies type-driven code generation that works on OCaml >=4.02.
 
-_deriving_ includes a set of useful plugins: [Show][], [Eq][], [Ord][eq], [Enum][], [Iter][], [Map][iter], [Fold][iter] [Protobuf][].
+_deriving_ includes a set of useful plugins: [Show][], [Eq][], [Ord][eq], [Enum][], [Iter][], [Map][iter], [Fold][iter], [Protobuf][].
 
 [show]: #plugin-show
 [eq]: #plugins-eq-and-ord

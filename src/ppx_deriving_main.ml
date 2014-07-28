@@ -11,33 +11,37 @@ let raise_errorf = Ppx_deriving.raise_errorf
 let string_of_lident lid =
   String.concat "." (Longident.flatten lid)
 
-let dynlink ?(loc=Location.none) filename filepath =
+let () = Findlib.init ()
+
+let dynlink ?(loc=Location.none) filename =
   try
-    Dynlink.loadfile filepath
+    Dynlink.loadfile filename
   with Dynlink.Error error ->
     raise_errorf ~loc "Cannot load %s: %s" filename (Dynlink.error_message error)
 
 let load_deriver loc name =
   let libname = String.lowercase name in
-  let try_expand filename =
-    let filename = Dynlink.adapt_filename filename in
-    try  Some (filename, Findlib.resolve_path filename)
-    with Fl_package_base.No_such_package _ -> None
-  in
-  let filename, filepath =
-    match try_expand (Printf.sprintf "@ppx_deriving_%s/ppx_deriving_%s.cmo" libname libname) with
-    | Some x -> x
-    | None ->
-      match try_expand (Printf.sprintf "@ppx_deriving.%s/ppx_deriving_%s.cmo" libname libname) with
-      | Some x -> x
-      | None ->
+  let pkgname, pkglist =
+    try  let pkgname = "ppx_deriving."^libname in
+         pkgname, Findlib.package_ancestors [] pkgname
+    with Fl_package_base.No_such_package _ ->
+      try  let pkgname = "ppx_deriving_"^libname in
+           pkgname, Findlib.package_ancestors [] pkgname
+      with Fl_package_base.No_such_package _ ->
         raise_errorf ~loc "Cannot locate findlib package ppx_deriving.%s or ppx_deriving_%s"
                           libname libname
   in
-  dynlink ~loc filename filepath;
+  let pkglist = List.filter ((<>) "ppx_deriving.api") pkglist in
+  let pkglist = pkgname :: Findlib.package_deep_ancestors [] pkglist in
+  pkglist |> List.iter (fun pkg ->
+    let kind = if Dynlink.is_native then "native" else "byte" in
+    Findlib.package_property [kind; "plugin"] pkg "archive" |>
+    Findlib.resolve_path ~base:(Findlib.package_directory pkg) |>
+    dynlink ~loc);
   begin match Ppx_deriving.lookup name with
   | Some deriver -> deriver
-  | None -> raise_errorf ~loc "Expected %s to define a deriver %s" filename name
+  | None -> raise_errorf ~loc "Expected packages %s to define a deriver %s"
+                              (String.concat ", " pkglist) name
   end
 
 let derive path typ_decls pstr_loc item fn =
@@ -74,7 +78,7 @@ let derive path typ_decls pstr_loc item fn =
     [item] deriver_exprs
 
 let mapper argv =
-  List.iter (fun file -> let file = Dynlink.adapt_filename file in dynlink file file) argv;
+  List.iter (fun file -> dynlink (Dynlink.adapt_filename file)) argv;
   let seen_toplevel = ref false in
   let module_nesting = ref [] in
   let set_module_nesting () =
