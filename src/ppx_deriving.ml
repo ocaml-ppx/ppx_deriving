@@ -5,9 +5,13 @@ open Parsetree
 open Ast_helper
 open Ast_convenience
 
-type deriver = options:(string * expression) list ->
-               path:string list ->
-               type_declaration list -> structure * signature
+type deriver = {
+  core_type : core_type -> expression;
+  structure : options:(string * expression) list -> path:string list ->
+              type_declaration list -> structure;
+  signature : options:(string * expression) list -> path:string list ->
+              type_declaration list -> signature;
+}
 
 let registry : (string, deriver) Hashtbl.t
              = Hashtbl.create 16

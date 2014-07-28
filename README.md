@@ -49,6 +49,16 @@ type addr = string * int
 [@@deriving Json { optional = true }]
 ```
 
+It's also possible (for most deriving plugins) to derive a function directly from a type, without declaring it first.
+
+``` ocaml
+open OUnit2
+let test_list_sort ctxt =
+  let sort = List.sort [%derive.Ord: int * int] in
+  assert_equal ~printer:[%derive.Show: (int * int) list]
+               [(1,1);(2,0);(3,5)] (sort [(2,0);(3,5);(1,1)])
+```
+
 ### Working with existing types
 
 At first, it may look like _deriving_ requires complete control of the type declaration. However, a lesser-known OCaml feature allows to derive functions for any existing type. Using `Pervasives.fpclass` as an example, _Show_ can be derived as follows:

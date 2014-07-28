@@ -4,19 +4,24 @@ open Parsetree
 
 (** {2 Registration} *)
 
-(** A type of deriving functions. A deriving function accepts a list of
-    [~options] and a type declaration item ([type t = .. and t' = ..]), and
-    returns a list of items to be appended after the type declaration item
-    in structure and signature.
+(** A type of deriving plugins.
 
-    [~path] contains the stack of modules for the type currently
-    being processed, with [[]] for toplevel phrases.
+    A structure or signature deriving function accepts a list of
+    [~options], a [~path] of modules for the type declaration currently
+    being processed (with [[]] for toplevel phrases), and a type declaration
+    item ([type t = .. and t' = ..]), and returns a list of items to be
+    appended after the type declaration item in structure and signature.
+    It is invoked by [[\@\@deriving]] annotations.
 
-    This value is based on [Location.input_name] and thus contains incorrect
-    information when used with -for-pack. See PR6497. *)
-type deriver = options:(string * expression) list ->
-               path:string list ->
-               type_declaration list -> structure * signature
+    A type deriving function accepts a type and returns a corresponding
+    derived expression. It is invoked by [[%derive.Foo]] annotations. *)
+type deriver = {
+  core_type : core_type -> expression;
+  structure : options:(string * expression) list -> path:string list ->
+              type_declaration list -> structure;
+  signature : options:(string * expression) list -> path:string list ->
+              type_declaration list -> signature;
+}
 
 (** [register name fn] registers a deriving function [fn] as [name].
     For automatic dynlinking to work, a module [Foo] must register itself

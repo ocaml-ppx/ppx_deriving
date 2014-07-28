@@ -8,9 +8,6 @@ open Ast_convenience
 
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let string_of_lident lid =
-  String.concat "." (Longident.flatten lid)
-
 let () = Findlib.init ()
 
 let dynlink ?(loc=Location.none) filename =
@@ -44,7 +41,7 @@ let load_deriver loc name =
                               (String.concat ", " pkglist) name
   end
 
-let derive path typ_decls pstr_loc item fn =
+let derive_type_decl path typ_decls pstr_loc item fn =
   let attributes = List.concat (List.map (fun { ptype_attributes = attrs } -> attrs) typ_decls) in
   let deriving = find_attr "deriving" attributes in
   let deriver_exprs, loc =
@@ -64,7 +61,8 @@ let derive path typ_decls pstr_loc item fn =
           name, []
         | { pexp_desc = Pexp_construct (name, Some
             { pexp_desc = Pexp_record (options, None) }) } ->
-          name, List.map (fun ({ txt }, expr) -> string_of_lident txt, expr) options
+          name, options |> List.map (fun ({ txt }, expr) ->
+            String.concat "." (Longident.flatten txt), expr)
         | { pexp_loc } ->
           raise_errorf ~loc:pexp_loc "Unrecognized [@@deriving] option syntax"
       in
@@ -74,7 +72,7 @@ let derive path typ_decls pstr_loc item fn =
         | Some deriver -> deriver
         | None -> load_deriver loc name
       in
-      items @ (fn (deriver ~options ~path:(!path) typ_decls)))
+      items @ ((fn deriver) ~options ~path:(!path) typ_decls))
     [item] deriver_exprs
 
 let module_from_input_name () =
@@ -92,12 +90,29 @@ let mapper argv =
     module_nesting := old_nesting;
     result
   in
+  let expression mapper expr =
+    match expr with
+    | { pexp_desc = Pexp_extension ({ txt = name; loc }, payload) }
+        when String.(length name >= 7 && sub name 0 7 = "derive.") ->
+      let name = String.sub name 7 ((String.length name) - 7) in
+      let deriver =
+        match Ppx_deriving.lookup name with
+        | Some deriver -> deriver
+        | None -> load_deriver loc name
+      in
+      begin match payload with
+      | PTyp typ -> deriver.Ppx_deriving.core_type typ
+      | _ -> raise_errorf ~loc "Unrecognized [%%derive.*] annotation syntax"
+      end
+    | _ -> default_mapper.expr mapper expr
+  in
   let rec structure mapper items =
     match items with
     | { pstr_desc = Pstr_type typ_decls; pstr_loc } as item :: rest when
         List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
       Ast_helper.with_default_loc pstr_loc (fun () ->
-        derive module_nesting typ_decls pstr_loc item fst @ structure mapper rest)
+        derive_type_decl module_nesting typ_decls pstr_loc item
+          (fun deriver -> deriver.Ppx_deriving.structure) @ structure mapper rest)
     | { pstr_desc = Pstr_module ({ pmb_name = { txt = name } } as mb) } as item :: rest ->
       { item with pstr_desc = Pstr_module (
           with_module name (fun () -> mapper.module_binding mapper mb)) }
@@ -116,7 +131,8 @@ let mapper argv =
     | { psig_desc = Psig_type typ_decls; psig_loc } as item :: rest when
         List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
       Ast_helper.with_default_loc psig_loc (fun () ->
-        derive module_nesting typ_decls psig_loc item snd @ signature mapper rest)
+        derive_type_decl module_nesting typ_decls psig_loc item
+          (fun deriver -> deriver.Ppx_deriving.signature) @ signature mapper rest)
     | { psig_desc = Psig_module ({ pmd_name = { txt = name } } as md) } as item :: rest ->
       { item with psig_desc = Psig_module (
           with_module name (fun () -> mapper.module_declaration mapper md)) }
@@ -131,6 +147,7 @@ let mapper argv =
     | [] -> []
   in
   { default_mapper with
+    expr = expression;
     structure = (fun mapper items ->
       module_nesting := module_from_input_name ();
       structure { mapper with structure; signature } items);
