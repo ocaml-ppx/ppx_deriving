@@ -45,9 +45,15 @@ let rec expr_of_typ typ =
           [%e expr_of_typ typ] x;
           Format.pp_print_string fmt ")"]
     | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-      app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid)))
-          ((List.map (fun typ -> [%expr fun fmt -> [%e expr_of_typ typ]]) args) @
-           [[%expr fmt]])
+      let args_pp = List.map (fun typ -> [%expr fun fmt -> [%e expr_of_typ typ]]) args in
+      begin match Ppx_deriving.attr ~prefix "polyprinter" typ.ptyp_attributes with
+      | Some (_, PStr [{ pstr_desc = Pstr_eval (printer, _) }]) ->
+        app printer (args_pp @ [[%expr fmt]])
+      | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.polyprinter] syntax" prefix
+      | None ->
+        app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid)))
+            (args_pp @ [[%expr fmt]])
+      end
     | { ptyp_desc = Ptyp_tuple typs } ->
       let args = List.mapi (fun i typ -> app (expr_of_typ typ) [evar (argn i)]) typs in
       [%expr

@@ -95,6 +95,14 @@ end
 let test_alias_path ctxt =
   assert_equal ~printer "M.A" (M'.show M'.A)
 
+let print_hi = fun fmt _ -> Format.fprintf fmt "hi!"
+type polypr = (string [@printer print_hi]) btree [@polyprinter pp_btree]
+[@@deriving Show]
+let test_polypr ctxt =
+  assert_equal ~printer "Test_deriving_show.Node (Test_deriving_show.Leaf, \
+                         hi!, Test_deriving_show.Leaf)"
+                        (show_polypr (Node (Leaf, "x", Leaf)))
+
 let suite = "Test deriving(Show)" >::: [
     "test_alias"        >:: test_alias;
     "test_variant"      >:: test_variant;
@@ -107,4 +115,5 @@ let suite = "Test deriving(Show)" >::: [
     "test_custom"       >:: test_custom;
     "test_parametric"   >:: test_parametric;
     "test_alias_path"   >:: test_alias_path;
+    "test_polypr"       >:: test_polypr;
   ]
