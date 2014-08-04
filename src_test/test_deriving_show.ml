@@ -11,6 +11,7 @@ type a6 = bool       [@@deriving Show]
 type a7 = char       [@@deriving Show]
 type a8 = string     [@@deriving Show]
 type a9 = bytes      [@@deriving Show]
+type r  = int ref    [@@deriving Show]
 type l  = int list   [@@deriving Show]
 type a  = int array  [@@deriving Show]
 type o  = int option [@@deriving Show]
@@ -24,6 +25,7 @@ let test_alias ctxt =
   assert_equal ~printer "'a'"     (show_a7 'a');
   assert_equal ~printer "\"foo\"" (show_a8 "foo");
   assert_equal ~printer "\"foo\"" (show_a9 (Bytes.of_string "foo"));
+  assert_equal ~printer "ref (1)" (show_r (ref 1));
   assert_equal ~printer "[1; 2; 3]" (show_l [1;2;3]);
   assert_equal ~printer "[|1; 2; 3|]" (show_a [|1;2;3|]);
   assert_equal ~printer "Some (1)" (show_o (Some 1))
@@ -52,12 +54,13 @@ type ty = int * string [@@deriving Show]
 let test_tuple ctxt =
   assert_equal ~printer "(1, \"foo\")" (show_ty (1, "foo"))
 
-type r = {
+type re = {
   f1 : int;
   f2 : string;
 } [@@deriving Show]
 let test_record ctxt =
-  assert_equal ~printer "{ Test_deriving_show.f1 = 1; f2 = \"foo\" }" (show_r { f1 = 1; f2 = "foo" })
+  assert_equal ~printer "{ Test_deriving_show.f1 = 1; f2 = \"foo\" }"
+                        (show_re { f1 = 1; f2 = "foo" })
 
 module M : sig
   type t = A [@@deriving Show]

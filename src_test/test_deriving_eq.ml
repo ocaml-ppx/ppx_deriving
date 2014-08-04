@@ -13,6 +13,7 @@ type a6 = bool       [@@deriving Eq]
 type a7 = char       [@@deriving Eq]
 type a8 = string     [@@deriving Eq]
 type a9 = bytes      [@@deriving Eq]
+type r  = int ref    [@@deriving Eq]
 type l  = int list   [@@deriving Eq]
 type a  = int array  [@@deriving Eq]
 type o  = int option [@@deriving Eq]
@@ -28,7 +29,7 @@ type pv2 = [ `Baz | pv1 ] [@@deriving Eq]
 
 type ty = int * string [@@deriving Eq]
 
-type r = {
+type re = {
   f1 : int;
   f2 : string;
 } [@@deriving Eq]

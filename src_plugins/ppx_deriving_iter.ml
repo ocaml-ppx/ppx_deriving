@@ -13,6 +13,7 @@ let argn = Printf.sprintf "a%d"
 let rec expr_of_typ typ =
   match typ with
   | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun _ -> ()]
+  | [%type: [%t? typ] ref]   -> [%expr fun x -> [%e expr_of_typ typ] !x]
   | [%type: [%t? typ] list]  -> [%expr List.iter [%e expr_of_typ typ]]
   | [%type: [%t? typ] array] -> [%expr Array.iter [%e expr_of_typ typ]]
   | [%type: [%t? typ] option] ->

@@ -15,6 +15,7 @@ let reduce_acc a b = [%expr let acc = [%e a] in [%e b]]
 let rec expr_of_typ typ =
   match typ with
   | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun acc _ -> acc]
+  | [%type: [%t? typ] ref]   -> [%expr fun x -> [%e expr_of_typ typ] !x]
   | [%type: [%t? typ] list]  -> [%expr List.fold_left [%e expr_of_typ typ]]
   | [%type: [%t? typ] array] -> [%expr Array.fold_left [%e expr_of_typ typ]]
   | [%type: [%t? typ] option] ->

@@ -37,6 +37,11 @@ let rec expr_of_typ typ =
     | [%type: bytes]  -> [%expr fun x -> Format.fprintf fmt "%S" (Bytes.to_string x)]
     | [%type: [%t? typ] list]  -> seq "["   "]" [%expr List.fold_left]  typ
     | [%type: [%t? typ] array] -> seq "[|" "|]" [%expr Array.fold_left] typ
+    | [%type: [%t? typ] ref]   ->
+      [%expr fun x ->
+        Format.pp_print_string fmt "ref (";
+        [%e expr_of_typ typ] !x;
+        Format.pp_print_string fmt ")"]
     | [%type: [%t? typ] option] ->
       [%expr
         function

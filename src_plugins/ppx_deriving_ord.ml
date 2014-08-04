@@ -36,6 +36,7 @@ and expr_of_typ typ =
     | [%type: int64] | [%type: Int64.t] | [%type: nativeint] | [%type: Nativeint.t]
     | [%type: float] | [%type: bool] | [%type: char] | [%type: string] | [%type: bytes] ->
       [%expr (fun (a:[%t typ]) b -> compare a b)]
+    | [%type: [%t? typ] ref]   -> [%expr fun a b -> [%e expr_of_typ typ] !a !b]
     | [%type: [%t? typ] list]  ->
       [%expr
         let rec loop x y =

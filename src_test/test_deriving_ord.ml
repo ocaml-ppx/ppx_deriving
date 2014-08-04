@@ -13,6 +13,7 @@ type a6 = bool       [@@deriving Ord]
 type a7 = char       [@@deriving Ord]
 type a8 = string     [@@deriving Ord]
 type a9 = bytes      [@@deriving Ord]
+type r  = int ref    [@@deriving Ord]
 type l  = int list   [@@deriving Ord]
 type a  = int array  [@@deriving Ord]
 type o  = int option [@@deriving Ord]
@@ -40,7 +41,7 @@ let test_complex ctxt =
   assert_equal ~printer (-1) (compare_ty (0, "a") (0, "b"));
   assert_equal ~printer (1)  (compare_ty (0, "b") (0, "a"))
 
-type r = {
+type re = {
   f1 : int;
   f2 : string;
 } [@@deriving Ord]
