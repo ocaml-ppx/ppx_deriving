@@ -20,7 +20,7 @@ let rec expr_of_typ typ =
       [%expr fun x ->
         Format.pp_print_string fmt [%e str start];
         ignore ([%e fold] (fun sep x ->
-          if sep then Format.pp_print_string fmt "; ";
+          if sep then Format.fprintf fmt ";@ ";
           [%e expr_of_typ typ] x; true) false x);
         Format.pp_print_string fmt [%e str finish];]
     in
@@ -60,7 +60,7 @@ let rec expr_of_typ typ =
         fun [%p ptuple (List.mapi (fun i _ -> pvar (argn i)) typs)] ->
         Format.pp_print_string fmt "(";
         [%e args |> Ppx_deriving.(fold_exprs
-                (seq_reduce ~sep:[%expr Format.pp_print_string fmt ", "]))];
+                (seq_reduce ~sep:[%expr Format.fprintf fmt ",@ "]))];
         Format.pp_print_string fmt ")"]
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
       let cases =
@@ -71,9 +71,9 @@ let rec expr_of_typ typ =
                      [%expr Format.pp_print_string fmt [%e str ("`" ^ label)]]
           | Rtag (label, _, false, [typ]) ->
             Exp.case (Pat.variant label (Some [%pat? x]))
-                     [%expr Format.pp_print_string fmt [%e str ("`" ^ label ^ " (")];
+                     [%expr Format.fprintf fmt [%e str ("`" ^ label ^ " (@[<hov 2>")];
                             [%e expr_of_typ typ] x;
-                            Format.pp_print_string fmt ")"]
+                            Format.fprintf fmt "@])"]
           | Rinherit ({ ptyp_desc = Ptyp_constr (tname, []) } as typ) ->
             Exp.case [%pat? [%p Pat.type_ tname] as x]
                      [%expr [%e expr_of_typ typ] x]
@@ -103,10 +103,10 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
             match args with
             | []   -> [%expr Format.pp_print_string fmt [%e str constr_name]]
             | args ->
-              [%expr Format.pp_print_string fmt [%e str (constr_name ^ " (")];
+              [%expr Format.fprintf fmt [%e str (constr_name ^ " (@[<hov 2>")];
               [%e args |> Ppx_deriving.(fold_exprs
-                    (seq_reduce ~sep:[%expr Format.pp_print_string fmt ", "]))];
-              Format.pp_print_string fmt ")"]
+                    (seq_reduce ~sep:[%expr Format.fprintf fmt ",@ "]))];
+              Format.fprintf fmt "@])"]
           in
           Exp.case (pconstr name' (List.mapi (fun i _ -> pvar (argn i)) pcd_args)) result)
       in
@@ -119,10 +119,10 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
             [%e expr_of_typ pld_type] [%e Exp.field (evar "x") (mknoloc (Lident name))]])
       in
       [%expr fun fmt x ->
-        Format.pp_print_string fmt "{ ";
+        Format.fprintf fmt "{@[<hov 2> ";
         [%e fields |> Ppx_deriving.(fold_exprs
-              (seq_reduce ~sep:[%expr Format.pp_print_string fmt "; "]))];
-        Format.pp_print_string fmt " }"]
+              (seq_reduce ~sep:[%expr Format.fprintf fmt ";@ "]))];
+        Format.fprintf fmt " @]}"]
     | Ptype_abstract, None -> raise_errorf ~loc "Cannot derive Show for fully abstract type"
     | Ptype_open, _        -> raise_errorf ~loc "Cannot derive Show for open type"
   in

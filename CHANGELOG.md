@@ -9,6 +9,7 @@ Changelog
   * Add [%derive.Foo:] shorthand.
   * Show, Eq, Ord: add support for list, array, option.
   * Show: include full module path in output, including for types with manifest.
+  * Show: include break hints in format strings.
   * A lot of changes in Ppx_deriving interface.
 
 0.1
