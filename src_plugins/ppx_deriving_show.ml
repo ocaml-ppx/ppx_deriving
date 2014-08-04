@@ -12,7 +12,8 @@ let argn = Printf.sprintf "a%d"
 
 let rec expr_of_typ typ =
   match Ppx_deriving.attr ~prefix "printer" typ.ptyp_attributes with
-  | Some (_, PStr [{ pstr_desc = Pstr_eval (printer, _) }]) -> [%expr [%e printer] fmt]
+  | Some (_, PStr [{ pstr_desc = Pstr_eval (printer, _) }]) ->
+    [%expr (let fprintf = Format.fprintf in [%e printer]) fmt]
   | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.printer] syntax" prefix
   | None ->
     let format x = [%expr Format.fprintf fmt [%e str x]] in
@@ -48,7 +49,7 @@ let rec expr_of_typ typ =
       let args_pp = List.map (fun typ -> [%expr fun fmt -> [%e expr_of_typ typ]]) args in
       begin match Ppx_deriving.attr ~prefix "polyprinter" typ.ptyp_attributes with
       | Some (_, PStr [{ pstr_desc = Pstr_eval (printer, _) }]) ->
-        app printer (args_pp @ [[%expr fmt]])
+        app [%expr let fprintf = Format.fprintf in [%e printer]] (args_pp @ [[%expr fmt]])
       | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.polyprinter] syntax" prefix
       | None ->
         app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid)))

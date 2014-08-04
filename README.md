@@ -122,11 +122,15 @@ _Show_ allows to specify custom formatters for types to override default behavio
 ``` ocaml
 # type file = {
   name : string;
-  perm : int     [@printer fun fmt -> Format.fprintf fmt "0o%03o"];
+  perm : int     [@printer fun fmt -> fprintf fmt "0o%03o"];
 } [@@deriving Show];;
 # show_file { name = "dir"; perm = 0o755 };;
 - : bytes = "{ name = \"dir\"; perm = 0o755 }"
 ```
+
+It is also possible to use `[@polyprinter]`. The difference is that for a type `int list`, `[@printer]` should have a signature `formatter -> int list -> unit`, and for `[@polyprinter]` it's `('a -> formatter -> unit) -> formatter -> 'a list -> unit`.
+
+The function `fprintf` is locally defined in the printer.
 
 Plugins: Eq and Ord
 -------------------
