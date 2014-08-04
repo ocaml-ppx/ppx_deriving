@@ -130,6 +130,8 @@ _Show_ allows to specify custom formatters for types to override default behavio
 
 It is also possible to use `[@polyprinter]`. The difference is that for a type `int list`, `[@printer]` should have a signature `formatter -> int list -> unit`, and for `[@polyprinter]` it's `('a -> formatter -> unit) -> formatter -> 'a list -> unit`.
 
+`[@opaque]` is a shorthand for `[@printer fun fmt _ -> Format.pp_print_string fmt "<opaque>"]`.
+
 The function `fprintf` is locally defined in the printer.
 
 Plugins: Eq and Ord

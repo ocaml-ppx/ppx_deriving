@@ -16,6 +16,10 @@ let rec expr_of_typ typ =
     [%expr (let fprintf = Format.fprintf in [%e printer]) fmt [@ocaml.warning "-26"]]
   | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.printer] syntax" prefix
   | None ->
+  match Ppx_deriving.attr ~prefix "opaque" typ.ptyp_attributes with
+  | Some (_, PStr []) -> [%expr fun _ -> Format.pp_print_string fmt "<opaque>"]
+  | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.opaque] syntax" prefix
+  | None ->
     let format x = [%expr Format.fprintf fmt [%e str x]] in
     let seq start finish fold typ =
       [%expr fun x ->

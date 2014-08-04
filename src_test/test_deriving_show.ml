@@ -57,10 +57,11 @@ let test_tuple ctxt =
 type re = {
   f1 : int;
   f2 : string;
+  f3 : float [@opaque];
 } [@@deriving Show]
 let test_record ctxt =
-  assert_equal ~printer "{ Test_deriving_show.f1 = 1; f2 = \"foo\" }"
-                        (show_re { f1 = 1; f2 = "foo" })
+  assert_equal ~printer "{ Test_deriving_show.f1 = 1; f2 = \"foo\"; f3 = <opaque> }"
+                        (show_re { f1 = 1; f2 = "foo"; f3 = 1.0 })
 
 module M : sig
   type t = A [@@deriving Show]

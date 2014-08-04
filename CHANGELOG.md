@@ -7,7 +7,7 @@ Changelog
   * Show, Eq, Ord, Iter, Fold: handle ref.
   * Show: include break hints in format strings.
   * Show: pull fprintf into local environment.
-  * Show: add [@polyprinter].
+  * Show: add [@polyprinter] and [@opaque].
 
 0.2
 ---
