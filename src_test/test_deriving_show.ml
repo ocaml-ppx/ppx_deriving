@@ -102,8 +102,8 @@ let print_hi = fun fmt _ -> Format.fprintf fmt "hi!"
 type polypr = (string [@printer print_hi]) btree [@polyprinter pp_btree]
 [@@deriving Show]
 let test_polypr ctxt =
-  assert_equal ~printer "Test_deriving_show.Node (Test_deriving_show.Leaf, \
-                         hi!, Test_deriving_show.Leaf)"
+  assert_equal ~printer "Test_deriving_show.Node (Test_deriving_show.Leaf, hi!,\n\
+                        \                         Test_deriving_show.Leaf)"
                         (show_polypr (Node (Leaf, "x", Leaf)))
 
 let suite = "Test deriving(Show)" >::: [
