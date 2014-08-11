@@ -17,7 +17,7 @@ let compare_reduce acc expr =
 let wildcard_case int_cases =
   Exp.case [%pat? _] [%expr
     let to_int = [%e Exp.function_ int_cases] in
-    (fun (a:int) b -> compare a b) (to_int lhs) (to_int rhs)]
+    (fun (a:int) b -> Pervasives.compare a b) (to_int lhs) (to_int rhs)]
 
 let pattn side typs =
   List.mapi (fun i _ -> pvar (argn side i)) typs
@@ -35,7 +35,7 @@ and expr_of_typ typ =
     | [%type: int] | [%type: int32] | [%type: Int32.t]
     | [%type: int64] | [%type: Int64.t] | [%type: nativeint] | [%type: Nativeint.t]
     | [%type: float] | [%type: bool] | [%type: char] | [%type: string] | [%type: bytes] ->
-      [%expr (fun (a:[%t typ]) b -> compare a b)]
+      [%expr (fun (a:[%t typ]) b -> Pervasives.compare a b)]
     | [%type: [%t? typ] ref]   -> [%expr fun a b -> [%e expr_of_typ typ] !a !b]
     | [%type: [%t? typ] list]  ->
       [%expr
@@ -54,7 +54,8 @@ and expr_of_typ typ =
           else [%e compare_reduce [%expr loop (i + 1)]
                                   [%expr [%e expr_of_typ typ] x.(i) y.(i)]]
         in
-        [%e compare_reduce [%expr loop 0] [%expr compare (Array.length x) (Array.length y)]]]
+        [%e compare_reduce [%expr loop 0]
+                           [%expr Pervasives.compare (Array.length x) (Array.length y)]]]
     | [%type: [%t? typ] option] ->
       [%expr fun x y ->
         match x, y with
