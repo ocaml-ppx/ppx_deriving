@@ -3,7 +3,7 @@ build:
 
 test: build
 	rm _build/src_test/ -rf
-	ocamlbuild -j 0 -use-ocamlfind -classic-display -I src \
+	ocamlbuild -j 0 -use-ocamlfind -classic-display \
 						 src_test/test_ppx_deriving.byte --
 
 doc:

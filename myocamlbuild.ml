@@ -14,10 +14,6 @@ let split delim str =
 let () = dispatch (
   function
   | After_rules ->
-    flag ["ocaml"; "compile"; "safe_string"] & A"-safe-string";
-
-    ocaml_lib ~dir:"src/" "ppx_deriving";
-
     pflag ["ocaml"; "compile"] "deriving" (fun names ->
       let plugins = split ',' names in
       let plugins = List.map (fun name -> "src_plugins/ppx_deriving_"^name^".cma") plugins in

@@ -227,7 +227,16 @@ A deriving plugin is expected packaged as a Findlib library. When encountering a
 
 The module must register itself using `Ppx_deriving.register "Foo"` during loading. The module must register one and only one deriver.
 
-It is possible to test the plugin without installing it by instructing _deriving_ to load it directly; the compiler should be invoked as `ocamlfind c -ppx 'ppx_deriving src/ppx_deriving_foo.cmo' ...`. The file extension is replaced with `.cmxs` automatically for native builds. This can be integrated with buildsystem, e.g.: [myocamlbuild.ml](myocamlbuild.ml#L9-L13).
+It is possible to test the plugin without installing it by instructing _deriving_ to load it directly; the compiler should be invoked as `ocamlfind c -ppx 'ocamlfind ppx_deriving/ppx_deriving src/ppx_deriving_foo.cmo' ...`. The file extension is replaced with `.cmxs` automatically for native builds. This can be integrated with buildsystem, e.g. for ocamlbuild:
+
+``` ocaml
+let () = dispatch (
+  function
+  | After_rules ->
+    flag ["ocaml"; "compile"; "deriving_Foo"] &
+      S[A"-ppx"; A("ocamlfind ppx_deriving/ppx_deriving src/ppx_deriving_foo.cmo")]
+  | _ -> ()
+```
 
 ### Goals of the API
 
