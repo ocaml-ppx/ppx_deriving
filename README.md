@@ -156,7 +156,7 @@ val compare : [ `A | `B of int ] -> [ `A | `B of int ] -> int = <fun>
 
 For variants, _Ord_ uses the definition order. For builtin types, properly monomorphized `(=)` is used for _Eq_, or corresponding `Mod.compare` function (e.g. `String.compare` for `string`) for _Ord_. For abstract type `t`, _Eq_ and _Ord_ expect to find an `equal_t` or `compare_t` function in the corresponding module.
 
-_Eq_ and _Ord_ allow to specify custom comparison functions for types to override default behavior. A comparator for type `t` has a type `t -> t -> bool` for _Eq_ or `t -> t -> int` for _Ord_. If an _Ord_comparator returns a value outside -1..1 range, the behavior is unspecified.
+_Eq_ and _Ord_ allow to specify custom comparison functions for types to override default behavior. A comparator for type `t` has a type `t -> t -> bool` for _Eq_ or `t -> t -> int` for _Ord_. If an _Ord_ comparator returns a value outside -1..1 range, the behavior is unspecified.
 
 ``` ocaml
 # type file = {
