@@ -1,12 +1,10 @@
 language: c
 script:
-  #- echo "yes" | sudo add-apt-repository ppa:avsm/ppa-opam-experimental
-  - echo 'deb http://download.opensuse.org/repositories/home:/ocaml/Debian_7.0/ /' | sudo tee /etc/apt/sources.list
-  - curl -L http://download.opensuse.org/repositories/home:ocaml/Debian_7.0/Release.key | sudo apt-key add -
+  - echo "yes" | sudo add-apt-repository ppa:avsm/ocaml42+opam12
   - sudo apt-get update -qq
-  - sudo apt-get install -qq opam #ocaml-native-compilers
+  - sudo apt-get install -qq opam ocaml-native-compilers
   - export OPAMYES=1
-  - opam init --comp=4.02.0+trunk
+  - opam init
   - eval `opam config env`
   - opam pin add -n -k path ppx_deriving .
   - opam install --deps-only -d -t ppx_deriving
