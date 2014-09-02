@@ -29,7 +29,7 @@ gh-pages: doc
 	git -C .gh-pages push origin gh-pages -f
 	rm -rf .gh-pages
 
-release:
+release: gh-pages
 	@if [ -z "$(VERSION)" ]; then echo "Usage: make release VERSION=1.0.0"; exit 1; fi
 	git checkout -B release
 	sed -i 's/%%VERSION%%/$(VERSION)/' pkg/META
