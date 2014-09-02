@@ -3,3 +3,4 @@
 *.docdir
 _build
 *.install
+src_test/_tags

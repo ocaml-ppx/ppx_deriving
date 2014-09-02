@@ -11,12 +11,17 @@ let split delim str =
   in
   List.rev (loop 0 0 [])
 
+let plugin_cmas names =
+  split ',' names |>
+  List.map (fun name -> "src_plugins/ppx_deriving_" ^ name ^ ".cma") |>
+  String.concat " "
+
 let () = dispatch (
   function
   | After_rules ->
-    pflag ["ocaml"; "compile"] "deriving" (fun names ->
-      let plugins = split ',' names in
-      let plugins = List.map (fun name -> "src_plugins/ppx_deriving_"^name^".cma") plugins in
-      S[A"-ppx"; A("src/ppx_deriving_main.native " ^ (String.concat " " plugins))])
+    pflag ["ocaml"; "compile"; "ppx_byte"] "deriving" (fun names ->
+      S[A"-ppx"; A("src/ppx_deriving_main.byte " ^ (plugin_cmas names))]);
+    pflag ["ocaml"; "compile"; "ppx_native"] "deriving" (fun names ->
+      S[A"-ppx"; A("src/ppx_deriving_main.native " ^ (plugin_cmas names))]);
 
   | _ -> ())
