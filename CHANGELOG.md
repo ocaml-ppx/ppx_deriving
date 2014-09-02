@@ -4,6 +4,7 @@ Changelog
 0.3
 ---
 
+  * Allow usage with bytecode-only installations.
   * Show, Eq, Ord, Iter, Fold: handle ref.
   * Show: include break hints in format strings.
   * Show: pull fprintf into local environment.
