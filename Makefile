@@ -29,7 +29,7 @@ gh-pages: doc
 	git -C .gh-pages push origin gh-pages -f
 	rm -rf .gh-pages
 
-release: #gh-pages
+release: gh-pages
 	@if [ -z "$(VERSION)" ] || [ -z "$(OPAMREPO)" ]; then \
 		echo "Usage: make release VERSION=1.0.0 OPAMREPO=~/opam-repository"; exit 1; fi
 	@echo ">>>>>> Releasing the package"
