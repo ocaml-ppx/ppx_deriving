@@ -8,6 +8,7 @@ Changelog
   * Show: include break hints in format strings.
   * Show: pull fprintf into local environment.
   * Show: add [@polyprinter] and [@opaque].
+  * Add Ppx_deriving.Arg.expr.
 
 0.2
 ---

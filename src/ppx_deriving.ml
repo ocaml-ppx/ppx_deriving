@@ -31,6 +31,9 @@ let string_of_core_type typ =
   Format.asprintf "%a" Pprintast.core_type { typ with ptyp_attributes = [] }
 
 module Arg = struct
+  let expr expr =
+    `Ok expr
+
   let int expr =
     match expr with
     | { pexp_desc = Pexp_constant (Const_int n) } -> `Ok n

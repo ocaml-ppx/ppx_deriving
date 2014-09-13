@@ -50,6 +50,9 @@ val string_of_core_type : Parsetree.core_type -> string
     The [~name] argument is used in error messages and should receive
     the name of the deriving plugin, e.g. ["Show"]. *)
 module Arg : sig
+  (** [expr] returns the input expression as-is. *)
+  val expr : expression -> [> `Ok of expression ]
+
   (** [int expr] extracts an integer constant from [expr], or returns
       [`Error "integer"] if [expr] does not contain an integer constant. *)
   val int : expression -> [ `Ok of int | `Error of string ]
