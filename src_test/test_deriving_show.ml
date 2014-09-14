@@ -15,6 +15,7 @@ type r  = int ref    [@@deriving Show]
 type l  = int list   [@@deriving Show]
 type a  = int array  [@@deriving Show]
 type o  = int option [@@deriving Show]
+type f  = int -> int [@@deriving Show]
 let test_alias ctxt =
   assert_equal ~printer "1"       (show_a1 1);
   assert_equal ~printer "1l"      (show_a2 1l);
@@ -28,7 +29,8 @@ let test_alias ctxt =
   assert_equal ~printer "ref (1)" (show_r (ref 1));
   assert_equal ~printer "[1; 2; 3]" (show_l [1;2;3]);
   assert_equal ~printer "[|1; 2; 3|]" (show_a [|1;2;3|]);
-  assert_equal ~printer "Some (1)" (show_o (Some 1))
+  assert_equal ~printer "Some (1)" (show_o (Some 1));
+  assert_equal ~printer "<fun>"   (show_f (fun x -> x))
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving Show]
 let test_variant ctxt =

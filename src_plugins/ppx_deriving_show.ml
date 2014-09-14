@@ -54,6 +54,8 @@ let rec expr_of_typ typ =
           Format.pp_print_string fmt "Some (";
           [%e expr_of_typ typ] x;
           Format.pp_print_string fmt ")"]
+    | { ptyp_desc = Ptyp_arrow _ } ->
+      [%expr fun _ -> Format.pp_print_string fmt "<fun>"]
     | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
       let args_pp = List.map (fun typ -> [%expr fun fmt -> [%e expr_of_typ typ]]) args in
       begin match Ppx_deriving.attr ~prefix "polyprinter" typ.ptyp_attributes with
