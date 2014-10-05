@@ -50,17 +50,17 @@ let derive_type_decl path typ_decls pstr_loc item fn =
                     { pexp_desc = Pexp_tuple exprs }, []); pstr_loc }]) ->
       exprs, pstr_loc
     | Some (PStr [{ pstr_desc = Pstr_eval (
-                    { pexp_desc = Pexp_construct _ } as expr, []); pstr_loc }]) ->
+                    { pexp_desc = (Pexp_ident _ | Pexp_apply _) } as expr, []); pstr_loc }]) ->
       [expr], pstr_loc
     | _ -> raise_errorf ~loc:pstr_loc "Unrecognized [@@deriving] annotation syntax"
   in
   List.fold_left (fun items deriver_expr ->
       let name, options =
         match deriver_expr with
-        | { pexp_desc = Pexp_construct (name, None) } ->
+        | { pexp_desc = Pexp_ident name } ->
           name, []
-        | { pexp_desc = Pexp_construct (name, Some
-            { pexp_desc = Pexp_record (options, None) }) } ->
+        | { pexp_desc = Pexp_apply ({ pexp_desc = Pexp_ident name }, ["",
+            { pexp_desc = Pexp_record (options, None) }]) } ->
           name, options |> List.map (fun ({ txt }, expr) ->
             String.concat "." (Longident.flatten txt), expr)
         | { pexp_loc } ->

@@ -158,7 +158,7 @@ let sig_of_type ~options ~path type_decl =
               (polymorphize [%type: [%t typ] -> string]))]
 
 let () =
-  Ppx_deriving.(register "Show" {
+  Ppx_deriving.(register "show" {
     core_type = (fun typ ->
       [%expr fun x -> Format.asprintf "%a" (fun fmt -> [%e expr_of_typ typ]) x]);
     structure = (fun ~options ~path type_decls ->

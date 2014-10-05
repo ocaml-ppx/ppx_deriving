@@ -2,7 +2,7 @@ open OUnit2
 
 let get o = match o with Some v -> v | None -> assert false
 
-type va = Aa | Ba | Ca [@@deriving Enum, Show]
+type va = Aa | Ba | Ca [@@deriving enum, show]
 let test_auto ctxt =
   assert_equal ~printer:string_of_int 0  (va_to_enum Aa);
   assert_equal ~printer:string_of_int 1  (va_to_enum Ba);
@@ -13,7 +13,7 @@ let test_auto ctxt =
   assert_equal ~printer:string_of_int 0 min_va;
   assert_equal ~printer:string_of_int 2 max_va
 
-type vm = Am [@value 1] | Bm [@value 3] | Cm [@@deriving Enum, Show]
+type vm = Am [@value 1] | Bm [@value 3] | Cm [@@deriving enum, show]
 let test_manual ctxt =
   assert_equal ~printer:string_of_int 1  (vm_to_enum Am);
   assert_equal ~printer:string_of_int 3  (vm_to_enum Bm);
@@ -24,7 +24,7 @@ let test_manual ctxt =
   assert_equal ~printer:string_of_int 1 min_vm;
   assert_equal ~printer:string_of_int 4 max_vm
 
-type pv = [ `A | `B | `C ] [@@deriving Enum, Show]
+type pv = [ `A | `B | `C ] [@@deriving enum, show]
 let test_poly ctxt =
   assert_equal ~printer:string_of_int 0  (pv_to_enum `A);
   assert_equal ~printer:string_of_int 1  (pv_to_enum `B);
@@ -35,7 +35,7 @@ let test_poly ctxt =
   assert_equal ~printer:string_of_int 0 min_pv;
   assert_equal ~printer:string_of_int 2 max_pv
 
-let suite = "Test deriving(Enum)" >::: [
+let suite = "Test deriving(enum)" >::: [
     "test_auto"   >:: test_auto;
     "test_manual" >:: test_manual;
     "test_poly"   >:: test_poly;

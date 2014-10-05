@@ -92,7 +92,7 @@ let sig_of_type ~options ~path type_decl =
              [%type: int -> [%t typ] option])]
 
 let () =
-  Ppx_deriving.(register "Enum" {
+  Ppx_deriving.(register "enum" {
     core_type = (fun { ptyp_loc } ->
       raise_errorf ~loc:ptyp_loc "[%%derive.Enum] is not supported");
     structure = (fun ~options ~path type_decls ->

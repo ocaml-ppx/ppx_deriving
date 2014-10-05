@@ -1,7 +1,7 @@
 open OUnit2
 
 type 'a btree = Node of 'a btree * 'a * 'a btree | Leaf
-[@@deriving Map, Show]
+[@@deriving map, show]
 
 let test_btree ctxt =
   let btree  = (Node (Node (Leaf, 0, Leaf), 1, Node (Leaf, 2, Leaf))) in
@@ -11,8 +11,8 @@ let test_btree ctxt =
                btree'
 
 type 'a ty = 'a * int list
-[@@deriving Map]
+[@@deriving map]
 
-let suite = "Test deriving(Map)" >::: [
+let suite = "Test deriving(map)" >::: [
     "test_btree" >:: test_btree;
   ]

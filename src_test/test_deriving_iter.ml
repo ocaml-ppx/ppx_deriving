@@ -1,7 +1,7 @@
 open OUnit2
 
 type 'a btree = Node of 'a btree * 'a * 'a btree | Leaf
-[@@deriving Iter]
+[@@deriving iter]
 
 let test_btree ctxt =
   let lst = ref [] in
@@ -10,8 +10,8 @@ let test_btree ctxt =
   assert_equal [2;1;0] !lst
 
 type 'a ty = 'a * int list
-[@@deriving Iter]
+[@@deriving iter]
 
-let suite = "Test deriving(Iter)" >::: [
+let suite = "Test deriving(iter)" >::: [
     "test_btree" >:: test_btree;
   ]

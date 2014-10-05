@@ -80,7 +80,7 @@ let sig_of_type ~options ~path type_decl =
               (polymorphize [%type: [%t typ] -> [%t typ]]))]
 
 let () =
-  Ppx_deriving.(register "Map" {
+  Ppx_deriving.(register "map" {
     core_type = expr_of_typ;
     structure = (fun ~options ~path type_decls ->
       [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))]);

@@ -4,57 +4,57 @@ open OUnit2
 
 let printer = string_of_bool
 
-type a1 = int        [@@deriving Eq]
-type a2 = int32      [@@deriving Eq]
-type a3 = int64      [@@deriving Eq]
-type a4 = nativeint  [@@deriving Eq]
-type a5 = float      [@@deriving Eq]
-type a6 = bool       [@@deriving Eq]
-type a7 = char       [@@deriving Eq]
-type a8 = string     [@@deriving Eq]
-type a9 = bytes      [@@deriving Eq]
-type r  = int ref    [@@deriving Eq]
-type l  = int list   [@@deriving Eq]
-type a  = int array  [@@deriving Eq]
-type o  = int option [@@deriving Eq]
+type a1 = int        [@@deriving eq]
+type a2 = int32      [@@deriving eq]
+type a3 = int64      [@@deriving eq]
+type a4 = nativeint  [@@deriving eq]
+type a5 = float      [@@deriving eq]
+type a6 = bool       [@@deriving eq]
+type a7 = char       [@@deriving eq]
+type a8 = string     [@@deriving eq]
+type a9 = bytes      [@@deriving eq]
+type r  = int ref    [@@deriving eq]
+type l  = int list   [@@deriving eq]
+type a  = int array  [@@deriving eq]
+type o  = int option [@@deriving eq]
 
 let test_simple ctxt =
   assert_equal ~printer true  (equal_a1 1 1);
   assert_equal ~printer false (equal_a1 1 2)
 
-type v = Foo | Bar of int * string | Baz of string [@@deriving Eq]
+type v = Foo | Bar of int * string | Baz of string [@@deriving eq]
 
-type pv1 = [ `Foo | `Bar of int * string ] [@@deriving Eq]
-type pv2 = [ `Baz | pv1 ] [@@deriving Eq]
+type pv1 = [ `Foo | `Bar of int * string ] [@@deriving eq]
+type pv2 = [ `Baz | pv1 ] [@@deriving eq]
 
-type ty = int * string [@@deriving Eq]
+type ty = int * string [@@deriving eq]
 
 type re = {
   f1 : int;
   f2 : string;
-} [@@deriving Eq]
+} [@@deriving eq]
 
 module M : sig
-  type t = int [@@deriving Eq]
+  type t = int [@@deriving eq]
 end = struct
-  type t = int [@@deriving Eq]
+  type t = int [@@deriving eq]
 end
 
-type z = M.t [@@deriving Eq]
+type z = M.t [@@deriving eq]
 
 type file = {
   name : string;
   perm : int     [@equal (<>)];
-} [@@deriving Eq]
+} [@@deriving eq]
 let test_custom ctxt =
   assert_equal ~printer false (equal_file { name = ""; perm = 1 }
                                           { name = ""; perm = 1 });
   assert_equal ~printer true  (equal_file { name = ""; perm = 1 }
                                           { name = ""; perm = 2 })
 
-type 'a pt = { v : 'a } [@@deriving Eq]
+type 'a pt = { v : 'a } [@@deriving eq]
 
-let suite = "Test deriving(Eq)" >::: [
+let suite = "Test deriving(eq)" >::: [
     "test_simple" >:: test_simple;
     "test_custom" >:: test_custom;
   ]
