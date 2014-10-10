@@ -27,7 +27,8 @@ package "main" (
 package "show" (
   version = "%%VERSION%%"
   description = "[@@deriving Show]"
-  requires = "ppx_deriving.api"
+  requires = "ppx_deriving"
+  requires(ppx) = "ppx_deriving.api"
   archive(byte) = "ppx_deriving_show.cma"
   archive(byte, plugin) = "ppx_deriving_show.cma"
   archive(native) = "ppx_deriving_show.cmxa"
