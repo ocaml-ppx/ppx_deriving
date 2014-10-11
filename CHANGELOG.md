@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.4
+---
+
+  * Make deriver names lowercase.
+
 0.3
 ---
 
