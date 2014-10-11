@@ -5,12 +5,10 @@ ppx = "./ppx_deriving"
 package "api" (
   version = "%%VERSION%%"
   description = "Plugin API for ppx_deriving"
-  requires = "dynlink compiler-libs.common ppx_tools.metaquot findlib"
+  requires = "dynlink compiler-libs.common ppx_tools"
   archive(byte) = "ppx_deriving.cma"
-  archive(byte, plugin) = "ppx_deriving.cma"
   archive(native) = "ppx_deriving.cmxa"
-  archive(native, plugin) = "ppx_deriving.cmxs"
-  exists_if = "ppx_deriving.cma"
+  exists_if = "ppx_deriving_main.cma"
 )
 
 package "main" (
@@ -18,86 +16,91 @@ package "main" (
   description = "Runner for ppx_deriving"
   requires = "ppx_deriving.api"
   archive(byte) = "ppx_deriving_main.cma"
-  archive(byte, plugin) = "ppx_deriving_main.cma"
   archive(native) = "ppx_deriving_main.cmxa"
-  archive(native, plugin) = "ppx_deriving_main.cmxs"
   exists_if = "ppx_deriving_main.cma"
+)
+
+package "std" (
+  version = "%%VERSION%%"
+  description = "Meta-package for all built-in derivers"
+  requires  = "ppx_deriving.show ppx_deriving.eq ppx_deriving.ord"
+  requires += "ppx_deriving.enum ppx_deriving.iter ppx_deriving.map"
+  requires += "ppx_deriving.fold"
 )
 
 package "show" (
   version = "%%VERSION%%"
-  description = "[@@deriving Show]"
+  description = "[@@deriving show]"
   requires = "ppx_deriving"
-  requires(ppx) = "ppx_deriving.api"
-  archive(byte) = "ppx_deriving_show.cma"
-  archive(byte, plugin) = "ppx_deriving_show.cma"
-  archive(native) = "ppx_deriving_show.cmxa"
-  archive(native, plugin) = "ppx_deriving_show.cmxs"
+  ppxopt = "ppx_deriving,./ppx_deriving_show.cma"
+  requires(ppx_driver) = "ppx_deriving.api"
+  archive(ppx_driver, byte) = "ppx_deriving_show.cma"
+  archive(ppx_driver, native) = "ppx_deriving_show.cmxa"
   exists_if = "ppx_deriving_show.cma"
 )
 
 package "eq" (
   version = "%%VERSION%%"
-  description = "[@@deriving Eq]"
-  requires = "ppx_deriving.api"
-  archive(byte) = "ppx_deriving_eq.cma"
-  archive(byte, plugin) = "ppx_deriving_eq.cma"
-  archive(native) = "ppx_deriving_eq.cmxa"
-  archive(native, plugin) = "ppx_deriving_eq.cmxs"
+  description = "[@@deriving eq]"
+  requires = "ppx_deriving"
+  ppxopt = "ppx_deriving,./ppx_deriving_eq.cma"
+  requires(ppx_driver) = "ppx_deriving.api"
+  archive(ppx_driver, byte) = "ppx_deriving_eq.cma"
+  archive(ppx_driver, native) = "ppx_deriving_eq.cmxa"
   exists_if = "ppx_deriving_eq.cma"
 )
 
 package "ord" (
   version = "%%VERSION%%"
-  description = "[@@deriving Ord]"
-  requires = "ppx_deriving.api"
-  archive(byte) = "ppx_deriving_ord.cma"
-  archive(byte, plugin) = "ppx_deriving_ord.cma"
-  archive(native) = "ppx_deriving_ord.cmxa"
-  archive(native, plugin) = "ppx_deriving_ord.cmxs"
+  description = "[@@deriving ord]"
+  requires = "ppx_deriving"
+  ppxopt = "ppx_deriving,./ppx_deriving_ord.cma"
+  requires(ppx_driver) = "ppx_deriving.api"
+  archive(ppx_driver, byte) = "ppx_deriving_ord.cma"
+  archive(ppx_driver, native) = "ppx_deriving_ord.cmxa"
   exists_if = "ppx_deriving_ord.cma"
 )
 
 package "enum" (
   version = "%%VERSION%%"
-  description = "[@@deriving Enum]"
-  requires = "ppx_deriving.api"
-  archive(byte) = "ppx_deriving_enum.cma"
-  archive(byte, plugin) = "ppx_deriving_enum.cma"
-  archive(native) = "ppx_deriving_enum.cmxa"
-  archive(native, plugin) = "ppx_deriving_enum.cmxs"
+  description = "[@@deriving enum]"
+  requires = "ppx_deriving"
+  ppxopt = "ppx_deriving,./ppx_deriving_enum.cma"
+  requires(ppx_driver) = "ppx_deriving.api"
+  archive(ppx_driver, byte) = "ppx_deriving_enum.cma"
+  archive(ppx_driver, native) = "ppx_deriving_enum.cmxa"
   exists_if = "ppx_deriving_enum.cma"
 )
 
 package "iter" (
   version = "%%VERSION%%"
-  description = "[@@deriving Iter]"
-  requires = "ppx_deriving.api"
-  archive(byte) = "ppx_deriving_iter.cma"
-  archive(byte, plugin) = "ppx_deriving_iter.cma"
-  archive(native) = "ppx_deriving_iter.cmxa"
-  archive(native, plugin) = "ppx_deriving_iter.cmxs"
+  description = "[@@deriving iter]"
+  requires = "ppx_deriving"
+  ppxopt = "ppx_deriving,./ppx_deriving_iter.cma"
+  requires(ppx_driver) = "ppx_deriving.api"
+  archive(ppx_driver, byte) = "ppx_deriving_iter.cma"
+  archive(ppx_driver, native) = "ppx_deriving_iter.cmxa"
   exists_if = "ppx_deriving_iter.cma"
 )
 
 package "map" (
   version = "%%VERSION%%"
-  description = "[@@deriving Map]"
-  requires = "ppx_deriving.api"
-  archive(byte) = "ppx_deriving_map.cma"
-  archive(byte, plugin) = "ppx_deriving_map.cma"
-  archive(native) = "ppx_deriving_map.cmxa"
-  archive(native, plugin) = "ppx_deriving_map.cmxs"
+  description = "[@@deriving map]"
+  requires = "ppx_deriving"
+  ppxopt = "ppx_deriving,./ppx_deriving_map.cma"
+  requires(ppx_driver) = "ppx_deriving.api"
+  archive(ppx_driver, byte) = "ppx_deriving_map.cma"
+  archive(ppx_driver, native) = "ppx_deriving_map.cmxa"
   exists_if = "ppx_deriving_map.cma"
 )
 
 package "fold" (
   version = "%%VERSION%%"
-  description = "[@@deriving Fold]"
-  requires = "ppx_deriving.api"
-  archive(byte) = "ppx_deriving_fold.cma"
-  archive(byte, plugin) = "ppx_deriving_fold.cma"
-  archive(native) = "ppx_deriving_fold.cmxa"
-  archive(native, plugin) = "ppx_deriving_fold.cmxs"
+  description = "[@@deriving fold]"
+  requires = "ppx_deriving"
+  ppxopt = "ppx_deriving,./ppx_deriving_fold.cma"
+  requires(ppx_driver) = "ppx_deriving.api"
+  archive(ppx_driver, byte) = "ppx_deriving_fold.cma"
+  archive(ppx_driver, native) = "ppx_deriving_fold.cmxa"
   exists_if = "ppx_deriving_fold.cma"
 )

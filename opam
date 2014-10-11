@@ -19,7 +19,7 @@ build-doc: [
   "make" "doc"
 ]
 depends: [
-  "ocamlfind" {>= "1.5.2"}
+  "ocamlfind" {>= "1.5.4"}
   "ppx_tools" {>= "0.99"}
   "ounit"     {test}
 ]

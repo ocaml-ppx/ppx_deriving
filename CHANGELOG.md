@@ -5,6 +5,8 @@ Changelog
 ---
 
   * Make deriver names lowercase.
+  * Remove Findlib+dynlink integration. All derivers must now be
+    explicitly required.
 
 0.3
 ---

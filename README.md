@@ -23,12 +23,14 @@ _deriving_ can be installed via [OPAM](https://opam.ocaml.org):
 Usage
 -----
 
-From a user's perspective, _deriving_ is triggered by a `[@@deriving Plugin]` annotation attached to a type declaration in structure or signature:
+From a user's perspective, _deriving_ is triggered by a `[@@deriving plugin]` annotation attached to a type declaration in structure or signature:
 
 ``` ocaml
 type point2d = float * float
 [@@deriving show]
 ```
+
+For every plugin, you need to require the corresponding package, e.g. `ppx_deriving.show` for the `show` deriver. The package `ppx_deriving.std` depends on every standard deriver.
 
 It's possible to invoke several plugins by separating their names with commas:
 
@@ -266,18 +268,6 @@ The following is a list of tips for developers trying to use the ppx interface:
   * Need to display a full path to a type, e.g. for an error message? Use [Ppx_deriving.path_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpath_of_type_decl).
   * Need to apply a sequence or a binary operator to variant, tuple or record elements? Use [Ppx_deriving.fold_exprs](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALfold_exprs).
   * Don't forget to invoke the option parser (TBD) even if you don't have any options. This way, it would display an error to the user.
-
-### Dynlink rationale
-
-_deriving_ is using Dynlink. This can be seen as controversional; here are the reasons for it being a superior solution:
-
-  * Dynlink allows to combine completely automatic discovery of plugins in both toplevel and batch compilation with strict control over annotation syntax. It is not currently possible to amend a ppx command line by requiring another package in batch compilation, and it will never be possible to do that in toplevel.
-  * Having a single ppx responsible for `[@@deriving]` annotation means it's possible to error out when a deriving plugin is missing. It's still possible to forget to include `ppx_deriving` as a whole, but less likely so.
-  * Having a single ppx that processes `[@@deriving]` annotation allows strict control over syntax.
-  * Having a single ppx that processes `[@@deriving]` means that there is much less forking, the code doesn't pay for plugins it doesn't use, the plugins can stay plentiful & small, and all the ASTs are traversed exactly once.
-  * After all else fails, or if the overhead of Dynlink is too high, it's possible to simply link `ppx_deriving_main.cmxa` with the required plugins without any additional OCaml code to get a combined executable.
-
-The only argument against Dynlink or the point single responsibility I can think of is an inability to write a deriving plugin completely independent from any other library. I do not see a reason this would be desirable.
 
 License
 -------
