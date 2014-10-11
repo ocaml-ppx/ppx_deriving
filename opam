@@ -23,4 +23,4 @@ depends: [
   "ppx_tools" {>= "0.99"}
   "ounit"     {test}
 ]
-available: [ocaml-version >= "4.02.0"]
+available: [ocaml-version >= "4.02.1"]

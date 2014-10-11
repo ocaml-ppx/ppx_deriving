@@ -9,10 +9,29 @@ open Ast_convenience
 let raise_errorf = Ppx_deriving.raise_errorf
 
 let dynlink ?(loc=Location.none) filename =
+  let filename = Dynlink.adapt_filename filename in
   try
     Dynlink.loadfile filename
   with Dynlink.Error error ->
     raise_errorf ~loc "Cannot load %s: %s" filename (Dynlink.error_message error)
+
+let get_plugins () =
+  match Ast_mapper.get_cookie "ppx_deriving" with
+  | Some { pexp_desc = Pexp_tuple exprs } ->
+    exprs |> List.map (fun expr ->
+      match expr with
+      | { pexp_desc = Pexp_constant (Const_string (file, None)) } -> file
+      | _ -> assert false)
+  | Some _ -> assert false
+  | None -> []
+
+let add_plugins plugins =
+  let loaded  = get_plugins () in
+  let plugins = List.filter (fun file -> not (List.mem file loaded)) plugins in
+  List.iter dynlink plugins;
+  let loaded  = loaded @ plugins in
+  Ast_mapper.set_cookie "ppx_deriving"
+    (Exp.tuple (List.map (fun file -> Exp.constant (Const_string (file, None))) loaded))
 
 let derive_type_decl path typ_decls pstr_loc item fn =
   let attributes = List.concat (List.map (fun { ptype_attributes = attrs } -> attrs) typ_decls) in
@@ -54,7 +73,8 @@ let module_from_input_name () =
   | filename -> [String.capitalize (Filename.(basename (chop_suffix filename ".ml")))]
 
 let mapper argv =
-  List.iter (fun file -> dynlink (Dynlink.adapt_filename file)) argv;
+  get_plugins () |> List.iter dynlink;
+  add_plugins argv;
   let module_nesting = ref [] in
   let with_module name f =
     let old_nesting = !module_nesting in
@@ -81,6 +101,15 @@ let mapper argv =
   in
   let rec structure mapper items =
     match items with
+    | [%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
+          [%expr "ppx_deriving"] :: elems) }]]] :: rest ->
+      elems |>
+        List.map (fun elem ->
+          match elem with
+          | { pexp_desc = Pexp_constant (Const_string (file, None))} -> file
+          | _ -> assert false) |>
+        add_plugins;
+        structure mapper rest
     | { pstr_desc = Pstr_type typ_decls; pstr_loc } as item :: rest when
         List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
       Ast_helper.with_default_loc pstr_loc (fun () ->
