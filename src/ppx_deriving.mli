@@ -158,7 +158,10 @@ val core_type_of_type_decl : type_declaration -> core_type
 val fold_exprs : ?unit:expression -> (expression -> expression -> expression) ->
                  expression list -> expression
 
-(** [seq_reduce] ≡ [fun x a b -> [%expr [%e a]; [%e x]; [%e b]]]. *)
+(** When [sep] is present:
+    [seq_reduce] ≡ [fun x a b -> [%expr [%e a]; [%e x]; [%e b]]].
+    When [sep] is missing:
+    [seq_reduce] ≡ [fun a b -> [%expr [%e a]; [%e b]]]. *)
 val seq_reduce : ?sep:expression -> expression -> expression -> expression
 
 (** [binop_reduce] ≡ [fun x a b -> [%expr [%e x] [%e a] [%e b]]]. *)
