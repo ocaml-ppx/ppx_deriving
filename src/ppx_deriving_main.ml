@@ -90,17 +90,18 @@ let mapper argv =
       let name = String.sub name 7 ((String.length name) - 7) in
       let deriver =
         match Ppx_deriving.lookup name with
-        | Some deriver -> deriver
+        | Some { Ppx_deriving.core_type = Some deriver } -> deriver
+        | Some _ -> raise_errorf ~loc "Deriver %s does not support inline notation" name
         | None -> raise_errorf ~loc "Cannot locate deriver %s" name
       in
       begin match payload with
-      | PTyp typ -> deriver.Ppx_deriving.core_type typ
+      | PTyp typ -> deriver typ
       | _ -> raise_errorf ~loc "Unrecognized [%%derive.*] syntax"
       end
     | { pexp_desc = Pexp_extension ({ txt = name; loc }, PTyp typ) } ->
       begin match Ppx_deriving.lookup name with
-      | None -> default_mapper.expr mapper expr
-      | Some deriver -> deriver.Ppx_deriving.core_type typ
+      | Some { Ppx_deriving.core_type = Some deriver } -> deriver typ
+      | _ -> default_mapper.expr mapper expr
       end
     | _ -> default_mapper.expr mapper expr
   in

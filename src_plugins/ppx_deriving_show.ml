@@ -159,7 +159,7 @@ let sig_of_type ~options ~path type_decl =
 
 let () =
   Ppx_deriving.(register "show" {
-    core_type = (fun typ ->
+    core_type = Some (fun typ ->
       [%expr fun x -> Format.asprintf "%a" (fun fmt -> [%e expr_of_typ typ]) x]);
     structure = (fun ~options ~path type_decls ->
       [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))]);

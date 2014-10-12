@@ -93,8 +93,7 @@ let sig_of_type ~options ~path type_decl =
 
 let () =
   Ppx_deriving.(register "enum" {
-    core_type = (fun { ptyp_loc } ->
-      raise_errorf ~loc:ptyp_loc "[%%derive.enum] is not supported");
+    core_type = None;
     structure = (fun ~options ~path type_decls ->
       [Str.value Nonrecursive (List.concat (List.map (str_of_type ~options ~path) type_decls))]);
     signature = (fun ~options ~path type_decls ->

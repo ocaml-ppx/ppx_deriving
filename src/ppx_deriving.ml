@@ -6,7 +6,7 @@ open Ast_helper
 open Ast_convenience
 
 type deriver = {
-  core_type : core_type -> expression;
+  core_type : (core_type -> expression) option;
   structure : options:(string * expression) list -> path:string list ->
               type_declaration list -> structure;
   signature : options:(string * expression) list -> path:string list ->

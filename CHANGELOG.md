@@ -1,13 +1,15 @@
 Changelog
 =========
 
-0.4
+1.0
 ---
 
   * Make deriver names lowercase.
   * Remove Findlib+dynlink integration. All derivers must now be
     explicitly required.
   * Allow shortening [%derive.x:] to [%x:] when deriver x exists.
+  * Make Ppx_deriving.core_type field optional to allow ignoring
+    unsupported [%x:] shorthands.
 
 0.3
 ---

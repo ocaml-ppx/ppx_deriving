@@ -15,9 +15,10 @@ open Parsetree
 
     A type deriving function accepts a type and returns a corresponding
     derived expression. It is invoked by [[%derive.foo:]] and [[%foo:]]
-    annotations. *)
+    annotations. If this function is missing, the corresponding [[%foo:]]
+    annotation is ignored. *)
 type deriver = {
-  core_type : core_type -> expression;
+  core_type : (core_type -> expression) option;
   structure : options:(string * expression) list -> path:string list ->
               type_declaration list -> structure;
   signature : options:(string * expression) list -> path:string list ->
@@ -73,7 +74,7 @@ module Arg : sig
       {[
 let kind =
   match Ppx_deriving.attr ~prefix:"index" "kind" pcd_attributes |>
-        Ppx_deriving.Arg.(payload ~name:"Ix" (enum ["flat"; "nested"])) with
+        Ppx_deriving.Arg.(payload ~name:"ix" (enum ["flat"; "nested"])) with
   | Some idx -> idx | None -> acc
 in ..
       ]} *)
