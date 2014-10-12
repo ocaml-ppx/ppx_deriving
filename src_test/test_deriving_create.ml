@@ -1,6 +1,20 @@
 open OUnit2
 
-module M = struct
+module M : sig
+  type a = {
+    a1 : int option;
+    a2 : int list;
+    a3 : int [@default];
+    a4 : int;
+  } [@@deriving show, create]
+
+  type b = {
+    b1 : int option;
+    b2 : int list;
+    b3 : int [@default];
+    b4 : int [@main];
+  } [@@deriving show, create]
+end = struct
   type a = {
     a1 : int option;
     a2 : int list;
