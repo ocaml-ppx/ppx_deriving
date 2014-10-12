@@ -53,7 +53,7 @@ type addr = string * int
 [@@deriving json { optional = true }]
 ```
 
-It's also possible (for most deriving plugins) to derive a function directly from a type, without declaring it first.
+It's also possible for many plugins to derive a function directly from a type, without declaring it first.
 
 ``` ocaml
 open OUnit2
@@ -235,7 +235,7 @@ Currently, the resulting ppx driver still depends on Dynlink as well as retains 
 Developing plugins
 ------------------
 
-This section only explains the tooling and best practices. Anyone aiming to implement their own deriving plugin is encouraged to explore the existing ones, e.g. [eq](src_plugins/ppx_deriving_eq.ml) or [show](src_plugins/ppx_deriving_show.ml).
+This section only explains the tooling and best practices. Anyone aiming to implement their own _deriving_ plugin is encouraged to explore the existing ones, e.g. [eq](src_plugins/ppx_deriving_eq.ml) or [show](src_plugins/ppx_deriving_show.ml).
 
 ### Tooling and environment
 
@@ -244,15 +244,15 @@ A _deriving_ plugin is packaged as a Findlib library; this library should includ
 ```
 version = "1.0"
 description = "[@@deriving yojson]"
+exists_if = "ppx_deriving_yojson.cma"
 # The following part affects batch compilation and toplevel.
-# The deriving plugin package may require any runtime component it needs.
+# The plugin package may require any runtime component it needs.
 requires = "ppx_deriving yojson"
 ppxopt = "ppx_deriving,./ppx_deriving_yojson.cma"
-# The following part
+# The following part affects ppx driver compilation.
 requires(ppx_driver) = "ppx_deriving.api"
 archive(ppx_driver, byte) = "ppx_deriving_yojson.cma"
 archive(ppx_driver, native) = "ppx_deriving_yojson.cmxa"
-exists_if = "ppx_deriving_yojson.cma"
 ```
 
 The module(s) provided by the package in the `ppxopt` variable must register the derivers using `Ppx_deriving.register "foo"` during loading. Any number of derivers may be registered; careful registration would allow a _yojson_ deriver to support all three of `[@@deriving yojson]`, `[@@deriving of_yojson]` and `[@@deriving to_yojson]`, as well as `[%derive.of_yojson:]` and `[%derive.to_yojson:]`.
