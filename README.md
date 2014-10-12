@@ -252,8 +252,8 @@ description = "[@@deriving yojson]"
 exists_if = "ppx_deriving_yojson.cma"
 # The following part affects batch compilation and toplevel.
 # The plugin package may require any runtime component it needs.
-requires = "ppx_deriving yojson"
-ppxopt = "ppx_deriving,./ppx_deriving_yojson.cma"
+requires(-ppx_driver) = "ppx_deriving yojson"
+ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_yojson.cma"
 # The following part affects ppx driver compilation.
 requires(ppx_driver) = "ppx_deriving.api"
 archive(ppx_driver, byte) = "ppx_deriving_yojson.cma"
