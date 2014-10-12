@@ -1,2 +1,5 @@
+B _build/**
+S src*/**
 PKG compiler-libs.common
+PKG ppx_tools
 PKG oUnit

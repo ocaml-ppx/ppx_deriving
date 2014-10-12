@@ -95,7 +95,12 @@ let mapper argv =
       in
       begin match payload with
       | PTyp typ -> deriver.Ppx_deriving.core_type typ
-      | _ -> raise_errorf ~loc "Unrecognized [%%derive.*] annotation syntax"
+      | _ -> raise_errorf ~loc "Unrecognized [%%derive.*] syntax"
+      end
+    | { pexp_desc = Pexp_extension ({ txt = name; loc }, PTyp typ) } ->
+      begin match Ppx_deriving.lookup name with
+      | None -> default_mapper.expr mapper expr
+      | Some deriver -> deriver.Ppx_deriving.core_type typ
       end
     | _ -> default_mapper.expr mapper expr
   in

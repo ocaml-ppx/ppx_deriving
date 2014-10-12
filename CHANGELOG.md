@@ -7,6 +7,7 @@ Changelog
   * Make deriver names lowercase.
   * Remove Findlib+dynlink integration. All derivers must now be
     explicitly required.
+  * Allow shortening [%derive.x:] to [%x:] when deriver x exists.
 
 0.3
 ---

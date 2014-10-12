@@ -64,6 +64,8 @@ let test_list_sort ctxt =
                [(1,1);(2,0);(3,5)] (sort [(2,0);(3,5);(1,1)])
 ```
 
+The `[%derive.x:]` syntax can be shortened to `[%x:]`, given that the deriver `x` exists and the payload is a type. If these conditions are not satisfied, the extension node will be left uninterpreted to minimize potential conflicts with other rewriters.
+
 ### Working with existing types
 
 At first, it may look like _deriving_ requires complete control of the type declaration. However, a lesser-known OCaml feature allows to derive functions for any existing type. Using `Pervasives.fpclass` as an example, _show_ can be derived as follows:
