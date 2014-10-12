@@ -36,7 +36,7 @@ let rec expr_of_typ typ =
           Exp.case [%pat? [%p Pat.type_ tname] as x]
                    [%expr [%e expr_of_typ typ] x]
         | _ ->
-          raise_errorf ~loc:ptyp_loc "Cannot derive Map for %s"
+          raise_errorf ~loc:ptyp_loc "Cannot derive map for %s"
                        (Ppx_deriving.string_of_core_type typ))
     in
     Exp.function_ cases
@@ -44,7 +44,7 @@ let rec expr_of_typ typ =
   | { ptyp_desc = Ptyp_alias (typ, name) } ->
     [%expr fun x -> [%e evar ("poly_"^name)] ([%e expr_of_typ typ] x)]
   | { ptyp_loc } ->
-    raise_errorf ~loc:ptyp_loc "Cannot derive Map for %s"
+    raise_errorf ~loc:ptyp_loc "Cannot derive map for %s"
                  (Ppx_deriving.string_of_core_type typ)
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
@@ -65,8 +65,8 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                        [%e Exp.field (evar "x") (mknoloc (Lident name))]])
       in
       [%expr fun x -> [%e record fields]]
-    | Ptype_abstract, None -> raise_errorf ~loc "Cannot derive Map for fully abstract type"
-    | Ptype_open, _        -> raise_errorf ~loc "Cannot derive Map for open type"
+    | Ptype_abstract, None -> raise_errorf ~loc "Cannot derive map for fully abstract type"
+    | Ptype_open, _        -> raise_errorf ~loc "Cannot derive map for open type"
   in
   let polymorphize = Ppx_deriving.poly_fun_of_type_decl type_decl in
   [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix "map") type_decl))

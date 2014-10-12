@@ -91,14 +91,14 @@ let rec expr_of_typ typ =
             Exp.case [%pat? [%p Pat.type_ tname] as x]
                      [%expr [%e expr_of_typ typ] x]
           | _ ->
-            raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
+            raise_errorf ~loc:ptyp_loc "Cannot derive show for %s"
                          (Ppx_deriving.string_of_core_type typ))
       in
       Exp.function_ cases
     | { ptyp_desc = Ptyp_var name } -> [%expr [%e evar ("poly_"^name)] fmt]
     | { ptyp_desc = Ptyp_alias (typ, _) } -> expr_of_typ typ
     | { ptyp_loc } ->
-      raise_errorf ~loc:ptyp_loc "Cannot derive Show for %s"
+      raise_errorf ~loc:ptyp_loc "Cannot derive show for %s"
                    (Ppx_deriving.string_of_core_type typ)
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
@@ -136,8 +136,8 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
         [%e fields |> Ppx_deriving.(fold_exprs
               (seq_reduce ~sep:[%expr Format.fprintf fmt ";@ "]))];
         Format.fprintf fmt "@] }"]
-    | Ptype_abstract, None -> raise_errorf ~loc "Cannot derive Show for fully abstract type"
-    | Ptype_open, _        -> raise_errorf ~loc "Cannot derive Show for open type"
+    | Ptype_abstract, None -> raise_errorf ~loc "Cannot derive show for fully abstract type"
+    | Ptype_open, _        -> raise_errorf ~loc "Cannot derive show for open type"
   in
   let pp_poly_apply = Ppx_deriving.poly_apply_of_type_decl type_decl (evar
                         (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl)) in
