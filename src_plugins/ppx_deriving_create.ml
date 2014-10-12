@@ -41,6 +41,19 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           Exp.fun_ ("?"^name) (Some default) (pvar name) accum
         | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.default] syntax" prefix
         | None ->
+        match Ppx_deriving.attr ~prefix "split" pld_type.ptyp_attributes with
+        | Some (_, PStr []) ->
+          begin match pld_type with
+          | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
+            let name' = String.sub name 0 (String.length name - 1) in
+            Exp.fun_ name' None (pvar name')
+              (Exp.fun_ ("?"^name) (Some [%expr []]) (pvar name)
+                [%expr let [%p pvar name] = [%e evar name'], [%e evar name] in [%e accum]])
+          | _ -> raise_errorf ~loc "[@deriving.%s.split] annotation requires a type of form \
+                                    'a * 'b list and label name ending with `s'" prefix
+          end
+        | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.split] syntax" prefix
+        | None ->
         match pld_type with
         | [%type: [%t? _] list] ->
           Exp.fun_ ("?"^name) (Some [%expr []]) (pvar name) accum
@@ -73,6 +86,19 @@ let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
         match Ppx_deriving.attr ~prefix "default" pld_type.ptyp_attributes with
         | Some (_, PStr _)  -> Typ.arrow ("?"^name) (wrap_predef_option pld_type) accum
         | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.default] syntax" prefix
+        | None ->
+        match Ppx_deriving.attr ~prefix "split" pld_type.ptyp_attributes with
+        | Some (_, PStr []) ->
+          begin match pld_type with
+          | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
+            let name' = String.sub name 0 (String.length name - 1) in
+            Typ.arrow name' lhs
+              (Typ.arrow ("?"^name) (wrap_predef_option [%type: [%t rhs] list])
+                accum)
+          | _ -> raise_errorf ~loc "[@deriving.%s.split] annotation requires a type of form \
+                                    'a * 'b list and label name ending with `s'" prefix
+          end
+        | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.split] syntax" prefix
         | None ->
         match pld_type with
         | [%type: [%t? _] list] ->
