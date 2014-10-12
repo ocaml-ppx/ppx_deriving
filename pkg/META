@@ -8,7 +8,7 @@ package "api" (
   requires = "dynlink compiler-libs.common ppx_tools"
   archive(byte) = "ppx_deriving.cma"
   archive(native) = "ppx_deriving.cmxa"
-  exists_if = "ppx_deriving_main.cma"
+  exists_if = "ppx_deriving.cma"
 )
 
 package "main" (
