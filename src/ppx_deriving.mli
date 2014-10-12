@@ -14,7 +14,8 @@ open Parsetree
     It is invoked by [[\@\@deriving]] annotations.
 
     A type deriving function accepts a type and returns a corresponding
-    derived expression. It is invoked by [[%derive.Foo]] annotations. *)
+    derived expression. It is invoked by [[%derive.foo:]] and [[%foo:]]
+    annotations. *)
 type deriver = {
   core_type : core_type -> expression;
   structure : options:(string * expression) list -> path:string list ->
@@ -23,12 +24,10 @@ type deriver = {
               type_declaration list -> signature;
 }
 
-(** [register name fn] registers a deriving function [fn] as [name].
-    For automatic dynlinking to work, a module [Foo] must register itself
-    with name ["Foo"]. *)
+(** [register name deriver] registers [deriver] as [name]. *)
 val register : string -> deriver -> unit
 
-(** [lookup name] looks up a deriving function called [name]. *)
+(** [lookup name] looks up a deriver called [name]. *)
 val lookup : string -> deriver option
 
 (** {2 Error handling} *)
@@ -48,7 +47,7 @@ val string_of_core_type : Parsetree.core_type -> string
     attached to types, fields or constructors.
 
     The [~name] argument is used in error messages and should receive
-    the name of the deriving plugin, e.g. ["Show"]. *)
+    the name of the deriving plugin, e.g. ["show"]. *)
 module Arg : sig
   (** [expr] returns the input expression as-is. *)
   val expr : expression -> [> `Ok of expression ]
