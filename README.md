@@ -65,7 +65,7 @@ let test_list_sort ctxt =
 
 ### Working with existing types
 
-At first, it may look like _deriving_ requires complete control of the type declaration. However, a lesser-known OCaml feature allows to derive functions for any existing type. Using `Pervasives.fpclass` as an example, _Show_ can be derived as follows:
+At first, it may look like _deriving_ requires complete control of the type declaration. However, a lesser-known OCaml feature allows to derive functions for any existing type. Using `Pervasives.fpclass` as an example, _show_ can be derived as follows:
 
 ``` ocaml
 # module M = struct
@@ -119,9 +119,9 @@ val show : [< `A | `B of i ] -> bytes = <fun>
 - : bytes = "`B (1)"
 ```
 
-For abstract type `t`, _show_ expects to find a `pp_t` function in the corresponding module.
+For an abstract type `ty`, _show_ expects to find a `pp_ty` function in the corresponding module.
 
-_Show_ allows to specify custom formatters for types to override default behavior. A formatter for type `t` has a type `Format.formatter -> t -> unit`:
+_show_ allows to specify custom formatters for types to override default behavior. A formatter for type `t` has a type `Format.formatter -> t -> unit`:
 
 ``` ocaml
 # type file = {
@@ -158,7 +158,7 @@ val compare : [ `A | `B of int ] -> [ `A | `B of int ] -> int = <fun>
 - : int = -1
 ```
 
-For variants, _ord_ uses the definition order. For builtin types, properly monomorphized `(=)` is used for _eq_, or corresponding `Mod.compare` function (e.g. `String.compare` for `string`) for _ord_. For abstract type `t`, _eq_ and _ord_ expect to find an `equal_t` or `compare_t` function in the corresponding module.
+For variants, _ord_ uses the definition order. For builtin types, properly monomorphized `(=)` is used for _eq_, or corresponding `Mod.compare` function (e.g. `String.compare` for `string`) for _ord_. For an abstract type `ty`, _eq_ and _ord_ expect to find an `equal_ty` or `compare_ty` function in the corresponding module.
 
 _eq_ and _ord_ allow to specify custom comparison functions for types to override default behavior. A comparator for type `t` has a type `t -> t -> bool` for _eq_ or `t -> t -> int` for _ord_. If an _ord_ comparator returns a value outside -1..1 range, the behavior is unspecified.
 
@@ -223,7 +223,7 @@ val tree : int btree = Node (Node (Leaf, 0, Leaf), 1, Node (Leaf, 2, Leaf))
 Developing plugins
 ------------------
 
-This section only explains the tooling and best practices. Anyone aiming to implement their own deriving plugin is encouraged to explore the existing ones, e.g. [eq](src_plugins/ppx_deriving_eq.ml) or [Show](src_plugins/ppx_deriving_show.ml).
+This section only explains the tooling and best practices. Anyone aiming to implement their own deriving plugin is encouraged to explore the existing ones, e.g. [eq](src_plugins/ppx_deriving_eq.ml) or [show](src_plugins/ppx_deriving_show.ml).
 
 ### Tooling and environment
 
