@@ -16,7 +16,7 @@ build-test: [
   "ocamlbuild" "-classic-display" "-use-ocamlfind" "src_test/test_ppx_deriving.byte" "--"
 ]
 build-doc: [
-  "make" "doc"
+  make "doc"
 ]
 depends: [
   "ocamlfind" {>= "1.5.4"}
