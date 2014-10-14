@@ -64,9 +64,8 @@ and expr_of_typ typ =
         | None, Some _ -> -1
         | Some _, None -> 1]
     | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-      (* ppx_tools#10 *)
-      let fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "compare") lid)) in
-      (match args with [] -> fn | _ -> app fn (List.map expr_of_typ args))
+      let compare_fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "compare") lid)) in
+      app compare_fn (List.map expr_of_typ args)
     | { ptyp_desc = Ptyp_tuple typs } ->
       [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
         [%e exprsn typs |> List.rev |> List.fold_left compare_reduce [%expr 0]]]

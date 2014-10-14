@@ -19,8 +19,8 @@ build-doc: [
   make "doc"
 ]
 depends: [
-  "ocamlfind" {>= "1.5.4"}
-  "ppx_tools" {>= "0.99"}
+  "ocamlfind" {>= "1.5.3"}
+  "ppx_tools" {>= "0.99.2"}
   "ounit"     {test}
 ]
 available: [ocaml-version >= "4.02.1"]
