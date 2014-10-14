@@ -1,9 +1,9 @@
-version = "%%VERSION%%"
+version = "%{version}%"
 description = "Type-driven code generation"
 ppx = "./ppx_deriving"
 
 package "api" (
-  version = "%%VERSION%%"
+  version = "%{version}%"
   description = "Plugin API for ppx_deriving"
   requires = "dynlink compiler-libs.common ppx_tools"
   archive(byte) = "ppx_deriving.cma"
@@ -12,7 +12,7 @@ package "api" (
 )
 
 package "main" (
-  version = "%%VERSION%%"
+  version = "%{version}%"
   description = "Runner for ppx_deriving"
   requires = "ppx_deriving.api"
   archive(byte) = "ppx_deriving_main.cma"
@@ -21,7 +21,7 @@ package "main" (
 )
 
 package "std" (
-  version = "%%VERSION%%"
+  version = "%{version}%"
   description = "Meta-package for all built-in derivers"
   requires  = "ppx_deriving.show ppx_deriving.eq ppx_deriving.ord"
   requires += "ppx_deriving.enum ppx_deriving.iter ppx_deriving.map"
@@ -29,7 +29,7 @@ package "std" (
 )
 
 package "show" (
-  version = "%%VERSION%%"
+  version = "%{version}%"
   description = "[@@deriving show]"
   requires(-ppx_driver) = "ppx_deriving"
   ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_show.cma"
@@ -40,7 +40,7 @@ package "show" (
 )
 
 package "eq" (
-  version = "%%VERSION%%"
+  version = "%{version}%"
   description = "[@@deriving eq]"
   requires(-ppx_driver) = "ppx_deriving"
   ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_eq.cma"
@@ -51,7 +51,7 @@ package "eq" (
 )
 
 package "ord" (
-  version = "%%VERSION%%"
+  version = "%{version}%"
   description = "[@@deriving ord]"
   requires(-ppx_driver) = "ppx_deriving"
   ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_ord.cma"
@@ -62,7 +62,7 @@ package "ord" (
 )
 
 package "enum" (
-  version = "%%VERSION%%"
+  version = "%{version}%"
   description = "[@@deriving enum]"
   requires(-ppx_driver) = "ppx_deriving"
   ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_enum.cma"
@@ -73,7 +73,7 @@ package "enum" (
 )
 
 package "iter" (
-  version = "%%VERSION%%"
+  version = "%{version}%"
   description = "[@@deriving iter]"
   requires(-ppx_driver) = "ppx_deriving"
   ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_iter.cma"
@@ -84,7 +84,7 @@ package "iter" (
 )
 
 package "map" (
-  version = "%%VERSION%%"
+  version = "%{version}%"
   description = "[@@deriving map]"
   requires(-ppx_driver) = "ppx_deriving"
   ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_map.cma"
@@ -95,7 +95,7 @@ package "map" (
 )
 
 package "fold" (
-  version = "%%VERSION%%"
+  version = "%{version}%"
   description = "[@@deriving fold]"
   requires(-ppx_driver) = "ppx_deriving"
   ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_fold.cma"
@@ -106,7 +106,7 @@ package "fold" (
 )
 
 package "create" (
-  version = "%%VERSION%%"
+  version = "%{version}%"
   description = "[@@deriving create]"
   requires(-ppx_driver) = "ppx_deriving"
   ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_create.cma"
