@@ -1,4 +1,5 @@
 build:
+	cp pkg/META.in pkg/META
 	ocaml pkg/build.ml native=true native-dynlink=true
 
 test: build
