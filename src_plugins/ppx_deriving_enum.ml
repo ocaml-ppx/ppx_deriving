@@ -8,6 +8,11 @@ open Ast_convenience
 let deriver = "enum"
 let raise_errorf = Ppx_deriving.raise_errorf
 
+let parse_options options =
+  options |> List.iter (fun (name, expr) ->
+    match name with
+    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
+
 let attr_value attrs =
   Ppx_deriving.(attrs |> attr ~deriver "value" |> Arg.(get_attr ~deriver int))
 
@@ -60,6 +65,7 @@ let mappings_of_type type_decl =
   kind, mappings
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
+  parse_options options;
   let kind, mappings = mappings_of_type type_decl in
   let patt name =
     match kind with
@@ -88,6 +94,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (Exp.function_ from_enum_cases)]
 
 let sig_of_type ~options ~path type_decl =
+  parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "min") type_decl))
              [%type: int]);

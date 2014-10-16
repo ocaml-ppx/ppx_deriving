@@ -8,6 +8,11 @@ open Ast_convenience
 let deriver = "create"
 let raise_errorf = Ppx_deriving.raise_errorf
 
+let parse_options options =
+  options |> List.iter (fun (name, expr) ->
+    match name with
+    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
+
 let attr_default attrs =
   Ppx_deriving.(attrs |> attr ~deriver "default" |> Arg.(get_attr ~deriver expr))
 
@@ -26,6 +31,7 @@ let find_main labels =
     (None, []) labels
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
+  parse_options options;
   let mapper =
     match type_decl.ptype_kind with
     | Ptype_record labels ->
@@ -70,6 +76,7 @@ let wrap_predef_option typ =
   Typ.constr predef_option [typ]
 
 let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
+  parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let typ =
     match type_decl.ptype_kind with

@@ -8,6 +8,11 @@ open Ast_convenience
 let deriver = "ord"
 let raise_errorf = Ppx_deriving.raise_errorf
 
+let parse_options options =
+  options |> List.iter (fun (name, expr) ->
+    match name with
+    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
+
 let attr_compare attrs =
   Ppx_deriving.(attrs |> attr ~deriver "compare" |> Arg.(get_attr ~deriver expr))
 
@@ -108,6 +113,7 @@ and expr_of_typ typ =
                    deriver (Ppx_deriving.string_of_core_type typ)
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
+  parse_options options;
   let comparator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest -> expr_of_typ manifest
@@ -142,6 +148,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (polymorphize comparator)]
 
 let sig_of_type ~options ~path type_decl =
+  parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
           (fun var -> [%type: [%t var] -> [%t var] -> int]) type_decl in

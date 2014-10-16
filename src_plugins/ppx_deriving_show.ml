@@ -8,6 +8,11 @@ open Ast_convenience
 let deriver = "show"
 let raise_errorf = Ppx_deriving.raise_errorf
 
+let parse_options options =
+  options |> List.iter (fun (name, expr) ->
+    match name with
+    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
+
 let attr_printer attrs =
   Ppx_deriving.(attrs |> attr ~deriver "printer" |> Arg.(get_attr ~deriver expr))
 
@@ -24,7 +29,7 @@ let rec expr_of_typ typ =
   | Some printer ->
     [%expr (let fprintf = Format.fprintf in [%e printer]) fmt [@ocaml.warning "-26"]]
   | None ->
-  if attr_opaquae typ.ptyp_attributes then
+  if attr_opaque typ.ptyp_attributes then
     [%expr fun _ -> Format.pp_print_string fmt "<opaque>"]
   else
     let format x = [%expr Format.fprintf fmt [%e str x]] in
@@ -108,6 +113,7 @@ let rec expr_of_typ typ =
                    deriver (Ppx_deriving.string_of_core_type typ)
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
+  parse_options options;
   let path = Ppx_deriving.path_of_type_decl ~path type_decl in
   let prettyprinter =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
@@ -157,6 +163,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                (polymorphize stringprinter);]
 
 let sig_of_type ~options ~path type_decl =
+  parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
         (fun var -> [%type: Format.formatter -> [%t var] -> unit]) type_decl in

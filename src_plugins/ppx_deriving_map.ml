@@ -8,6 +8,11 @@ open Ast_convenience
 let deriver = "map"
 let raise_errorf = Ppx_deriving.raise_errorf
 
+let parse_options options =
+  options |> List.iter (fun (name, expr) ->
+    match name with
+    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
+
 let argn = Printf.sprintf "a%d"
 
 let rec expr_of_typ typ =
@@ -48,6 +53,7 @@ let rec expr_of_typ typ =
                  deriver (Ppx_deriving.string_of_core_type typ)
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
+  parse_options options;
   let mapper =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest -> expr_of_typ manifest
@@ -65,9 +71,9 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                        [%e Exp.field (evar "x") (mknoloc (Lident name))]])
       in
       [%expr fun x -> [%e record fields]]
-    | Ptype_abstract, None -> 
+    | Ptype_abstract, None ->
       raise_errorf ~loc "%s cannot be derived for fully abstract types" deriver
-    | Ptype_open, _        -> 
+    | Ptype_open, _        ->
       raise_errorf ~loc "%s cannot be derived for open types" deriver
   in
   let polymorphize = Ppx_deriving.poly_fun_of_type_decl type_decl in
@@ -75,6 +81,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                (polymorphize mapper)]
 
 let sig_of_type ~options ~path type_decl =
+  parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
                         (fun var -> [%type: [%t var] -> [%t var]]) type_decl in
