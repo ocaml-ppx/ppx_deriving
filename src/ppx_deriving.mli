@@ -66,19 +66,21 @@ module Arg : sig
       a variant included in [values]. *)
   val enum : string list -> expression -> [ `Ok of string | `Error of string ]
 
-  (** [payload conv attr] extracts the expression from [attr] and converts
+  (** [payload ~deriver conv attr] extracts the expression from [attr] and converts
       it with [conv], raising [Location.Error] if [attr] is not a structure with
       a single expression or [conv] fails; or returns [None] if [attr] is [None].
+      The name of the deriving plugin should be passed as [deriver]; it is used
+      in error messages.
 
       Example usage:
       {[
 let kind =
-  match Ppx_deriving.attr ~prefix:"index" "kind" pcd_attributes |>
-        Ppx_deriving.Arg.(payload ~name:"ix" (enum ["flat"; "nested"])) with
+  match Ppx_deriving.attr ~deriver:"index" "kind" pcd_attributes |>
+        Ppx_deriving.Arg.(payload ~deriver:"ix" (enum ["flat"; "nested"])) with
   | Some idx -> idx | None -> acc
 in ..
       ]} *)
-  val payload : name:string -> (expression -> [ `Ok of 'a | `Error of string ]) ->
+  val payload : deriver:string -> (expression -> [ `Ok of 'a | `Error of string ]) ->
                 attribute option -> 'a option
 end
 
@@ -107,11 +109,11 @@ val mangle_type_decl : ?fixpoint:string -> [ `Prefix of string | `Suffix of stri
 val mangle_lid : ?fixpoint:string -> [ `Prefix of string | `Suffix of string ] ->
                  Longident.t -> Longident.t
 
-(** [attr ~prefix name attrs] searches for an attribute [\[\@deriving.prefix.name\]]
-    in [attrs] if any attribute with name starting with [\@deriving.prefix] exists,
-    or [\[\@prefix.name\]] if any attribute with name starting with [\@prefix] exists,
-    or [\[\@name\]] otherwise. *)
-val attr : prefix:string -> string -> attributes -> attribute option
+(** [attr ~deriver name attrs] searches for an attribute [\[\@deriving.deriver.attr\]]
+    in [attrs] if any attribute with name starting with [\@deriving.deriver] exists,
+    or [\[\@deriver.attr\]] if any attribute with name starting with [\@deriver] exists,
+    or [\[\@attr\]] otherwise. *)
+val attr : deriver:string -> string -> attributes -> attribute option
 
 (** [free_vars_in_core_type typ] returns unique free variables in [typ] in
     lexical order. *)

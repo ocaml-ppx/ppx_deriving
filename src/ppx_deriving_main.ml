@@ -58,6 +58,12 @@ let derive_type_decl path typ_decls pstr_loc item fn =
         | { pexp_loc } ->
           raise_errorf ~loc:pexp_loc "Unrecognized [@@deriving] option syntax"
       in
+(*       let is_optional, options =
+        match List.assoc "optional" options with
+        | exception Not_found -> false, options
+        | expr ->
+          match Ppx_deriving.Arg.payload 
+      in *)
       let name, loc = String.concat "_" (Longident.flatten name.txt), name.loc in
       let deriver =
         match Ppx_deriving.lookup name with

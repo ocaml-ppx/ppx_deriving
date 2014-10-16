@@ -9,6 +9,9 @@ let test_inline_shorthand ctxt =
   assert_equal ~printer:(fun x -> x)
                "[(1, 1); (2, 0)]" ([%show: (int * int) list] [(1,1); (2,0)])
 
+type optional_deriver = string 
+(* [@@deriving missing { optional = true }] *)
+
 let suite = "Test ppx_deriving" >::: [
     Test_deriving_show.suite;
     Test_deriving_eq.suite;

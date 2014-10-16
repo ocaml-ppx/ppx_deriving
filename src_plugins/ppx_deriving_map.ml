@@ -5,7 +5,7 @@ open Parsetree
 open Ast_helper
 open Ast_convenience
 
-let prefix = "map"
+let deriver = "map"
 let raise_errorf = Ppx_deriving.raise_errorf
 
 let argn = Printf.sprintf "a%d"
@@ -18,7 +18,7 @@ let rec expr_of_typ typ =
   | [%type: [%t? typ] option] ->
     [%expr function None -> None | Some x -> Some ([%e expr_of_typ typ] x)]
   | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-    app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "map") lid)))
+    app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix deriver) lid)))
         (List.map expr_of_typ args)
   | { ptyp_desc = Ptyp_tuple typs } ->
     [%expr fun [%p ptuple (List.mapi (fun i _ -> pvar (argn i)) typs)] ->
@@ -36,16 +36,16 @@ let rec expr_of_typ typ =
           Exp.case [%pat? [%p Pat.type_ tname] as x]
                    [%expr [%e expr_of_typ typ] x]
         | _ ->
-          raise_errorf ~loc:ptyp_loc "Cannot derive map for %s"
-                       (Ppx_deriving.string_of_core_type typ))
+          raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
+                       deriver (Ppx_deriving.string_of_core_type typ))
     in
     Exp.function_ cases
   | { ptyp_desc = Ptyp_var name } -> evar ("poly_"^name)
   | { ptyp_desc = Ptyp_alias (typ, name) } ->
     [%expr fun x -> [%e evar ("poly_"^name)] ([%e expr_of_typ typ] x)]
   | { ptyp_loc } ->
-    raise_errorf ~loc:ptyp_loc "Cannot derive map for %s"
-                 (Ppx_deriving.string_of_core_type typ)
+    raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
+                 deriver (Ppx_deriving.string_of_core_type typ)
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   let mapper =
@@ -65,22 +65,24 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                        [%e Exp.field (evar "x") (mknoloc (Lident name))]])
       in
       [%expr fun x -> [%e record fields]]
-    | Ptype_abstract, None -> raise_errorf ~loc "Cannot derive map for fully abstract type"
-    | Ptype_open, _        -> raise_errorf ~loc "Cannot derive map for open type"
+    | Ptype_abstract, None -> 
+      raise_errorf ~loc "%s cannot be derived for fully abstract types" deriver
+    | Ptype_open, _        -> 
+      raise_errorf ~loc "%s cannot be derived for open types" deriver
   in
   let polymorphize = Ppx_deriving.poly_fun_of_type_decl type_decl in
-  [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix "map") type_decl))
+  [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
                (polymorphize mapper)]
 
 let sig_of_type ~options ~path type_decl =
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
                         (fun var -> [%type: [%t var] -> [%t var]]) type_decl in
-  [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "map") type_decl))
+  [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
               (polymorphize [%type: [%t typ] -> [%t typ]]))]
 
 let () =
-  Ppx_deriving.(register "map" {
+  Ppx_deriving.(register deriver {
     core_type = Some expr_of_typ;
     structure = (fun ~options ~path type_decls ->
       [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))]);

@@ -51,17 +51,17 @@ module Arg = struct
     | _ -> `Error (Printf.sprintf "one of: %s"
                     (String.concat ", " (List.map (fun s -> "`"^s) values)))
 
-  let payload ~name conv attr =
+  let payload ~deriver conv attr =
     match attr with
     | None -> None
-    | Some ({ txt = attr_name }, PStr [{ pstr_desc = Pstr_eval (expr, []) }]) ->
+    | Some ({ txt = name }, PStr [{ pstr_desc = Pstr_eval (expr, []) }]) ->
       begin match conv expr with
       | `Ok v -> Some v
       | `Error desc ->
-        raise_errorf ~loc:expr.pexp_loc "%s: invalid [@%s]: %s expected" name attr_name desc
+        raise_errorf ~loc:expr.pexp_loc "%s: invalid [@%s]: %s expected" deriver name desc
       end
-    | Some ({ txt = attr_name; loc }, _) ->
-      raise_errorf ~loc "%s: invalid [@%s]: value expected" name attr_name
+    | Some ({ txt = name; loc }, _) ->
+      raise_errorf ~loc "%s: invalid [@%s]: value expected" deriver name
 end
 
 let expand_path ~path ident =
@@ -92,7 +92,7 @@ let mangle_lid ?fixpoint affix lid =
   | Ldot (p, s) -> Ldot (p, mangle ?fixpoint affix s)
   | Lapply _    -> assert false
 
-let attr ~prefix name attrs =
+let attr ~deriver name attrs =
   let starts str prefix =
     String.length str >= String.length prefix &&
       String.sub str 0 (String.length prefix) = prefix
@@ -103,8 +103,8 @@ let attr ~prefix name attrs =
     else f ()
   in
   let name =
-    try_prefix ("deriving."^prefix^".") (fun () ->
-      try_prefix (prefix^".") (fun () ->
+    try_prefix ("deriving."^deriver^".") (fun () ->
+      try_prefix (deriver^".") (fun () ->
         name))
   in
   try Some (List.find (fun ({ txt }, _) -> txt = name) attrs)

@@ -5,14 +5,13 @@ open Parsetree
 open Ast_helper
 open Ast_convenience
 
-let prefix = "enum"
+let deriver = "enum"
 let raise_errorf = Ppx_deriving.raise_errorf
 
 let mappings_of_type type_decl =
   let map acc mappings attrs constr_name =
     let value =
-      match Ppx_deriving.attr ~prefix "value" attrs |>
-            Ppx_deriving.Arg.(payload ~name:"enum" int) with
+      match Ppx_deriving.(attrs |> attr ~deriver "value" |> Arg.(payload ~deriver int)) with
       | Some idx -> idx | None -> acc
     in
     (value + 1, (value, constr_name) :: mappings)
@@ -23,7 +22,8 @@ let mappings_of_type type_decl =
       `Regular,
       List.fold_left (fun (acc, mappings) { pcd_name; pcd_args; pcd_attributes; pcd_loc } ->
           if pcd_args <> [] then
-            raise_errorf ~loc:pcd_loc "enum can be derived only for argumentless constructors";
+            raise_errorf ~loc:pcd_loc 
+                         "%s can be derived only for argumentless constructors" deriver;
           map acc mappings pcd_attributes pcd_name)
         (0, []) constrs
     | Ptype_abstract, Some { ptyp_desc = Ptyp_variant (constrs, Closed, None); ptyp_loc } ->
@@ -32,20 +32,24 @@ let mappings_of_type type_decl =
           (* TODO: use row_field location instead of ptyp_loc when fixed in Parsetree *)
           match row_field with
           | Rinherit _ ->
-            raise_errorf ~loc:ptyp_loc "enum cannot be derived for inherited variant cases"
+            raise_errorf ~loc:ptyp_loc 
+                         "%s cannot be derived for inherited variant cases" deriver
           | Rtag (name, attrs, true, []) ->
             map acc mappings attrs { txt = name; loc = ptyp_loc }
           | Rtag _ ->
-            raise_errorf ~loc:ptyp_loc "enum can be derived only for argumentless constructors")
+            raise_errorf ~loc:ptyp_loc 
+                         "%s can be derived only for argumentless constructors" deriver)
         (0, []) constrs
-    | _ -> raise_errorf ~loc:type_decl.ptype_loc "enum can be derived only for variants"
+    | _ -> raise_errorf ~loc:type_decl.ptype_loc 
+                        "%s can be derived only for variants" deriver
   in
   let rec check_dup mappings =
     match mappings with
     | (a, { txt=atxt; loc=aloc }) :: (b, { txt=btxt; loc=bloc }) :: _ when a = b ->
       let sigil = match kind with `Regular -> "" | `Polymorphic -> "`" in
       let sub = [Location.errorf ~loc:bloc "Same as for %s%s" sigil btxt] in
-      raise_errorf ~sub ~loc:aloc "enum: duplicate value %d for constructor %s%s" a sigil atxt
+      raise_errorf ~sub ~loc:aloc 
+                   "%s: duplicate value %d for constructor %s%s" deriver a sigil atxt
     | _ :: rest -> check_dup rest
     | [] -> ()
   in
@@ -92,7 +96,7 @@ let sig_of_type ~options ~path type_decl =
              [%type: int -> [%t typ] option])]
 
 let () =
-  Ppx_deriving.(register "enum" {
+  Ppx_deriving.(register deriver {
     core_type = None;
     structure = (fun ~options ~path type_decls ->
       [Str.value Nonrecursive (List.concat (List.map (str_of_type ~options ~path) type_decls))]);

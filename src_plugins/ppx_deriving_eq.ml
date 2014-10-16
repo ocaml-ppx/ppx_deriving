@@ -5,7 +5,7 @@ open Parsetree
 open Ast_helper
 open Ast_convenience
 
-let prefix = "eq"
+let deriver = "eq"
 let raise_errorf = Ppx_deriving.raise_errorf
 
 let argn kind =
@@ -19,9 +19,9 @@ let rec exprsn typs =
     app (expr_of_typ typ) [evar (argn `lhs i); evar (argn `rhs i)])
 
 and expr_of_typ typ =
-  match Ppx_deriving.attr ~prefix "equal" typ.ptyp_attributes with
+  match Ppx_deriving.attr ~deriver "equal" typ.ptyp_attributes with
   | Some (_, PStr [{ pstr_desc = Pstr_eval (equal, _) }]) -> equal
-  | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.equal] syntax" prefix
+  | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.equal] syntax" deriver
   | None ->
     match typ with
     | [%type: int] | [%type: int32] | [%type: Int32.t]
@@ -68,16 +68,16 @@ and expr_of_typ typ =
             Exp.case (pdup (fun var -> Pat.alias (Pat.type_ tname) (mknoloc var)))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
           | _ ->
-            raise_errorf ~loc:ptyp_loc "Cannot derive eq for %s"
-                         (Ppx_deriving.string_of_core_type typ))) @
+            raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
+                         deriver (Ppx_deriving.string_of_core_type typ))) @
         [Exp.case (pvar "_") [%expr false]]
       in
       [%expr fun lhs rhs -> [%e Exp.match_ [%expr lhs, rhs] cases]]
     | { ptyp_desc = Ptyp_var name } -> evar ("poly_"^name)
     | { ptyp_desc = Ptyp_alias (typ, _) } -> expr_of_typ typ
     | { ptyp_loc } ->
-      raise_errorf ~loc:ptyp_loc "Cannot derive eq for %s"
-                   (Ppx_deriving.string_of_core_type typ)
+      raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
+                   deriver (Ppx_deriving.string_of_core_type typ)
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   let comparator =
@@ -101,9 +101,9 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       in
       [%expr fun lhs rhs -> [%e exprs |> Ppx_deriving.(fold_exprs (binop_reduce [%expr (&&)]))]]
     | Ptype_abstract, None ->
-      raise_errorf ~loc "Cannot derive eq for fully abstract type"
+      raise_errorf ~loc "%s cannot be derived for fully abstract types" deriver
     | Ptype_open, _ ->
-      raise_errorf ~loc "Cannot derive eq for open type"
+      raise_errorf ~loc "%s cannot be derived for open types" deriver
   in
   let polymorphize = Ppx_deriving.poly_fun_of_type_decl type_decl in
   [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix "equal") type_decl))

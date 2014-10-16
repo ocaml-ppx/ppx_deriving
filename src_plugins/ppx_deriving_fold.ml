@@ -5,7 +5,7 @@ open Parsetree
 open Ast_helper
 open Ast_convenience
 
-let prefix = "fold"
+let deriver = "fold"
 let raise_errorf = Ppx_deriving.raise_errorf
 
 let argn = Printf.sprintf "a%d"
@@ -21,7 +21,7 @@ let rec expr_of_typ typ =
   | [%type: [%t? typ] option] ->
     [%expr fun acc -> function None -> acc | Some x -> [%e expr_of_typ typ] acc x]
   | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-    app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "fold") lid)))
+    app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix deriver) lid)))
         (List.map expr_of_typ args)
   | { ptyp_desc = Ptyp_tuple typs } ->
     let args = typs |> List.mapi (fun i typ ->
@@ -41,16 +41,16 @@ let rec expr_of_typ typ =
           Exp.case [%pat? [%p Pat.type_ tname] as x]
                    [%expr [%e expr_of_typ typ] acc x]
         | _ ->
-          raise_errorf ~loc:ptyp_loc "Cannot derive fold for %s"
-                       (Ppx_deriving.string_of_core_type typ))
+          raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
+                       deriver (Ppx_deriving.string_of_core_type typ))
     in
     Exp.function_ cases
   | { ptyp_desc = Ptyp_var name } -> evar ("poly_"^name)
   | { ptyp_desc = Ptyp_alias (typ, name) } ->
     [%expr fun acc x -> [%e evar ("poly_"^name)] ([%e expr_of_typ typ] acc x) x]
   | { ptyp_loc } ->
-    raise_errorf ~loc:ptyp_loc "Cannot derive fold for %s"
-                 (Ppx_deriving.string_of_core_type typ)
+    raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
+                 deriver (Ppx_deriving.string_of_core_type typ)
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   let mapper =
@@ -71,11 +71,13 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                  [%e Exp.field (evar "x") (mknoloc (Lident name))]])
       in
       [%expr fun acc x -> [%e Ppx_deriving.(fold_exprs ~unit:[%expr acc] reduce_acc fields)]]
-    | Ptype_abstract, None -> raise_errorf ~loc "Cannot derive fold for fully abstract type"
-    | Ptype_open, _        -> raise_errorf ~loc "Cannot derive fold for open type"
+    | Ptype_abstract, None -> 
+      raise_errorf ~loc "%s cannot be derived for fully abstract types" deriver
+    | Ptype_open, _        -> 
+      raise_errorf ~loc "%s cannot be derived for open types" deriver
   in
   let polymorphize = Ppx_deriving.poly_fun_of_type_decl type_decl in
-  [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix "fold") type_decl))
+  [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
                (polymorphize mapper)]
 
 let sig_of_type ~options ~path type_decl =
@@ -83,11 +85,11 @@ let sig_of_type ~options ~path type_decl =
   let acc = Typ.var Ppx_deriving.(fresh_var (free_vars_in_core_type typ)) in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
                         (fun var -> [%type: [%t acc] -> [%t var] -> [%t acc]]) type_decl in
-  [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "fold") type_decl))
+  [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
               (polymorphize [%type: [%t acc] -> [%t typ] -> [%t acc]]))]
 
 let () =
-  Ppx_deriving.(register "fold" {
+  Ppx_deriving.(register deriver {
     core_type = Some expr_of_typ;
     structure = (fun ~options ~path type_decls ->
       [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))]);
