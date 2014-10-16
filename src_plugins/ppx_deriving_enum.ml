@@ -11,7 +11,7 @@ let raise_errorf = Ppx_deriving.raise_errorf
 let mappings_of_type type_decl =
   let map acc mappings attrs constr_name =
     let value =
-      match Ppx_deriving.(attrs |> attr ~deriver "value" |> Arg.(payload ~deriver int)) with
+      match Ppx_deriving.(attrs |> attr ~deriver "value" |> Arg.(get_attr ~deriver int)) with
       | Some idx -> idx | None -> acc
     in
     (value + 1, (value, constr_name) :: mappings)

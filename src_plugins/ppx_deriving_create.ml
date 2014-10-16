@@ -10,14 +10,13 @@ let raise_errorf = Ppx_deriving.raise_errorf
 
 let find_main labels =
   List.fold_left (fun (main, labels) ({ pld_type; pld_loc } as label) ->
-    match Ppx_deriving.attr ~deriver "main" pld_type.ptyp_attributes with
-    | Some (_, PStr []) ->
-      begin match main with
+    if Ppx_deriving.(pld_type.ptyp_attributes |> 
+                     attr ~deriver "main" |> Arg.get_flag ~deriver) then
+      match main with
       | Some _ -> raise_errorf ~loc:pld_loc "Duplicate [@deriving.%s.main] annotation" deriver
       | None -> Some label, labels
-      end
-    | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.main] syntax" deriver
-    | None -> main, label :: labels)
+    else
+      main, label :: labels)
     (None, []) labels
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
@@ -36,14 +35,13 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           Exp.fun_ "" None (punit ()) (record fields)
       in
       List.fold_left (fun accum { pld_name = { txt = name }; pld_type } ->
-        match Ppx_deriving.attr ~deriver "default" pld_type.ptyp_attributes with
-        | Some (_, PStr [{ pstr_desc = Pstr_eval (default, _) }]) ->
-          Exp.fun_ ("?"^name) (Some default) (pvar name) accum
-        | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.default] syntax" deriver
+        match Ppx_deriving.(pld_type.ptyp_attributes |> 
+                            attr ~deriver "default" |> Arg.(get_attr ~deriver expr)) with
+        | Some default -> Exp.fun_ ("?"^name) (Some default) (pvar name) accum
         | None ->
-        match Ppx_deriving.attr ~deriver "split" pld_type.ptyp_attributes with
-        | Some (_, PStr []) ->
-          begin match pld_type with
+        if Ppx_deriving.(pld_type.ptyp_attributes |> 
+                         attr ~deriver "split" |> Arg.get_flag ~deriver) then
+          match pld_type with
           | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
             let name' = String.sub name 0 (String.length name - 1) in
             Exp.fun_ name' None (pvar name')
@@ -51,16 +49,14 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                 [%expr let [%p pvar name] = [%e evar name'], [%e evar name] in [%e accum]])
           | _ -> raise_errorf ~loc "[@deriving.%s.split] annotation requires a type of form \
                                     'a * 'b list and label name ending with `s'" deriver
-          end
-        | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.split] syntax" deriver
-        | None ->
-        match pld_type with
-        | [%type: [%t? _] list] ->
-          Exp.fun_ ("?"^name) (Some [%expr []]) (pvar name) accum
-        | [%type: [%t? _] option] ->
-          Exp.fun_ ("?"^name) None (pvar name) accum
-        | _ -> Exp.fun_ name None (pvar name) accum)
-        fn labels
+        else
+          match pld_type with
+          | [%type: [%t? _] list] ->
+            Exp.fun_ ("?"^name) (Some [%expr []]) (pvar name) accum
+          | [%type: [%t? _] option] ->
+            Exp.fun_ ("?"^name) None (pvar name) accum
+          | _ -> Exp.fun_ name None (pvar name) accum)
+          fn labels
     | _ -> raise_errorf ~loc "%s can be derived only for record types" deriver
   in
   [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl)) mapper]

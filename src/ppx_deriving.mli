@@ -53,6 +53,10 @@ module Arg : sig
   (** [expr] returns the input expression as-is. *)
   val expr : expression -> [> `Ok of expression ]
 
+  (** [bool expr] extracts a boolean constant from [expr], or returns
+      [`Error "boolean"] if [expr] does not contain a boolean constant. *)
+  val bool : expression -> [ `Ok of bool | `Error of string ]
+
   (** [int expr] extracts an integer constant from [expr], or returns
       [`Error "integer"] if [expr] does not contain an integer constant. *)
   val int : expression -> [ `Ok of int | `Error of string ]
@@ -66,7 +70,7 @@ module Arg : sig
       a variant included in [values]. *)
   val enum : string list -> expression -> [ `Ok of string | `Error of string ]
 
-  (** [payload ~deriver conv attr] extracts the expression from [attr] and converts
+  (** [get_attr ~deriver conv attr] extracts the expression from [attr] and converts
       it with [conv], raising [Location.Error] if [attr] is not a structure with
       a single expression or [conv] fails; or returns [None] if [attr] is [None].
       The name of the deriving plugin should be passed as [deriver]; it is used
@@ -74,14 +78,30 @@ module Arg : sig
 
       Example usage:
       {[
-let kind =
-  match Ppx_deriving.attr ~deriver:"index" "kind" pcd_attributes |>
-        Ppx_deriving.Arg.(payload ~deriver:"ix" (enum ["flat"; "nested"])) with
-  | Some idx -> idx | None -> acc
-in ..
+let deriver = "index"
+(* ... *)
+  let kind =
+    match Ppx_deriving.attr ~deriver "kind" pcd_attributes |>
+          Ppx_deriving.Arg.(get_attr ~deriver (enum ["flat"; "nested"])) with
+    | Some "flat" -> `flat | Some "nested" -> `nested | None -> `default
+  in ..
       ]} *)
-  val payload : deriver:string -> (expression -> [ `Ok of 'a | `Error of string ]) ->
-                attribute option -> 'a option
+  val get_attr : deriver:string -> (expression -> [ `Ok of 'a | `Error of string ]) ->
+                 attribute option -> 'a option
+
+  (** [get_flag ~deriver attr] returns [true] if [attr] is an empty attribute
+      or [false] if it is absent, raising [Location.Error] if [attr] is not
+      a structure.
+      The name of the deriving plugin should be passed as [deriver]; it is used
+      in error messages. *)
+  val get_flag : deriver:string -> attribute option -> bool
+
+  (** [get_expr ~deriver conv exp] converts expression [exp] with [conv], raising
+      [Location.Error] if [conv] fails.
+      The name of the deriving plugin should be passed as [deriver]; it is used
+      in error messages. *)
+  val get_expr : deriver:string -> (expression -> [ `Ok of 'a | `Error of string ]) ->
+                 expression -> 'a
 end
 
 (** {2 AST manipulation} *)

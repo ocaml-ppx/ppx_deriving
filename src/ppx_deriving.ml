@@ -39,6 +39,12 @@ module Arg = struct
     | { pexp_desc = Pexp_constant (Const_int n) } -> `Ok n
     | _ -> `Error "integer"
 
+  let bool expr =
+    match expr with
+    | [%expr true] -> `Ok true
+    | [%expr false] -> `Ok false
+    | _ -> `Error "boolean"
+
   let string expr =
     match expr with
     | { pexp_desc = Pexp_constant (Const_string (n, None)) } -> `Ok n
@@ -51,7 +57,7 @@ module Arg = struct
     | _ -> `Error (Printf.sprintf "one of: %s"
                     (String.concat ", " (List.map (fun s -> "`"^s) values)))
 
-  let payload ~deriver conv attr =
+  let get_attr ~deriver conv attr =
     match attr with
     | None -> None
     | Some ({ txt = name }, PStr [{ pstr_desc = Pstr_eval (expr, []) }]) ->
@@ -62,6 +68,18 @@ module Arg = struct
       end
     | Some ({ txt = name; loc }, _) ->
       raise_errorf ~loc "%s: invalid [@%s]: value expected" deriver name
+
+  let get_flag ~deriver attr =
+    match attr with
+    | None -> false
+    | Some ({ txt = name }, PStr []) -> true
+    | Some ({ txt = name; loc }, _) ->
+      raise_errorf ~loc "%s: invalid [@%s]: empty structure expected" deriver name
+
+  let get_expr ~deriver conv expr =
+    match conv expr with
+    | `Error desc -> raise_errorf ~loc:expr.pexp_loc "%s: %s expected" deriver desc
+    | `Ok v -> v
 end
 
 let expand_path ~path ident =

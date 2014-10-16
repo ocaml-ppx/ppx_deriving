@@ -19,9 +19,9 @@ let rec exprsn typs =
     app (expr_of_typ typ) [evar (argn `lhs i); evar (argn `rhs i)])
 
 and expr_of_typ typ =
-  match Ppx_deriving.attr ~deriver "equal" typ.ptyp_attributes with
-  | Some (_, PStr [{ pstr_desc = Pstr_eval (equal, _) }]) -> equal
-  | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.equal] syntax" deriver
+  match Ppx_deriving.(typ.ptyp_attributes |> 
+                      attr ~deriver "equal" |> Arg.(get_attr ~deriver expr)) with
+  | Some fn -> fn
   | None ->
     match typ with
     | [%type: int] | [%type: int32] | [%type: Int32.t]

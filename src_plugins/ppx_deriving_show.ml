@@ -11,15 +11,15 @@ let raise_errorf = Ppx_deriving.raise_errorf
 let argn = Printf.sprintf "a%d"
 
 let rec expr_of_typ typ =
-  match Ppx_deriving.attr ~deriver "printer" typ.ptyp_attributes with
-  | Some (_, PStr [{ pstr_desc = Pstr_eval (printer, _) }]) ->
+  match Ppx_deriving.(typ.ptyp_attributes |> 
+                      attr ~deriver "printer" |> Arg.(get_attr ~deriver expr)) with
+  | Some printer ->
     [%expr (let fprintf = Format.fprintf in [%e printer]) fmt [@ocaml.warning "-26"]]
-  | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.printer] syntax" deriver
   | None ->
-  match Ppx_deriving.attr ~deriver "opaque" typ.ptyp_attributes with
-  | Some (_, PStr []) -> [%expr fun _ -> Format.pp_print_string fmt "<opaque>"]
-  | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.opaque] syntax" deriver
-  | None ->
+  if Ppx_deriving.(typ.ptyp_attributes |> 
+                   attr ~deriver "opaque" |> Arg.get_flag ~deriver) then
+    [%expr fun _ -> Format.pp_print_string fmt "<opaque>"]
+  else
     let format x = [%expr Format.fprintf fmt [%e str x]] in
     let seq start finish fold typ =
       [%expr fun x ->

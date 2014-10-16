@@ -58,19 +58,20 @@ let derive_type_decl path typ_decls pstr_loc item fn =
         | { pexp_loc } ->
           raise_errorf ~loc:pexp_loc "Unrecognized [@@deriving] option syntax"
       in
-(*       let is_optional, options =
+      let name, loc = String.concat "_" (Longident.flatten name.txt), name.loc in
+      let is_optional, options =
         match List.assoc "optional" options with
         | exception Not_found -> false, options
         | expr ->
-          match Ppx_deriving.Arg.payload 
-      in *)
-      let name, loc = String.concat "_" (Longident.flatten name.txt), name.loc in
-      let deriver =
-        match Ppx_deriving.lookup name with
-        | Some deriver -> deriver
-        | None -> raise_errorf ~loc "Cannot locate deriver %s" name
+          Ppx_deriving.Arg.(get_expr ~deriver:name bool) expr, 
+          List.remove_assoc "optional" options
       in
-      items @ ((fn deriver) ~options ~path:(!path) typ_decls))
+      match Ppx_deriving.lookup name with
+      | Some deriver -> 
+        items @ ((fn deriver) ~options ~path:(!path) typ_decls)
+      | None -> 
+        if is_optional then items
+        else raise_errorf ~loc "Cannot locate deriver %s" name)
     [item] deriver_exprs
 
 let module_from_input_name () =

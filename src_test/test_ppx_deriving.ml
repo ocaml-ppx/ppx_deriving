@@ -10,7 +10,7 @@ let test_inline_shorthand ctxt =
                "[(1, 1); (2, 0)]" ([%show: (int * int) list] [(1,1); (2,0)])
 
 type optional_deriver = string 
-(* [@@deriving missing { optional = true }] *)
+[@@deriving missing { optional = true }]
 
 let suite = "Test ppx_deriving" >::: [
     Test_deriving_show.suite;

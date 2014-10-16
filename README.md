@@ -40,14 +40,14 @@ type point3d = float * float * float
 [@@deriving show, eq]
 ```
 
-It's possible to pass options to a plugin by appending a record to plugin's name (TBD):
+It's possible to pass options to a plugin by appending a record to plugin's name:
 
 ``` ocaml
 type t = string
 [@@deriving ord { affix = true }]
 ```
 
-It's possible to make _deriving_ ignore a missing plugin rather than raising an error by passing an `optional = true` option (TBD), for example, to enable conditional compilation:
+It's possible to make _deriving_ ignore a missing plugin rather than raising an error by passing an `optional = true` option, for example, to enable conditional compilation:
 
 ``` ocaml
 type addr = string * int
@@ -280,7 +280,7 @@ _deriving_ is a thin wrapper over the ppx rewriter system. Indeed, it includes v
 As such, _deriving_:
 
   * Completely defines the syntax of `[@@deriving]` annotation and unifies the plugin discovery mechanism;
-  * Provides an unified, strict option parsing API to plugins (TBD);
+  * Provides an unified, strict option parsing API to plugins;
   * Provides helpers for parsing annotations to ensure that the plugins interoperate with each other and the rest of the ecosystem.
 
 ### Using the API
@@ -298,7 +298,7 @@ The following is a list of tips for developers trying to use the ppx interface:
   * Need to handle polymorphism? Use [Ppx_deriving.poly_fun_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpoly_fun_of_type_decl) for derived functions, [Ppx_deriving.poly_arrow_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpoly_arrow_of_type_decl) for signatures, and [Ppx_deriving.poly_apply_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpoly_apply_of_type_decl) for "forwarding" the arguments corresponding to type variables to another generated function.
   * Need to display a full path to a type, e.g. for an error message? Use [Ppx_deriving.path_of_type_decl](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALpath_of_type_decl).
   * Need to apply a sequence or a binary operator to variant, tuple or record elements? Use [Ppx_deriving.fold_exprs](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html#VALfold_exprs).
-  * Don't forget to invoke the option parser (TBD) even if you don't have any options. This way, it would display an error to the user if they pass any option.
+  * Don't forget to display an error message if your plugin doesn't parse any options.
 
 License
 -------

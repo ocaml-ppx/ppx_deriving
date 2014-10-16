@@ -10,8 +10,12 @@ Changelog
   * Allow shortening [%derive.x:] to [%x:] when deriver x exists.
   * Make Ppx_deriving.core_type field optional to allow ignoring
     unsupported [%x:] shorthands.
+  * Add support for [@@deriving foo { optional = true }] that does
+    not error out if foo is missing, useful for optional dependencies.
   * Rename ~name and ~prefix of Ppx_deriving.attr and 
     Ppx_deriving.Arg.payload to ~deriver.
+  * Renamed Ppx_deriving.Arg.payload to get_attr.
+  * Add Ppx_deriving.Arg.get_expr and get_flag.
 
 0.3
 ---
