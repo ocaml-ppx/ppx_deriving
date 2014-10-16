@@ -4,7 +4,7 @@ module M : sig
   type a = {
     a1  : int option;
     a2  : int list;
-    a3  : int [@default];
+    a3  : int [@default 42];
     a4s : (int * int list) [@split];
     a5  : int;
   } [@@deriving show, create]
@@ -12,7 +12,7 @@ module M : sig
   type b = {
     b1  : int option;
     b2  : int list;
-    b3  : int [@default];
+    b3  : int [@default 42];
     b4s : (int * int list) [@split];
     b5  : int [@main];
   } [@@deriving show, create]

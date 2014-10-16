@@ -8,6 +8,9 @@ open Ast_convenience
 let deriver = "ord"
 let raise_errorf = Ppx_deriving.raise_errorf
 
+let attr_compare attrs =
+  Ppx_deriving.(attrs |> attr ~deriver "compare" |> Arg.(get_attr ~deriver expr))
+
 let argn kind =
   Printf.sprintf (match kind with `lhs -> "lhs%d" | `rhs -> "rhs%d")
 
@@ -27,8 +30,7 @@ let rec exprsn typs =
     app (expr_of_typ typ) [evar (argn `lhs i); evar (argn `rhs i)])
 
 and expr_of_typ typ =
-  match Ppx_deriving.(typ.ptyp_attributes |> 
-                      attr ~deriver "compare" |> Arg.(get_attr ~deriver expr)) with
+  match attr_compare typ.ptyp_attributes with
   | Some fn -> fn
   | None ->
     match typ with

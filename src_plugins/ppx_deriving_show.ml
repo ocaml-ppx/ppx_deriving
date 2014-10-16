@@ -8,16 +8,23 @@ open Ast_convenience
 let deriver = "show"
 let raise_errorf = Ppx_deriving.raise_errorf
 
+let attr_printer attrs =
+  Ppx_deriving.(attrs |> attr ~deriver "printer" |> Arg.(get_attr ~deriver expr))
+
+let attr_polyprinter attrs =
+  Ppx_deriving.(attrs |> attr ~deriver "polyprinter" |> Arg.(get_attr ~deriver expr))
+
+let attr_opaque attrs =
+  Ppx_deriving.(attrs |> attr ~deriver "opaque" |> Arg.get_flag ~deriver)
+
 let argn = Printf.sprintf "a%d"
 
 let rec expr_of_typ typ =
-  match Ppx_deriving.(typ.ptyp_attributes |> 
-                      attr ~deriver "printer" |> Arg.(get_attr ~deriver expr)) with
+  match attr_printer typ.ptyp_attributes with
   | Some printer ->
     [%expr (let fprintf = Format.fprintf in [%e printer]) fmt [@ocaml.warning "-26"]]
   | None ->
-  if Ppx_deriving.(typ.ptyp_attributes |> 
-                   attr ~deriver "opaque" |> Arg.get_flag ~deriver) then
+  if attr_opaquae typ.ptyp_attributes then
     [%expr fun _ -> Format.pp_print_string fmt "<opaque>"]
   else
     let format x = [%expr Format.fprintf fmt [%e str x]] in
@@ -58,11 +65,10 @@ let rec expr_of_typ typ =
       [%expr fun _ -> Format.pp_print_string fmt "<fun>"]
     | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
       let args_pp = List.map (fun typ -> [%expr fun fmt -> [%e expr_of_typ typ]]) args in
-      begin match Ppx_deriving.attr ~deriver "polyprinter" typ.ptyp_attributes with
-      | Some (_, PStr [{ pstr_desc = Pstr_eval (printer, _) }]) ->
+      begin match attr_polyprinter typ.ptyp_attributes with
+      | Some printer ->
         app [%expr (let fprintf = Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
             (args_pp @ [[%expr fmt]])
-      | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.polyprinter] syntax" deriver
       | None ->
         app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid)))
             (args_pp @ [[%expr fmt]])
@@ -136,9 +142,9 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
         [%e fields |> Ppx_deriving.(fold_exprs
               (seq_reduce ~sep:[%expr Format.fprintf fmt ";@ "]))];
         Format.fprintf fmt "@] }"]
-    | Ptype_abstract, None -> 
+    | Ptype_abstract, None ->
       raise_errorf ~loc "%s cannot be derived for fully abstract types" deriver
-    | Ptype_open, _        -> 
+    | Ptype_open, _        ->
       raise_errorf ~loc "%s cannot be derived for open types" deriver
   in
   let pp_poly_apply = Ppx_deriving.poly_apply_of_type_decl type_decl (evar

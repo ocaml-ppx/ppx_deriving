@@ -8,9 +8,15 @@ open Ast_convenience
 let deriver = "create"
 let raise_errorf = Ppx_deriving.raise_errorf
 
+let attr_default attrs =
+  Ppx_deriving.(attrs |> attr ~deriver "default" |> Arg.(get_attr ~deriver expr))
+
+let attr_split attrs =
+  Ppx_deriving.(attrs |> attr ~deriver "split" |> Arg.get_flag ~deriver)
+
 let find_main labels =
   List.fold_left (fun (main, labels) ({ pld_type; pld_loc } as label) ->
-    if Ppx_deriving.(pld_type.ptyp_attributes |> 
+    if Ppx_deriving.(pld_type.ptyp_attributes |>
                      attr ~deriver "main" |> Arg.get_flag ~deriver) then
       match main with
       | Some _ -> raise_errorf ~loc:pld_loc "Duplicate [@deriving.%s.main] annotation" deriver
@@ -35,12 +41,10 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           Exp.fun_ "" None (punit ()) (record fields)
       in
       List.fold_left (fun accum { pld_name = { txt = name }; pld_type } ->
-        match Ppx_deriving.(pld_type.ptyp_attributes |> 
-                            attr ~deriver "default" |> Arg.(get_attr ~deriver expr)) with
+        match attr_default pld_type.ptyp_attributes with
         | Some default -> Exp.fun_ ("?"^name) (Some default) (pvar name) accum
         | None ->
-        if Ppx_deriving.(pld_type.ptyp_attributes |> 
-                         attr ~deriver "split" |> Arg.get_flag ~deriver) then
+        if attr_split pld_type.ptyp_attributes then
           match pld_type with
           | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
             let name' = String.sub name 0 (String.length name - 1) in
@@ -79,29 +83,24 @@ let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           Typ.arrow "" (tconstr "unit" []) typ
       in
       List.fold_left (fun accum { pld_name = { txt = name; loc }; pld_type } ->
-        match Ppx_deriving.attr ~deriver "default" pld_type.ptyp_attributes with
-        | Some (_, PStr _)  -> Typ.arrow ("?"^name) (wrap_predef_option pld_type) accum
-        | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.default] syntax" deriver
+        match attr_default pld_type.ptyp_attributes with
+        | Some _ -> Typ.arrow ("?"^name) (wrap_predef_option pld_type) accum
         | None ->
-        match Ppx_deriving.attr ~deriver "split" pld_type.ptyp_attributes with
-        | Some (_, PStr []) ->
-          begin match pld_type with
+        if attr_split pld_type.ptyp_attributes then
+          match pld_type with
           | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
             let name' = String.sub name 0 (String.length name - 1) in
             Typ.arrow name' lhs
-              (Typ.arrow ("?"^name) (wrap_predef_option [%type: [%t rhs] list])
-                accum)
+              (Typ.arrow ("?"^name) (wrap_predef_option [%type: [%t rhs] list]) accum)
           | _ -> raise_errorf ~loc "[@deriving.%s.split] annotation requires a type of form \
                                     'a * 'b list and label name ending with `s'" deriver
-          end
-        | Some ({ loc }, _) -> raise_errorf ~loc "Invalid [@deriving.%s.split] syntax" deriver
-        | None ->
-        match pld_type with
-        | [%type: [%t? _] list] ->
-          Typ.arrow ("?"^name) (wrap_predef_option pld_type) accum
-        | [%type: [%t? opt] option] ->
-          Typ.arrow ("?"^name) (wrap_predef_option opt) accum
-        | _ -> Typ.arrow name pld_type accum)
+        else
+          match pld_type with
+          | [%type: [%t? _] list] ->
+            Typ.arrow ("?"^name) (wrap_predef_option pld_type) accum
+          | [%type: [%t? opt] option] ->
+            Typ.arrow ("?"^name) (wrap_predef_option opt) accum
+          | _ -> Typ.arrow name pld_type accum)
         typ labels
     | _ -> raise_errorf ~loc "%s can only be derived for record types" deriver
   in
