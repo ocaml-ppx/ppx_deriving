@@ -45,12 +45,12 @@ release: gh-pages
 	 set +e; \
 	 mkdir -p $${opam}; \
 	 cp descr opam $${opam}; \
+	 echo $${pkg} >$${opam}/findlib; \
 	 echo "archive: \"$${url}\"" >$${opam}/url; \
 	 echo "checksum: \"$$(curl -sL $${url} | md5sum | cut -d' ' -f1)\"" >>$${opam}/url; \
 	 git -C $(OPAMREPO) pull --rebase git@github.com:ocaml/opam-repository master; \
 	 git -C $(OPAMREPO) add packages/$${pkg}/$${pkg}.$(VERSION); \
 	 git -C $(OPAMREPO) commit -m "+$${pkg}.$(VERSION)"; \
-	 git -C $(OPAMREPO) push --force origin master; \
-	 x-www-browser "https://github.com/$${user}/opam-repository/compare/ocaml:master...master"
+	 git -C $(OPAMREPO) push --force origin
 
 .PHONY: gh-pages release
