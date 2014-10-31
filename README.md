@@ -21,6 +21,17 @@ _deriving_ can be installed via [OPAM](https://opam.ocaml.org):
 
     opam install ppx_deriving
 
+Buildsystem integration
+-----------------------
+
+To use _deriving_, only one modification is needed: you need to require via ocamlfind the package corresponding to the _deriving_ plugin. This will both engage the syntax extension and link in the runtime components of the _deriving_ plugin, if any.
+
+For example, if you are using ocamlbuild, add the following to `_tags` to use the default _deriving_ plugins:
+
+    <src/*>: package(ppx_deriving.std)
+
+If you are using another buildsystem, just make sure it passes `-package ppx_deriving_whatever` to ocamlfind.
+
 Usage
 -----
 
@@ -30,8 +41,6 @@ From a user's perspective, _deriving_ is triggered by a `[@@deriving plugin]` an
 type point2d = float * float
 [@@deriving show]
 ```
-
-For every plugin, you need to require the corresponding package, e.g. `ppx_deriving.show` for the `show` deriver. The package `ppx_deriving.std` depends on every standard deriver.
 
 It's possible to invoke several plugins by separating their names with commas:
 
