@@ -54,7 +54,11 @@ let test_custom ctxt =
 
 type 'a pt = { v : 'a } [@@deriving eq]
 
+let test_placeholder ctxt =
+  assert_equal ~printer true ([%eq: _] 1 2)
+
 let suite = "Test deriving(eq)" >::: [
-    "test_simple" >:: test_simple;
-    "test_custom" >:: test_custom;
+    "test_simple"       >:: test_simple;
+    "test_custom"       >:: test_custom;
+    "test_placeholder"  >:: test_placeholder;
   ]

@@ -66,9 +66,13 @@ let test_custom ctxt =
 
 type 'a pt = { v : 'a } [@@deriving ord]
 
+let test_placeholder ctxt =
+  assert_equal ~printer 0 ([%ord: _] 1 2)
+
 let suite = "Test deriving(ord)" >::: [
-    "test_simple"  >:: test_simple;
-    "test_variant" >:: test_variant;
-    "test_complex" >:: test_complex;
-    "test_custom"  >:: test_custom;
+    "test_simple"       >:: test_simple;
+    "test_variant"      >:: test_variant;
+    "test_complex"      >:: test_complex;
+    "test_custom"       >:: test_custom;
+    "test_placeholder"  >:: test_placeholder;
   ]

@@ -109,6 +109,9 @@ let test_polypr ctxt =
                         \                         Test_deriving_show.Leaf)"
                         (show_polypr (Node (Leaf, "x", Leaf)))
 
+let test_placeholder ctxt =
+  assert_equal ~printer "_" ([%show: _] 1)
+
 let suite = "Test deriving(show)" >::: [
     "test_alias"        >:: test_alias;
     "test_variant"      >:: test_variant;
@@ -122,4 +125,5 @@ let suite = "Test deriving(show)" >::: [
     "test_parametric"   >:: test_parametric;
     "test_alias_path"   >:: test_alias_path;
     "test_polypr"       >:: test_polypr;
+    "test_placeholder"  >:: test_placeholder;
   ]

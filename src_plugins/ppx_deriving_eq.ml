@@ -31,6 +31,7 @@ and expr_of_typ typ =
   | Some fn -> fn
   | None ->
     match typ with
+    | [%type: _] -> [%expr fun _ _ -> true]
     | [%type: int] | [%type: int32] | [%type: Int32.t]
     | [%type: int64] | [%type: Int64.t] | [%type: nativeint] | [%type: Nativeint.t]
     | [%type: float] | [%type: bool] | [%type: char] | [%type: string] | [%type: bytes] ->
