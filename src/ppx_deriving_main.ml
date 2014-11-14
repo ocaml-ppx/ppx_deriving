@@ -63,13 +63,13 @@ let derive_type_decl path typ_decls pstr_loc item fn =
         match List.assoc "optional" options with
         | exception Not_found -> false, options
         | expr ->
-          Ppx_deriving.Arg.(get_expr ~deriver:name bool) expr, 
+          Ppx_deriving.Arg.(get_expr ~deriver:name bool) expr,
           List.remove_assoc "optional" options
       in
       match Ppx_deriving.lookup name with
-      | Some deriver -> 
+      | Some deriver ->
         items @ ((fn deriver) ~options ~path:(!path) typ_decls)
-      | None -> 
+      | None ->
         if is_optional then items
         else raise_errorf ~loc "Cannot locate deriver %s" name)
     [item] deriver_exprs
