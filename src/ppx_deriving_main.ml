@@ -107,7 +107,8 @@ let mapper argv =
       end
     | { pexp_desc = Pexp_extension ({ txt = name; loc }, PTyp typ) } ->
       begin match Ppx_deriving.lookup name with
-      | Some { Ppx_deriving.core_type = Some deriver } -> deriver typ
+      | Some { Ppx_deriving.core_type = Some deriver } ->
+        Ast_helper.with_default_loc typ.ptyp_loc (fun () -> deriver typ)
       | _ -> default_mapper.expr mapper expr
       end
     | _ -> default_mapper.expr mapper expr
