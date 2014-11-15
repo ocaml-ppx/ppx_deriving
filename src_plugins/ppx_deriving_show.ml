@@ -64,7 +64,7 @@ let rec expr_of_typ typ =
         function
         | None -> Format.pp_print_string fmt "None"
         | Some x ->
-          Format.pp_print_string fmt "Some (";
+          Format.pp_print_string fmt "(Some ";
           [%e expr_of_typ typ] x;
           Format.pp_print_string fmt ")"]
     | { ptyp_desc = Ptyp_arrow _ } ->
@@ -128,8 +128,13 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           let result =
             match args with
             | []   -> [%expr Format.pp_print_string fmt [%e str constr_name]]
+            | [arg] ->
+              [%expr
+                Format.fprintf fmt [%e str ("(@[<hov2>" ^  constr_name ^ "@ ")];
+                [%e arg];
+                Format.fprintf fmt "@])"]
             | args ->
-              [%expr Format.fprintf fmt [%e str (constr_name ^ " (@[<hov>")];
+              [%expr Format.fprintf fmt [%e str ("@[<hov2>" ^  constr_name ^ " (@,")];
               [%e args |> Ppx_deriving.(fold_exprs
                     (seq_reduce ~sep:[%expr Format.fprintf fmt ",@ "]))];
               Format.fprintf fmt "@])"]

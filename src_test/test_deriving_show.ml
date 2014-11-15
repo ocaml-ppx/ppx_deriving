@@ -29,18 +29,18 @@ let test_alias ctxt =
   assert_equal ~printer "ref (1)" (show_r (ref 1));
   assert_equal ~printer "[1; 2; 3]" (show_l [1;2;3]);
   assert_equal ~printer "[|1; 2; 3|]" (show_a [|1;2;3|]);
-  assert_equal ~printer "Some (1)" (show_o (Some 1));
+  assert_equal ~printer "(Some 1)" (show_o (Some 1));
   assert_equal ~printer "<fun>"   (show_f (fun x -> x))
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving show]
 let test_variant ctxt =
   assert_equal ~printer "Test_deriving_show.Foo"              (show_v Foo);
   assert_equal ~printer "Test_deriving_show.Bar (1, \"foo\")" (show_v (Bar (1, "foo")));
-  assert_equal ~printer "Test_deriving_show.Baz (\"foo\")"    (show_v (Baz "foo"))
+  assert_equal ~printer "(Test_deriving_show.Baz \"foo\")"    (show_v (Baz "foo"))
 
 type vn = Foo of int option [@@deriving show]
 let test_variant_nest ctxt =
-  assert_equal ~printer "Test_deriving_show.Foo (Some (1))" (show_vn (Foo (Some 1)))
+  assert_equal ~printer "(Test_deriving_show.Foo (Some 1))" (show_vn (Foo (Some 1)))
 
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving show]
 let test_poly ctxt =
@@ -106,7 +106,7 @@ type polypr = (string [@printer print_hi]) btree [@polyprinter pp_btree]
 [@@deriving show]
 let test_polypr ctxt =
   assert_equal ~printer "Test_deriving_show.Node (Test_deriving_show.Leaf, hi!,\n\
-                        \                         Test_deriving_show.Leaf)"
+                        \  Test_deriving_show.Leaf)"
                         (show_polypr (Node (Leaf, "x", Leaf)))
 
 let test_placeholder ctxt =
