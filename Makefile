@@ -5,7 +5,12 @@ build:
 test: build
 	rm _build/src_test/ -rf
 	ocamlbuild -j 0 -use-ocamlfind -classic-display \
-						 src_test/test_ppx_deriving.byte --
+		src_test/test_ppx_deriving.byte --
+
+examples: build
+	rm _build/src_examples/ -rf
+	ocamlbuild -j 0 -use-ocamlfind -classic-display \
+	    src_examples/print_test.byte 
 
 doc:
 	ocamlbuild -use-ocamlfind doc/api.docdir/index.html \
@@ -17,7 +22,7 @@ doc:
 clean:
 	ocamlbuild -clean
 
-.PHONY: build test doc clean
+.PHONY: build test doc clean examples
 
 gh-pages: doc
 	git clone `git config --get remote.origin.url` .gh-pages --reference .
