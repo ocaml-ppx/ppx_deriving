@@ -10,7 +10,7 @@ test: build
 examples: build
 	rm _build/src_examples/ -rf
 	ocamlbuild -j 0 -use-ocamlfind -classic-display \
-	    src_examples/print_test.byte 
+	    src_examples/print_test.byte
 
 doc:
 	ocamlbuild -use-ocamlfind doc/api.docdir/index.html \
@@ -35,15 +35,15 @@ gh-pages: doc
 	git -C .gh-pages push origin gh-pages -f
 	rm -rf .gh-pages
 
-VERSION      = $(shell opam query --version)
-NAME_VERSION = $(shell opam query --name-version)
-ARCHIVE      = $(shell opam query --archive)
+VERSION      := $$(opam query --version)
+NAME_VERSION := $$(opam query --name-version)
+ARCHIVE      := $$(opam query --archive)
 
 release:
-  git tag -a v$(VERSION) -m "Version $(VERSION)."
-  git push origin v$(VERSION)
-  opam publish prepare $(NAME_VERSION) $(ARCHIVE)
-  opam publish submit $(NAME_VERSION)
-  rm -rf $(NAME_VERSION)
+	git tag -a v$(VERSION) -m "Version $(VERSION)."
+	git push origin v$(VERSION)
+	opam publish prepare $(NAME_VERSION) $(ARCHIVE)
+	opam publish submit $(NAME_VERSION)
+	rm -rf $(NAME_VERSION)
 
 .PHONY: gh-pages release
