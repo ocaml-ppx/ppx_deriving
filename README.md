@@ -271,14 +271,16 @@ archive(ppx_driver, native) = "ppx_deriving_yojson.cmxa"
 
 The module(s) provided by the package in the `ppxopt` variable must register the derivers using `Ppx_deriving.register "foo"` during loading. Any number of derivers may be registered; careful registration would allow a _yojson_ deriver to support all three of `[@@deriving yojson]`, `[@@deriving of_yojson]` and `[@@deriving to_yojson]`, as well as `[%derive.of_yojson:]` and `[%derive.to_yojson:]`.
 
-It is possible to test the plugin without installing it by instructing _deriving_ to load it directly; the compiler should be invoked as `ocamlfind c -ppx 'ocamlfind ppx_deriving/ppx_deriving src/ppx_deriving_foo.cma' ...`. The file extension is replaced with `.cmxs` automatically for native builds. This can be integrated with buildsystem, e.g. for ocamlbuild:
+It is possible to test the plugin without installing it by instructing _deriving_ to load it directly; the compiler should be invoked as `ocamlfind c -package ppx_deriving -ppxopt ppx_deriving,src/ppx_deriving_foo.cma ...`. The file extension is replaced with `.cmxs` automatically for native builds. This can be integrated with buildsystem, e.g. for ocamlbuild:
 
 ``` ocaml
 let () = dispatch (
   function
   | After_rules ->
+    (* Assuming files tagged with deriving_foo are already tagged with
+       package(ppx_deriving) or anything that uses it, e.g. package(ppx_deriving.std). *)
     flag ["ocaml"; "compile"; "deriving_foo"] &
-      S[A"-ppx"; A("ocamlfind ppx_deriving/ppx_deriving src/ppx_deriving_foo.cma")]
+      S[A"-ppxopt"; A"ppx_deriving,src/ppx_deriving_foo.cma"]
   | _ -> ()
 ```
 
