@@ -99,7 +99,7 @@ let rec expr_of_typ typ =
                      [%expr Format.fprintf fmt [%e str ("`" ^ label ^ " (@[<hov>")];
                             [%e expr_of_typ typ] x;
                             Format.fprintf fmt "@])"]
-          | Rinherit ({ ptyp_desc = Ptyp_constr (tname, []) } as typ) ->
+          | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case [%pat? [%p Pat.type_ tname] as x]
                      [%expr [%e expr_of_typ typ] x]
           | _ ->

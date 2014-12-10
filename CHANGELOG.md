@@ -5,6 +5,8 @@ Changelog
 ---
 
   * Show, Eq, Ord: handle `_`.
+  * Show, Eq, Ord, Map, Iter, Fold: handle inheriting from a parametric
+    polymorphic variant type.
 
 1.0
 ---

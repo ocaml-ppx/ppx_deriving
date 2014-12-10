@@ -42,7 +42,7 @@ let rec expr_of_typ typ =
         | Rtag (label, _, false, [typ]) ->
           Exp.case (Pat.variant label (Some [%pat? x]))
                    [%expr [%e expr_of_typ typ] acc x]
-        | Rinherit ({ ptyp_desc = Ptyp_constr (tname, []) } as typ) ->
+        | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
           Exp.case [%pat? [%p Pat.type_ tname] as x]
                    [%expr [%e expr_of_typ typ] acc x]
         | _ ->

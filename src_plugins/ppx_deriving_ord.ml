@@ -87,7 +87,7 @@ and expr_of_typ typ =
           | Rtag (label, _, false, [typ]) ->
             Exp.case (pdup (fun var -> Pat.variant label (Some (pvar var))))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
-          | Rinherit ({ ptyp_desc = Ptyp_constr (tname, []) } as typ) ->
+          | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case (pdup (fun var -> Pat.alias (Pat.type_ tname) (mknoloc var)))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
           | _ ->
