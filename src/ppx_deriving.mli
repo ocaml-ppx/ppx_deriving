@@ -164,6 +164,10 @@ val fresh_var : string list -> string
     wildcard) parameters in [type_]. *)
 val fold_type_decl : ('a -> string -> 'a) -> 'a -> type_declaration -> 'a
 
+(** [fold_type_ext fn accum type_] folds over all type variable (i.e. not
+    wildcard) parameters in [type_]. *)
+val fold_type_ext : ('a -> string -> 'a) -> 'a -> type_extension -> 'a
+
 (** [poly_fun_of_type_decl type_ expr] wraps [expr] into [fun poly_N -> ...] for every
     type parameter ['N] present in [type_]. For example, if [type_] refers to
     [type ('a, 'b) map], [expr] will be wrapped into [fun poly_a poly_b -> [%e expr]].
@@ -171,12 +175,18 @@ val fold_type_decl : ('a -> string -> 'a) -> 'a -> type_declaration -> 'a
     [_] parameters are ignored.  *)
 val poly_fun_of_type_decl : type_declaration -> expression -> expression
 
+(** Same as {!poly_fun_of_type_decl} but for type extension. *)
+val poly_fun_of_type_ext : type_extension -> expression -> expression
+
 (** [poly_apply_of_type_decl type_ expr] wraps [expr] into [expr poly_N] for every
     type parameter ['N] present in [type_]. For example, if [type_] refers to
     [type ('a, 'b) map], [expr] will be wrapped into [[%e expr] poly_a poly_b].
 
     [_] parameters are ignored. *)
 val poly_apply_of_type_decl : type_declaration -> expression -> expression
+
+(** Same as {!poly_apply_of_type_decl} but for type extension. *)
+val poly_apply_of_type_ext : type_extension -> expression -> expression
 
 (** [poly_arrow_of_type_decl fn type_ typ] wraps [typ] in an arrow with [fn [%type: 'N]]
     as argument for every type parameter ['N] present in [type_]. For example, if
@@ -187,9 +197,16 @@ val poly_apply_of_type_decl : type_declaration -> expression -> expression
 val poly_arrow_of_type_decl : (core_type -> core_type) ->
                               type_declaration -> core_type -> core_type
 
+(** Same as {!poly_arrow_of_type_decl} but for type extension. *)
+val poly_arrow_of_type_ext : (core_type -> core_type) ->
+                              type_extension -> core_type -> core_type
+
 (** [core_type_of_type_decl type_] constructs type [('a, 'b, ...) t] for
     type declaration [type ('a, 'b, ...) t = ...]. *)
 val core_type_of_type_decl : type_declaration -> core_type
+
+(** Same as {!core_type_of_type_decl} but for type extension. *)
+val core_type_of_type_ext : type_extension -> core_type
 
 (** [fold_exprs ~unit fn exprs] folds [exprs] using head of [exprs] as initial
     accumulator value, or [unit] if [exprs = []].
