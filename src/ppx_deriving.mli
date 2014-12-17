@@ -21,12 +21,29 @@ type deriver = {
   core_type : (core_type -> expression) option;
   structure : options:(string * expression) list -> path:string list ->
               type_declaration list -> structure;
+  structure_ext : options:(string * expression) list -> path:string list ->
+              type_extension -> structure;
   signature : options:(string * expression) list -> path:string list ->
               type_declaration list -> signature;
+  signature_ext : options:(string * expression) list -> path:string list ->
+              type_extension -> signature;
 }
 
 (** [register name deriver] registers [deriver] as [name]. *)
 val register : string -> deriver -> unit
+
+(** Creating {!deriver} structure. *)
+val create :
+  ?core_type: (core_type -> expression) ->
+  ?structure_ext: (options:(string * expression) list -> path:string list ->
+                   type_extension -> structure) ->
+  ?signature_ext: (options:(string * expression) list -> path:string list ->
+                   type_extension -> signature) ->
+  structure: (options:(string * expression) list -> path:string list ->
+              type_declaration list -> structure) ->
+  signature: (options:(string * expression) list -> path:string list ->
+              type_declaration list -> signature) ->
+    unit -> deriver
 
 (** [lookup name] looks up a deriver called [name]. *)
 val lookup : string -> deriver option

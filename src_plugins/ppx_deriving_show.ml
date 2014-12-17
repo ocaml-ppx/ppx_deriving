@@ -179,11 +179,13 @@ let sig_of_type ~options ~path type_decl =
               (polymorphize [%type: [%t typ] -> string]))]
 
 let () =
-  Ppx_deriving.(register deriver {
-    core_type = Some (fun typ ->
-      [%expr fun x -> Format.asprintf "%a" (fun fmt -> [%e expr_of_typ typ]) x]);
-    structure = (fun ~options ~path type_decls ->
-      [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))]);
-    signature = (fun ~options ~path type_decls ->
-      List.concat (List.map (sig_of_type ~options ~path) type_decls));
-  })
+  Ppx_deriving.(register deriver
+   (create
+    ~core_type: (fun typ ->
+      [%expr fun x -> Format.asprintf "%a" (fun fmt -> [%e expr_of_typ typ]) x])
+    ~structure: (fun ~options ~path type_decls ->
+      [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
+    ~signature: (fun ~options ~path type_decls ->
+      List.concat (List.map (sig_of_type ~options ~path) type_decls))
+    ()
+  ))

@@ -9,14 +9,30 @@ type deriver = {
   core_type : (core_type -> expression) option;
   structure : options:(string * expression) list -> path:string list ->
               type_declaration list -> structure;
+  structure_ext : options:(string * expression) list -> path:string list ->
+              type_extension -> structure;
   signature : options:(string * expression) list -> path:string list ->
               type_declaration list -> signature;
+  signature_ext : options:(string * expression) list -> path:string list ->
+              type_extension -> signature;
 }
 
 let registry : (string, deriver) Hashtbl.t
              = Hashtbl.create 16
 
 let register = Hashtbl.add registry
+
+let create =
+  let default_structure_ext ~options ~path typ_ext = [] in
+  let default_signature_ext ~options ~path typ_ext = [] in
+  fun ?core_type
+    ?(structure_ext=default_structure_ext)
+    ?(signature_ext=default_signature_ext)
+      ~structure ~signature () ->
+      { core_type ;
+        structure ; structure_ext ;
+        signature ; signature_ext ;
+      }
 
 let lookup name =
   try  Some (Hashtbl.find registry name)

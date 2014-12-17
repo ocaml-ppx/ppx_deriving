@@ -106,10 +106,12 @@ let sig_of_type ~options ~path type_decl =
              [%type: int -> [%t typ] option])]
 
 let () =
-  Ppx_deriving.(register deriver {
-    core_type = None;
-    structure = (fun ~options ~path type_decls ->
-      [Str.value Nonrecursive (List.concat (List.map (str_of_type ~options ~path) type_decls))]);
-    signature = (fun ~options ~path type_decls ->
-      List.concat (List.map (sig_of_type ~options ~path) type_decls));
-  })
+  Ppx_deriving.(register deriver
+   (create
+    ~structure: (fun ~options ~path type_decls ->
+       [Str.value Nonrecursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
+      ~signature: (fun ~options ~path type_decls ->
+         List.concat (List.map (sig_of_type ~options ~path) type_decls))
+      ()
+   )
+  )
