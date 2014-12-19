@@ -138,13 +138,16 @@ val path_of_type_decl : path:string list -> type_declaration -> string list
 (** [mangle_type_decl ~fixpoint affix type_] derives a function name from [type_] name
     by doing nothing if [type_] is named [fixpoint] (["t"] by default), or
     appending or prepending [affix] via an underscore. *)
-val mangle_type_decl : ?fixpoint:string -> [ `Prefix of string | `Suffix of string ] ->
-                       type_declaration -> string
+val mangle_type_decl :
+   ?fixpoint:string ->
+   [ `Prefix of string | `Suffix of string | `PrefixSuffix of string * string ] ->
+   type_declaration -> string
 
 (** [mangle_lid ~fixpoint affix lid] does the same as {!mangle_type_decl}, but for
     the last component of [lid]. *)
-val mangle_lid : ?fixpoint:string -> [ `Prefix of string | `Suffix of string ] ->
-                 Longident.t -> Longident.t
+val mangle_lid : ?fixpoint:string ->
+   [ `Prefix of string | `Suffix of string | `PrefixSuffix of string * string] ->
+   Longident.t -> Longident.t
 
 (** [attr ~deriver name attrs] searches for an attribute [\[\@deriving.deriver.attr\]]
     in [attrs] if any attribute with name starting with [\@deriving.deriver] exists,

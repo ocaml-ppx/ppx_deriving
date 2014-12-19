@@ -114,6 +114,8 @@ let path_of_type_decl ~path type_decl =
 let mangle ?(fixpoint="t") affix name =
   match name = fixpoint, affix with
   | true,  (`Prefix x | `Suffix x) -> x
+  | true, `PrefixSuffix (p, s) -> p ^ "_" ^ s
+  | false, `PrefixSuffix (p, s) -> p ^ "_" ^ name ^ "_" ^ s
   | false, `Prefix x -> x ^ "_" ^ name
   | false, `Suffix x -> name ^ "_" ^ x
 
