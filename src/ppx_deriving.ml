@@ -146,6 +146,8 @@ let fold_right_type_decl fn { ptype_params } accum =
       | _ -> assert false)
     ptype_params accum
 
+let fold_type_decl = fold_left_type_decl
+
 let free_vars_in_core_type typ =
   let rec free_in typ =
     match typ with
