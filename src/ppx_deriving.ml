@@ -197,9 +197,12 @@ let core_type_of_type_decl { ptype_name = { txt = name }; ptype_params } =
 
 let fold_exprs ?unit fn exprs =
   match exprs with
-  | [] -> (match unit with Some x -> x | None -> assert false)
   | [a] -> a
   | hd::tl -> List.fold_left fn hd tl
+  | [] ->
+    match unit with
+    | Some x -> x
+    | None -> raise (Invalid_argument "Ppx_deriving.fold_exprs")
 
 let seq_reduce ?sep a b =
   match sep with
