@@ -143,9 +143,17 @@ val free_vars_in_core_type : core_type -> string list
     The name is selected in alphabetical succession. *)
 val fresh_var : string list -> string
 
-(** [fold_type_decl fn accum type_] folds over all type variable (i.e. not
-    wildcard) parameters in [type_]. *)
+(** [fold_left_type_decl fn accum type_] performs a left fold over all type variable
+    (i.e. not wildcard) parameters in [type_]. *)
+val fold_left_type_decl : ('a -> string -> 'a) -> 'a -> type_declaration -> 'a
+
+(** [fold_right_type_decl fn accum type_] performs a right fold over all type variable
+    (i.e. not wildcard) parameters in [type_]. *)
+val fold_right_type_decl : (string -> 'a -> 'a) -> type_declaration -> 'a -> 'a
+
+(** [fold_type_decl] is a deprecated alias to [fold_left_type_decl]. *)
 val fold_type_decl : ('a -> string -> 'a) -> 'a -> type_declaration -> 'a
+[@@ocaml.deprecated "Use fold_left_type_decl"]
 
 (** [poly_fun_of_type_decl type_ expr] wraps [expr] into [fun poly_N -> ...] for every
     type parameter ['N] present in [type_]. For example, if [type_] refers to

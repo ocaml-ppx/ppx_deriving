@@ -7,6 +7,10 @@ Changelog
   * Show, Eq, Ord: handle `_`.
   * Show, Eq, Ord, Map, Iter, Fold: handle inheriting from a parametric
     polymorphic variant type.
+  * Make Ppx_deriving.poly_{fun,arrow}_of_type_decl construct functions
+    in correct order. This also fixes all derivers with types with
+    more than one parameter.
+  * Add Ppx_deriving.fold_{left,right}_type_decl.
 
 1.0
 ---
