@@ -18,31 +18,33 @@ open Parsetree
     annotations. If this function is missing, the corresponding [[%foo:]]
     annotation is ignored. *)
 type deriver = {
+  name : string ;
   core_type : (core_type -> expression) option;
-  structure : options:(string * expression) list -> path:string list ->
-              type_declaration list -> structure;
-  structure_ext : options:(string * expression) list -> path:string list ->
-              type_extension -> structure;
-  signature : options:(string * expression) list -> path:string list ->
-              type_declaration list -> signature;
-  signature_ext : options:(string * expression) list -> path:string list ->
-              type_extension -> signature;
+  type_decl_str : options:(string * expression) list -> path:string list ->
+                   type_declaration list -> structure;
+  type_ext_str : options:(string * expression) list -> path:string list ->
+                   type_extension -> structure;
+  type_decl_sig : options:(string * expression) list -> path:string list ->
+                   type_declaration list -> signature;
+  type_ext_sig : options:(string * expression) list -> path:string list ->
+                  type_extension -> signature;
 }
 
-(** [register name deriver] registers [deriver] as [name]. *)
-val register : string -> deriver -> unit
+(** [register deriver] registers [deriver] according to its [name] field. *)
+val register : deriver -> unit
 
 (** Creating {!deriver} structure. *)
 val create :
+  string ->
   ?core_type: (core_type -> expression) ->
-  ?structure_ext: (options:(string * expression) list -> path:string list ->
+  ?type_ext_str: (options:(string * expression) list -> path:string list ->
                    type_extension -> structure) ->
-  ?signature_ext: (options:(string * expression) list -> path:string list ->
+  ?type_ext_sig: (options:(string * expression) list -> path:string list ->
                    type_extension -> signature) ->
-  structure: (options:(string * expression) list -> path:string list ->
-              type_declaration list -> structure) ->
-  signature: (options:(string * expression) list -> path:string list ->
-              type_declaration list -> signature) ->
+  type_decl_str: (options:(string * expression) list -> path:string list ->
+                   type_declaration list -> structure) ->
+  type_decl_sig: (options:(string * expression) list -> path:string list ->
+                   type_declaration list -> signature) ->
     unit -> deriver
 
 (** [lookup name] looks up a deriver called [name]. *)

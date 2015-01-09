@@ -135,12 +135,12 @@ let mapper argv =
         List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
       Ast_helper.with_default_loc pstr_loc (fun () ->
         derive_type_decl module_nesting typ_decls pstr_loc item
-          (fun deriver -> deriver.Ppx_deriving.structure) @ structure mapper rest)
+          (fun deriver -> deriver.Ppx_deriving.type_decl_str) @ structure mapper rest)
     | { pstr_desc = Pstr_typext typ_ext; pstr_loc } as item :: rest when
           has_attr "deriving" typ_ext.ptyext_attributes ->
       Ast_helper.with_default_loc pstr_loc (fun () ->
         derive_type_ext module_nesting typ_ext pstr_loc item
-          (fun deriver -> deriver.Ppx_deriving.structure_ext) @ structure mapper rest)
+          (fun deriver -> deriver.Ppx_deriving.type_ext_str) @ structure mapper rest)
     | { pstr_desc = Pstr_module ({ pmb_name = { txt = name } } as mb) } as item :: rest ->
       { item with pstr_desc = Pstr_module (
           with_module name (fun () -> mapper.module_binding mapper mb)) }
@@ -160,12 +160,12 @@ let mapper argv =
         List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
       Ast_helper.with_default_loc psig_loc (fun () ->
         derive_type_decl module_nesting typ_decls psig_loc item
-          (fun deriver -> deriver.Ppx_deriving.signature) @ signature mapper rest)
+          (fun deriver -> deriver.Ppx_deriving.type_decl_sig) @ signature mapper rest)
     | { psig_desc = Psig_typext typ_ext; psig_loc } as item :: rest when
         has_attr "deriving" typ_ext.ptyext_attributes ->
       Ast_helper.with_default_loc psig_loc (fun () ->
         derive_type_ext module_nesting typ_ext psig_loc item
-          (fun deriver -> deriver.Ppx_deriving.signature_ext) @ signature mapper rest)
+          (fun deriver -> deriver.Ppx_deriving.type_ext_sig) @ signature mapper rest)
     | { psig_desc = Psig_module ({ pmd_name = { txt = name } } as md) } as item :: rest ->
       { item with psig_desc = Psig_module (
           with_module name (fun () -> mapper.module_declaration mapper md)) }

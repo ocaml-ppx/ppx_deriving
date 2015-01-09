@@ -6,33 +6,22 @@ open Ast_helper
 open Ast_convenience
 
 type deriver = {
+  name : string ;
   core_type : (core_type -> expression) option;
-  structure : options:(string * expression) list -> path:string list ->
-              type_declaration list -> structure;
-  structure_ext : options:(string * expression) list -> path:string list ->
-              type_extension -> structure;
-  signature : options:(string * expression) list -> path:string list ->
-              type_declaration list -> signature;
-  signature_ext : options:(string * expression) list -> path:string list ->
-              type_extension -> signature;
+  type_decl_str : options:(string * expression) list -> path:string list ->
+                   type_declaration list -> structure;
+  type_ext_str : options:(string * expression) list -> path:string list ->
+                  type_extension -> structure;
+  type_decl_sig : options:(string * expression) list -> path:string list ->
+                   type_declaration list -> signature;
+  type_ext_sig : options:(string * expression) list -> path:string list ->
+                  type_extension -> signature;
 }
 
 let registry : (string, deriver) Hashtbl.t
              = Hashtbl.create 16
 
-let register = Hashtbl.add registry
-
-let create =
-  let default_structure_ext ~options ~path typ_ext = [] in
-  let default_signature_ext ~options ~path typ_ext = [] in
-  fun ?core_type
-    ?(structure_ext=default_structure_ext)
-    ?(signature_ext=default_signature_ext)
-      ~structure ~signature () ->
-      { core_type ;
-        structure ; structure_ext ;
-        signature ; signature_ext ;
-      }
+let register d = Hashtbl.add registry d.name d
 
 let lookup name =
   try  Some (Hashtbl.find registry name)
@@ -42,6 +31,19 @@ let raise_errorf ?sub ?if_highlight ?loc message =
   message |> Printf.kprintf (fun str ->
     let err = Location.error ?sub ?if_highlight ?loc str in
     raise (Location.Error err))
+
+let create =
+  let error name = raise_errorf
+    "Extensible types not supported by deriver %s" name
+  in
+  fun name ?core_type
+    ?(type_ext_str=fun ~options ~path typ_ext -> error name)
+    ?(type_ext_sig=fun ~options ~path typ_ext -> error name)
+      ~type_decl_str ~type_decl_sig () ->
+      { name ; core_type ;
+        type_decl_str ; type_ext_str ;
+        type_decl_sig ; type_ext_sig ;
+      }
 
 let string_of_core_type typ =
   Format.asprintf "%a" Pprintast.core_type { typ with ptyp_attributes = [] }

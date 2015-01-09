@@ -127,12 +127,12 @@ let sig_of_type ~options ~path type_decl =
               (polymorphize [%type: [%t typ] -> [%t typ] -> bool]))]
 
 let () =
-  Ppx_deriving.(register "eq"
-   (create
+  Ppx_deriving.(register
+   (create "eq"
     ~core_type: expr_of_typ
-    ~structure: (fun ~options ~path type_decls ->
+    ~type_decl_str: (fun ~options ~path type_decls ->
          [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
-    ~signature: (fun ~options ~path type_decls ->
+    ~type_decl_sig: (fun ~options ~path type_decls ->
          List.concat (List.map (sig_of_type ~options ~path) type_decls))
     ()
    )
