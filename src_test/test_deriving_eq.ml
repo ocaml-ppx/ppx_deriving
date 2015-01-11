@@ -57,8 +57,23 @@ type 'a pt = { v : 'a } [@@deriving eq]
 let test_placeholder ctxt =
   assert_equal ~printer true ([%eq: _] 1 2)
 
+
+type mrec_variant =
+  | MrecFoo of string
+  | MrecBar of int
+
+and mrec_variant_list = mrec_variant list [@@deriving eq]
+
+let test_mrec ctxt =
+  assert_equal ~printer true  (equal_mrec_variant_list [MrecFoo "foo"; MrecBar 1]
+                                                       [MrecFoo "foo"; MrecBar 1]);
+  assert_equal ~printer false (equal_mrec_variant_list [MrecFoo "foo"; MrecBar 1]
+                                                       [MrecFoo "bar"; MrecBar 1])
+
 let suite = "Test deriving(eq)" >::: [
     "test_simple"       >:: test_simple;
     "test_custom"       >:: test_custom;
     "test_placeholder"  >:: test_placeholder;
+    "test_mrec"         >:: test_mrec;
   ]
+
