@@ -41,11 +41,11 @@ val create :
                    type_extension -> structure) ->
   ?type_ext_sig: (options:(string * expression) list -> path:string list ->
                    type_extension -> signature) ->
-  type_decl_str: (options:(string * expression) list -> path:string list ->
-                   type_declaration list -> structure) ->
-  type_decl_sig: (options:(string * expression) list -> path:string list ->
-                   type_declaration list -> signature) ->
-    unit -> deriver
+  ?type_decl_str: (options:(string * expression) list -> path:string list ->
+                    type_declaration list -> structure) ->
+  ?type_decl_sig: (options:(string * expression) list -> path:string list ->
+                    type_declaration list -> signature) ->
+  unit -> deriver
 
 (** [lookup name] looks up a deriver called [name]. *)
 val lookup : string -> deriver option
@@ -139,7 +139,7 @@ val path_of_type_decl : path:string list -> type_declaration -> string list
 
 (** [mangle_type_decl ~fixpoint affix type_] derives a function name from [type_] name
     by doing nothing if [type_] is named [fixpoint] (["t"] by default), or
-    appending or prepending [affix] via an underscore. *)
+    appending and/or prepending [affix] via an underscore. *)
 val mangle_type_decl :
    ?fixpoint:string ->
    [ `Prefix of string | `Suffix of string | `PrefixSuffix of string * string ] ->
@@ -172,10 +172,6 @@ val fold_left_type_decl : ('a -> string -> 'a) -> 'a -> type_declaration -> 'a
 (** [fold_right_type_decl fn accum type_] performs a right fold over all type variable
     (i.e. not wildcard) parameters in [type_]. *)
 val fold_right_type_decl : (string -> 'a -> 'a) -> type_declaration -> 'a -> 'a
-
-(** [fold_type_decl] is a deprecated alias to [fold_left_type_decl]. *)
-val fold_type_decl : ('a -> string -> 'a) -> 'a -> type_declaration -> 'a
-[@@ocaml.deprecated "Use fold_left_type_decl"]
 
 (** [fold_left_type_ext fn accum type_] performs a left fold over all type variable (i.e. not
     wildcard) parameters in [type_]. *)

@@ -94,8 +94,7 @@ let sig_of_type ~options ~path type_decl =
               (polymorphize [%type: [%t typ] -> unit]))]
 
 let () =
-  Ppx_deriving.(register
-   (create deriver
+  Ppx_deriving.(register (create deriver
     ~core_type: expr_of_typ
     ~type_decl_str: (fun ~options ~path type_decls ->
       [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])

@@ -33,13 +33,24 @@ let raise_errorf ?sub ?if_highlight ?loc message =
     raise (Location.Error err))
 
 let create =
-  let error name = raise_errorf
-    "Extensible types not supported by deriver %s" name
+  let def_ext_str name ~options ~path typ_ext =
+    raise_errorf "Extensible types in structures not supported by deriver %s" name
+  in
+  let def_ext_sig name ~options ~path typ_ext =
+    raise_errorf "Extensible types in signatures not supported by deriver %s" name
+  in
+  let def_decl_str name ~options ~path typ_decl =
+    raise_errorf "Type declarations in structures not supported by deriver %s" name
+  in
+  let def_decl_sig name ~options ~path typ_decl =
+    raise_errorf "Type declaratons in signatures not supported by deriver %s" name
   in
   fun name ?core_type
-    ?(type_ext_str=fun ~options ~path typ_ext -> error name)
-    ?(type_ext_sig=fun ~options ~path typ_ext -> error name)
-      ~type_decl_str ~type_decl_sig () ->
+    ?(type_ext_str=def_ext_str name)
+    ?(type_ext_sig=def_ext_sig name)
+    ?(type_decl_str=def_decl_str name)
+    ?(type_decl_sig=def_decl_sig name)
+    () ->
       { name ; core_type ;
         type_decl_str ; type_ext_str ;
         type_decl_sig ; type_ext_sig ;
@@ -177,8 +188,6 @@ let fold_right_type_decl fn { ptype_params } accum =
 
 let fold_right_type_ext fn { ptyext_params } accum =
   fold_right_type_params fn ptyext_params accum
-
-let fold_type_decl = fold_left_type_decl
 
 let free_vars_in_core_type typ =
   let rec free_in typ =
