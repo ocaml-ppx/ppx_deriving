@@ -54,7 +54,7 @@ and expr_of_typ typ =
           | _, [] -> 1
           | a :: x, b :: y ->
             [%e compare_reduce [%expr loop x y] [%expr [%e expr_of_typ typ] a b]]
-        in loop]
+        in (fun x y -> loop x y)]
     | [%type: [%t? typ] array] ->
       [%expr fun x y ->
         let rec loop i =

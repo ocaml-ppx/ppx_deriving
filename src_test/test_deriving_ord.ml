@@ -69,10 +69,27 @@ type 'a pt = { v : 'a } [@@deriving ord]
 let test_placeholder ctxt =
   assert_equal ~printer 0 ([%ord: _] 1 2)
 
+type mrec_variant =
+  | MrecFoo of string
+  | MrecBar of int
+
+and mrec_variant_list = mrec_variant list
+[@@deriving ord]
+
+let test_mrec ctxt =
+  assert_equal ~printer (0)   (compare_mrec_variant_list [MrecFoo "foo"; MrecBar 1;]
+                                                         [MrecFoo "foo"; MrecBar 1;]);
+  assert_equal ~printer (-1)  (compare_mrec_variant_list [MrecFoo "foo"; MrecBar 1;]
+                                                         [MrecFoo "foo"; MrecBar 2;]);
+  assert_equal ~printer (1)   (compare_mrec_variant_list [MrecFoo "foo"; MrecBar 2;]
+                                                         [MrecFoo "foo"; MrecBar 1;])
+
 let suite = "Test deriving(ord)" >::: [
     "test_simple"       >:: test_simple;
     "test_variant"      >:: test_variant;
     "test_complex"      >:: test_complex;
     "test_custom"       >:: test_custom;
     "test_placeholder"  >:: test_placeholder;
+    "test_mrec"         >:: test_mrec;
   ]
+

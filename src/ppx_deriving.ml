@@ -148,7 +148,7 @@ let attr ~deriver name attrs =
   try Some (List.find (fun ({ txt }, _) -> txt = name) attrs)
   with Not_found -> None
 
-let fold_type_params fn accum params =
+let fold_left_type_params fn accum params =
   List.fold_left (fun accum (param, _) ->
       match param with
       | { ptyp_desc = Ptyp_any } -> accum
@@ -157,11 +157,28 @@ let fold_type_params fn accum params =
       | _ -> assert false)
     accum params
 
-let fold_type_decl fn accum { ptype_params } =
-  fold_type_params fn accum ptype_params
+let fold_left_type_decl fn accum { ptype_params } =
+  fold_left_type_params fn accum ptype_params
 
-let fold_type_ext fn accum { ptyext_params } =
-  fold_type_params fn accum ptyext_params
+let fold_left_type_ext fn accum { ptyext_params } =
+  fold_left_type_params fn accum ptyext_params
+
+let fold_right_type_params fn params accum =
+  List.fold_right (fun (param, _) accum ->
+      match param with
+      | { ptyp_desc = Ptyp_any } -> accum
+      | { ptyp_desc = Ptyp_var name } ->
+        fn name accum
+      | _ -> assert false)
+    params accum
+
+let fold_right_type_decl fn { ptype_params } accum =
+  fold_right_type_params fn ptype_params accum
+
+let fold_right_type_ext fn { ptyext_params } accum =
+  fold_right_type_params fn ptyext_params accum
+
+let fold_type_decl = fold_left_type_decl
 
 let free_vars_in_core_type typ =
   let rec free_in typ =
@@ -199,22 +216,22 @@ let fresh_var bound =
   loop 0
 
 let poly_fun_of_type_decl type_decl expr =
-  fold_type_decl (fun expr name -> Exp.fun_ "" None (pvar ("poly_"^name)) expr) expr type_decl
+  fold_right_type_decl (fun name expr -> Exp.fun_ "" None (pvar ("poly_"^name)) expr) type_decl expr
 
 let poly_fun_of_type_ext type_ext expr =
-  fold_type_ext (fun expr name -> Exp.fun_ "" None (pvar ("poly_"^name)) expr) expr type_ext
+  fold_right_type_ext (fun name expr -> Exp.fun_ "" None (pvar ("poly_"^name)) expr) type_ext expr
 
 let poly_apply_of_type_decl type_decl expr =
-  fold_type_decl (fun expr name -> Exp.apply expr ["", evar ("poly_"^name)]) expr type_decl
+  fold_left_type_decl (fun expr name -> Exp.apply expr ["", evar ("poly_"^name)]) expr type_decl
 
 let poly_apply_of_type_ext type_ext expr =
-  fold_type_ext (fun expr name -> Exp.apply expr ["", evar ("poly_"^name)]) expr type_ext
+  fold_left_type_ext (fun expr name -> Exp.apply expr ["", evar ("poly_"^name)]) expr type_ext
 
 let poly_arrow_of_type_decl fn type_decl typ =
-  fold_type_decl (fun typ name -> Typ.arrow "" (fn (Typ.var name)) typ) typ type_decl
+  fold_right_type_decl (fun name typ -> Typ.arrow "" (fn (Typ.var name)) typ) type_decl typ
 
 let poly_arrow_of_type_ext fn type_ext typ =
-  fold_type_ext (fun typ name -> Typ.arrow "" (fn (Typ.var name)) typ) typ type_ext
+  fold_right_type_ext (fun  name typ -> Typ.arrow "" (fn (Typ.var name)) typ) type_ext typ
 
 let core_type_of_type_decl { ptype_name = { txt = name }; ptype_params } =
   Typ.constr (mknoloc (Lident name)) (List.map fst ptype_params)
@@ -224,9 +241,12 @@ let core_type_of_type_ext { ptyext_path ; ptyext_params } =
 
 let fold_exprs ?unit fn exprs =
   match exprs with
-  | [] -> (match unit with Some x -> x | None -> assert false)
   | [a] -> a
   | hd::tl -> List.fold_left fn hd tl
+  | [] ->
+    match unit with
+    | Some x -> x
+    | None -> raise (Invalid_argument "Ppx_deriving.fold_exprs")
 
 let seq_reduce ?sep a b =
   match sep with

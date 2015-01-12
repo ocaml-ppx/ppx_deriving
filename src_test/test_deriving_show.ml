@@ -112,6 +112,17 @@ let test_polypr ctxt =
 let test_placeholder ctxt =
   assert_equal ~printer "_" ([%show: _] 1)
 
+module rec RecFoo : sig
+  type ('a,'b) t = ('b, 'a) RecBar.t [@@deriving show]
+end = struct
+  type ('a,'b) t = ('b,'a) RecBar.t [@@deriving show]
+end
+and RecBar : sig
+  type ('b, 'a) t = 'b * 'a [@@deriving show]
+end = struct
+  type ('b,'a) t = 'b * 'a [@@deriving show]
+end
+
 let suite = "Test deriving(show)" >::: [
     "test_alias"        >:: test_alias;
     "test_variant"      >:: test_variant;

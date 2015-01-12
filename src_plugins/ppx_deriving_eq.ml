@@ -44,7 +44,7 @@ and expr_of_typ typ =
           | [], [] -> true
           | a :: x, b :: y -> [%e expr_of_typ typ] a b && loop x y
           | _ -> false
-        in loop]
+        in (fun x y -> loop x y)]
     | [%type: [%t? typ] array] ->
       [%expr fun x y ->
         let rec loop i =
