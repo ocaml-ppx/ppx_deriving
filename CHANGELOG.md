@@ -1,8 +1,10 @@
 Changelog
 =========
 
-1.2
+2.0
 ---
+
+  * Add support for open types.
 
 1.1
 ---
