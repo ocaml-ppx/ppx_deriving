@@ -33,8 +33,7 @@ let add_plugins plugins =
   Ast_mapper.set_cookie "ppx_deriving"
     (Exp.tuple (List.map (fun file -> Exp.constant (Const_string (file, None))) loaded))
 
-let derive_type_decl path typ_decls pstr_loc item fn =
-  let attributes = List.concat (List.map (fun { ptype_attributes = attrs } -> attrs) typ_decls) in
+let derive path pstr_loc item attributes fn arg =
   let deriving = find_attr "deriving" attributes in
   let deriver_exprs, loc =
     match deriving with
@@ -68,11 +67,19 @@ let derive_type_decl path typ_decls pstr_loc item fn =
       in
       match Ppx_deriving.lookup name with
       | Some deriver ->
-        items @ ((fn deriver) ~options ~path:(!path) typ_decls)
+        items @ ((fn deriver) ~options ~path:(!path) arg)
       | None ->
         if is_optional then items
         else raise_errorf ~loc "Cannot locate deriver %s" name)
     [item] deriver_exprs
+
+let derive_type_decl path typ_decls pstr_loc item fn =
+  let attributes = List.concat (List.map (fun { ptype_attributes = attrs } -> attrs) typ_decls) in
+  derive path pstr_loc item attributes fn typ_decls
+
+let derive_type_ext path typ_ext pstr_loc item fn =
+  let attributes = typ_ext.ptyext_attributes in
+  derive path pstr_loc item attributes fn typ_ext
 
 let module_from_input_name () =
   match !Location.input_name with
@@ -128,7 +135,12 @@ let mapper argv =
         List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
       Ast_helper.with_default_loc pstr_loc (fun () ->
         derive_type_decl module_nesting typ_decls pstr_loc item
-          (fun deriver -> deriver.Ppx_deriving.structure) @ structure mapper rest)
+          (fun deriver -> deriver.Ppx_deriving.type_decl_str) @ structure mapper rest)
+    | { pstr_desc = Pstr_typext typ_ext; pstr_loc } as item :: rest when
+          has_attr "deriving" typ_ext.ptyext_attributes ->
+      Ast_helper.with_default_loc pstr_loc (fun () ->
+        derive_type_ext module_nesting typ_ext pstr_loc item
+          (fun deriver -> deriver.Ppx_deriving.type_ext_str) @ structure mapper rest)
     | { pstr_desc = Pstr_module ({ pmb_name = { txt = name } } as mb) } as item :: rest ->
       { item with pstr_desc = Pstr_module (
           with_module name (fun () -> mapper.module_binding mapper mb)) }
@@ -148,7 +160,12 @@ let mapper argv =
         List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
       Ast_helper.with_default_loc psig_loc (fun () ->
         derive_type_decl module_nesting typ_decls psig_loc item
-          (fun deriver -> deriver.Ppx_deriving.signature) @ signature mapper rest)
+          (fun deriver -> deriver.Ppx_deriving.type_decl_sig) @ signature mapper rest)
+    | { psig_desc = Psig_typext typ_ext; psig_loc } as item :: rest when
+        has_attr "deriving" typ_ext.ptyext_attributes ->
+      Ast_helper.with_default_loc psig_loc (fun () ->
+        derive_type_ext module_nesting typ_ext psig_loc item
+          (fun deriver -> deriver.Ppx_deriving.type_ext_sig) @ signature mapper rest)
     | { psig_desc = Psig_module ({ pmd_name = { txt = name } } as md) } as item :: rest ->
       { item with psig_desc = Psig_module (
           with_module name (fun () -> mapper.module_declaration mapper md)) }

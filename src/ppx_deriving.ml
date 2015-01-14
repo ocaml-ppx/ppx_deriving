@@ -6,17 +6,22 @@ open Ast_helper
 open Ast_convenience
 
 type deriver = {
+  name : string ;
   core_type : (core_type -> expression) option;
-  structure : options:(string * expression) list -> path:string list ->
-              type_declaration list -> structure;
-  signature : options:(string * expression) list -> path:string list ->
-              type_declaration list -> signature;
+  type_decl_str : options:(string * expression) list -> path:string list ->
+                   type_declaration list -> structure;
+  type_ext_str : options:(string * expression) list -> path:string list ->
+                  type_extension -> structure;
+  type_decl_sig : options:(string * expression) list -> path:string list ->
+                   type_declaration list -> signature;
+  type_ext_sig : options:(string * expression) list -> path:string list ->
+                  type_extension -> signature;
 }
 
 let registry : (string, deriver) Hashtbl.t
              = Hashtbl.create 16
 
-let register = Hashtbl.add registry
+let register d = Hashtbl.add registry d.name d
 
 let lookup name =
   try  Some (Hashtbl.find registry name)
@@ -26,6 +31,30 @@ let raise_errorf ?sub ?if_highlight ?loc message =
   message |> Printf.kprintf (fun str ->
     let err = Location.error ?sub ?if_highlight ?loc str in
     raise (Location.Error err))
+
+let create =
+  let def_ext_str name ~options ~path typ_ext =
+    raise_errorf "Extensible types in structures not supported by deriver %s" name
+  in
+  let def_ext_sig name ~options ~path typ_ext =
+    raise_errorf "Extensible types in signatures not supported by deriver %s" name
+  in
+  let def_decl_str name ~options ~path typ_decl =
+    raise_errorf "Type declarations in structures not supported by deriver %s" name
+  in
+  let def_decl_sig name ~options ~path typ_decl =
+    raise_errorf "Type declaratons in signatures not supported by deriver %s" name
+  in
+  fun name ?core_type
+    ?(type_ext_str=def_ext_str name)
+    ?(type_ext_sig=def_ext_sig name)
+    ?(type_decl_str=def_decl_str name)
+    ?(type_decl_sig=def_decl_sig name)
+    () ->
+      { name ; core_type ;
+        type_decl_str ; type_ext_str ;
+        type_decl_sig ; type_ext_sig ;
+      }
 
 let string_of_core_type typ =
   Format.asprintf "%a" Pprintast.core_type { typ with ptyp_attributes = [] }
@@ -98,6 +127,8 @@ let path_of_type_decl ~path type_decl =
 let mangle ?(fixpoint="t") affix name =
   match name = fixpoint, affix with
   | true,  (`Prefix x | `Suffix x) -> x
+  | true, `PrefixSuffix (p, s) -> p ^ "_" ^ s
+  | false, `PrefixSuffix (p, s) -> p ^ "_" ^ name ^ "_" ^ s
   | false, `Prefix x -> x ^ "_" ^ name
   | false, `Suffix x -> name ^ "_" ^ x
 
@@ -128,25 +159,35 @@ let attr ~deriver name attrs =
   try Some (List.find (fun ({ txt }, _) -> txt = name) attrs)
   with Not_found -> None
 
-let fold_left_type_decl fn accum { ptype_params }=
+let fold_left_type_params fn accum params =
   List.fold_left (fun accum (param, _) ->
       match param with
       | { ptyp_desc = Ptyp_any } -> accum
       | { ptyp_desc = Ptyp_var name } ->
         fn accum name
       | _ -> assert false)
-    accum ptype_params
+    accum params
 
-let fold_right_type_decl fn { ptype_params } accum =
+let fold_left_type_decl fn accum { ptype_params } =
+  fold_left_type_params fn accum ptype_params
+
+let fold_left_type_ext fn accum { ptyext_params } =
+  fold_left_type_params fn accum ptyext_params
+
+let fold_right_type_params fn params accum =
   List.fold_right (fun (param, _) accum ->
       match param with
       | { ptyp_desc = Ptyp_any } -> accum
       | { ptyp_desc = Ptyp_var name } ->
         fn name accum
       | _ -> assert false)
-    ptype_params accum
+    params accum
 
-let fold_type_decl = fold_left_type_decl
+let fold_right_type_decl fn { ptype_params } accum =
+  fold_right_type_params fn ptype_params accum
+
+let fold_right_type_ext fn { ptyext_params } accum =
+  fold_right_type_params fn ptyext_params accum
 
 let free_vars_in_core_type typ =
   let rec free_in typ =
@@ -186,14 +227,26 @@ let fresh_var bound =
 let poly_fun_of_type_decl type_decl expr =
   fold_right_type_decl (fun name expr -> Exp.fun_ "" None (pvar ("poly_"^name)) expr) type_decl expr
 
+let poly_fun_of_type_ext type_ext expr =
+  fold_right_type_ext (fun name expr -> Exp.fun_ "" None (pvar ("poly_"^name)) expr) type_ext expr
+
 let poly_apply_of_type_decl type_decl expr =
   fold_left_type_decl (fun expr name -> Exp.apply expr ["", evar ("poly_"^name)]) expr type_decl
+
+let poly_apply_of_type_ext type_ext expr =
+  fold_left_type_ext (fun expr name -> Exp.apply expr ["", evar ("poly_"^name)]) expr type_ext
 
 let poly_arrow_of_type_decl fn type_decl typ =
   fold_right_type_decl (fun name typ -> Typ.arrow "" (fn (Typ.var name)) typ) type_decl typ
 
+let poly_arrow_of_type_ext fn type_ext typ =
+  fold_right_type_ext (fun  name typ -> Typ.arrow "" (fn (Typ.var name)) typ) type_ext typ
+
 let core_type_of_type_decl { ptype_name = { txt = name }; ptype_params } =
   Typ.constr (mknoloc (Lident name)) (List.map fst ptype_params)
+
+let core_type_of_type_ext { ptyext_path ; ptyext_params } =
+  Typ.constr ptyext_path (List.map fst ptyext_params)
 
 let fold_exprs ?unit fn exprs =
   match exprs with

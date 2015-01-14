@@ -114,10 +114,11 @@ let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl)) typ)]
 
 let () =
-  Ppx_deriving.(register deriver {
-    core_type = None;
-    structure = (fun ~options ~path type_decls ->
-      [Str.value Nonrecursive (List.concat (List.map (str_of_type ~options ~path) type_decls))]);
-    signature = (fun ~options ~path type_decls ->
-      List.concat (List.map (sig_of_type ~options ~path) type_decls));
-  })
+  Ppx_deriving.(register (create deriver
+    ~type_decl_str: (fun ~options ~path type_decls ->
+       [Str.value Nonrecursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
+    ~type_decl_sig: (fun ~options ~path type_decls ->
+       List.concat (List.map (sig_of_type ~options ~path) type_decls))
+    ()
+   )
+  )
