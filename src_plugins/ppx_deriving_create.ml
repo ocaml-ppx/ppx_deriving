@@ -120,5 +120,4 @@ let () =
     ~type_decl_sig: (fun ~options ~path type_decls ->
        List.concat (List.map (sig_of_type ~options ~path) type_decls))
     ()
-   )
-  )
+  ))
