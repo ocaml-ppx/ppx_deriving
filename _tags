@@ -14,5 +14,5 @@ true: warn(@5@8@10@11@12@14@23@24@26@29@40), bin_annot, safe_string, debug
 "src_test/test_deriving_map.ml": deriving(show,map)
 "src_test/test_deriving_fold.ml": deriving(fold)
 "src_test/test_deriving_create.ml": deriving(show,create)
-"src_test/test_ppx_deriving.ml": deriving(show,ord)
+"src_test/test_ppx_deriving.ml": deriving(show,ord,eq)
 "src_examples/print_test.ml": deriving(show), ppx_native

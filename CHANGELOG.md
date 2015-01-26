@@ -1,6 +1,11 @@
 Changelog
 =========
 
+2.1
+---
+
+  * Fix prefixed attribute names ([@deriving.foo.attr] and [@foo.attr]).
+
 2.0
 ---
 

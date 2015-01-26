@@ -148,7 +148,7 @@ let attr ~deriver name attrs =
   in
   let try_prefix prefix f =
     if List.exists (fun ({ txt }, _) -> starts txt prefix) attrs
-    then prefix
+    then prefix ^ name
     else f ()
   in
   let name =
