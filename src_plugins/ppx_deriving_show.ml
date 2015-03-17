@@ -43,6 +43,7 @@ let rec expr_of_typ typ =
     in
     match typ with
     | [%type: _]      -> [%expr fun _ -> Format.pp_print_string fmt "_"]
+    | [%type: unit]   -> [%expr fun () -> Format.pp_print_string fmt "()"]
     | [%type: int]    -> format "%d"
     | [%type: int32]     | [%type: Int32.t] -> format "%ldl"
     | [%type: int64]     | [%type: Int64.t] -> format "%LdL"
