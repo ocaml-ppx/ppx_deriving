@@ -22,6 +22,19 @@ let argn kind =
 let pattn side typs =
   List.mapi (fun i _ -> pvar (argn side i)) typs
 
+let core_type_of_decl ~options ~path type_decl =
+  parse_options options;
+  let typ = Ppx_deriving.core_type_of_type_decl type_decl in
+  Ppx_deriving.poly_arrow_of_type_decl
+    (fun var -> [%type: [%t var] -> [%t var] -> bool])
+    type_decl
+    [%type: [%t typ] -> [%t typ] -> bool]
+
+let sig_of_type ~options ~path type_decl =
+  parse_options options;
+  [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "equal") type_decl))
+             (core_type_of_decl ~options ~path type_decl))]
+
 let rec exprsn typs =
   typs |> List.mapi (fun i typ ->
     app (expr_of_typ typ) [evar (argn `lhs i); evar (argn `rhs i)])
@@ -115,16 +128,12 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       raise_errorf ~loc "%s cannot be derived for open types" deriver
   in
   let polymorphize = Ppx_deriving.poly_fun_of_type_decl type_decl in
-  [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix "equal") type_decl))
-         (polymorphize comparator)]
-
-let sig_of_type ~options ~path type_decl =
-  parse_options options;
-  let typ = Ppx_deriving.core_type_of_type_decl type_decl in
-  let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
-          (fun var -> [%type: [%t var] -> [%t var] -> bool]) type_decl in
-  [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "equal") type_decl))
-              (polymorphize [%type: [%t typ] -> [%t typ] -> bool]))]
+  let out_type =
+    Ppx_deriving.strong_type_of_type @@
+      core_type_of_decl  ~options ~path type_decl in
+  let eq_var = 
+    pvar (Ppx_deriving.mangle_type_decl (`Prefix "equal") type_decl) in
+  [Vb.mk (Pat.constraint_ eq_var out_type) (polymorphize comparator)]
 
 let () =
   Ppx_deriving.(register (create "eq"

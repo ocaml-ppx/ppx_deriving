@@ -70,10 +70,25 @@ let test_mrec ctxt =
   assert_equal ~printer false (equal_mrec_variant_list [MrecFoo "foo"; MrecBar 1]
                                                        [MrecFoo "bar"; MrecBar 1])
 
+type e = Bool of be | Plus of e * e | IfE  of (be, e) if_e | Unit
+and be = True | False | And of be * be | IfB of (be, be) if_e
+and ('cond, 'a) if_e = 'cond * 'a * 'a
+  [@@deriving eq]
+
+let test_mut_rec ctxt =
+  let e1 = IfE (And (False, True), Unit, Plus (Unit, Unit)) in
+  let e2 = Plus (Unit, Bool False) in
+  assert_equal ~printer true (equal_e e1 e1);
+  assert_equal ~printer true (equal_e e2 e2);
+  assert_equal ~printer false (equal_e e1 e2);
+  assert_equal ~printer false (equal_e e2 e1)
+
+
 let suite = "Test deriving(eq)" >::: [
     "test_simple"       >:: test_simple;
     "test_custom"       >:: test_custom;
     "test_placeholder"  >:: test_placeholder;
     "test_mrec"         >:: test_mrec;
+    "test_mut_rec"      >:: test_mut_rec;
   ]
 
