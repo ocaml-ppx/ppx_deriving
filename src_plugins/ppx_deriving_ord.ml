@@ -20,12 +20,16 @@ let argn kind =
   Printf.sprintf (match kind with `lhs -> "lhs%d" | `rhs -> "rhs%d")
 
 let compare_reduce acc expr =
-  [%expr match [%e expr] with (-1|1) as x -> x | _ -> [%e acc]]
+  [%expr match [%e expr] with 0 -> [%e acc] | x -> x]
+
+let reduce_compare = function
+  | [] -> [%expr 0]
+  | x :: xs -> List.fold_left compare_reduce x xs
 
 let wildcard_case int_cases =
   Exp.case [%pat? _] [%expr
     let to_int = [%e Exp.function_ int_cases] in
-    (fun (a:int) b -> Pervasives.compare a b) (to_int lhs) (to_int rhs)]
+    Pervasives.compare (to_int lhs) (to_int rhs)]
 
 let pattn side typs =
   List.mapi (fun i _ -> pvar (argn side i)) typs
@@ -43,7 +47,7 @@ and expr_of_typ typ =
     | [%type: int] | [%type: int32] | [%type: Int32.t]
     | [%type: int64] | [%type: Int64.t] | [%type: nativeint] | [%type: Nativeint.t]
     | [%type: float] | [%type: bool] | [%type: char] | [%type: string] | [%type: bytes] ->
-      [%expr (fun (a:[%t typ]) b -> Pervasives.compare a b)]
+      [%expr Pervasives.compare]
     | [%type: [%t? typ] ref]   -> [%expr fun a b -> [%e expr_of_typ typ] !a !b]
     | [%type: [%t? typ] list]  ->
       [%expr
@@ -76,7 +80,7 @@ and expr_of_typ typ =
       app compare_fn (List.map expr_of_typ args)
     | { ptyp_desc = Ptyp_tuple typs } ->
       [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
-        [%e exprsn typs |> List.rev |> List.fold_left compare_reduce [%expr 0]]]
+        [%e exprsn typs |> List.rev |> reduce_compare]]
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
       let cases =
         fields |> List.map (fun field ->
@@ -137,7 +141,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
             | _  -> Exp.case (pconstr name (List.map (fun _ -> [%pat? _]) pcd_args)) (int i))
       and cases =
         constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args = typs } ->
-          exprsn typs |> List.rev |> List.fold_left compare_reduce [%expr 0] |>
+          exprsn typs |> List.rev |> reduce_compare |>
           Exp.case (ptuple [pconstr name (pattn `lhs typs);
                             pconstr name (pattn `rhs typs)]))
       in
@@ -149,7 +153,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           let field obj = Exp.field obj (mknoloc (Lident name)) in
           app (expr_of_typ pld_type) [field (evar "lhs"); field (evar "rhs")])
       in
-      [%expr fun lhs rhs -> [%e List.fold_left compare_reduce [%expr 0] exprs]]
+      [%expr fun lhs rhs -> [%e reduce_compare exprs]]
     | Ptype_abstract, None ->
       raise_errorf ~loc "%s cannot be derived for fully abstract types" deriver
     | Ptype_open, _ ->
