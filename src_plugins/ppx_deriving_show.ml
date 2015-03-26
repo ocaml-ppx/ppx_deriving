@@ -187,20 +187,13 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                         (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl)) in
   let stringprinter = [%expr fun x -> Format.asprintf "%a" [%e pp_poly_apply] x] in
   let polymorphize  = Ppx_deriving.poly_fun_of_type_decl type_decl in
-  let weak_polymorph_pp_type = pp_type_of_decl ~options ~path type_decl in
-  let weak_polymorph_show_type = show_type_of_decl ~options ~path type_decl in
-  (* the free var set should be the same in both types, but here
-   * we don't make any hypothesis. *)
-  let pp_free_var =
-    Ppx_deriving.free_vars_in_core_type weak_polymorph_pp_type in
-  let show_free_var =
-    Ppx_deriving.free_vars_in_core_type weak_polymorph_show_type in
+  let pp_type =
+    Ppx_deriving.strong_type_of_type @@ pp_type_of_decl ~options ~path type_decl in
+  let show_type =
+    Ppx_deriving.strong_type_of_type @@
+      show_type_of_decl ~options ~path type_decl in
   let pp_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl) in
-  let pp_type =
-    Typ.force_poly @@ Typ.poly pp_free_var @@ weak_polymorph_pp_type in
-  let show_type =
-    Typ.force_poly @@ Typ.poly show_free_var @@ weak_polymorph_show_type in
   let show_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl) in
   [Vb.mk (Pat.constraint_ pp_var pp_type) (polymorphize prettyprinter);

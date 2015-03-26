@@ -156,10 +156,9 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       raise_errorf ~loc "%s cannot be derived for open types" deriver
   in
   let polymorphize = Ppx_deriving.poly_fun_of_type_decl type_decl in
-  let weak_polymorph_function_type = core_type_of_decl ~options ~path type_decl in
-  let free_out_var = Ppx_deriving.free_vars_in_core_type weak_polymorph_function_type in
   let out_type =
-    Typ.force_poly @@ Typ.poly free_out_var @@ weak_polymorph_function_type in
+    Ppx_deriving.strong_type_of_type @@
+      core_type_of_decl ~options ~path type_decl in
   let out_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "compare") type_decl) in
   [Vb.mk (Pat.constraint_ out_var out_type)
