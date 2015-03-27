@@ -41,6 +41,7 @@ let test_complex ctxt =
   assert_equal ~printer (-1) (compare_ty (0, "a") (0, "b"));
   assert_equal ~printer (1)  (compare_ty (0, "b") (0, "a"))
 
+
 type re = {
   f1 : int;
   f2 : string;
@@ -84,6 +85,20 @@ let test_mrec ctxt =
   assert_equal ~printer (1)   (compare_mrec_variant_list [MrecFoo "foo"; MrecBar 2;]
                                                          [MrecFoo "foo"; MrecBar 1;])
 
+
+type e = Bool of be | Plus of e * e | IfE  of (be, e) if_e
+and be = True | False | And of be * be | IfB of (be, be) if_e
+and ('cond, 'a) if_e = 'cond * 'a * 'a
+  [@@deriving ord]
+
+let test_mutualy_recursive ctxt =
+  let ce1 = Bool (IfB (True, False, True)) in
+  let ce2 = Bool (IfB (True, False, False)) in
+  assert_equal ~printer (0) (compare_e ce1 ce1);
+  assert_equal ~printer (-1) (compare_e ce1 ce2);
+  assert_equal ~printer (1) (compare_e ce2 ce1)
+
+
 let suite = "Test deriving(ord)" >::: [
     "test_simple"       >:: test_simple;
     "test_variant"      >:: test_variant;
@@ -91,5 +106,6 @@ let suite = "Test deriving(ord)" >::: [
     "test_custom"       >:: test_custom;
     "test_placeholder"  >:: test_placeholder;
     "test_mrec"         >:: test_mrec;
+    "test_mutualy_recursive" >:: test_mutualy_recursive;
   ]
 
