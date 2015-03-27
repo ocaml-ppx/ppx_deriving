@@ -156,7 +156,7 @@ The function `fprintf` is locally defined in the printer.
 Plugins: eq and ord
 -------------------
 
-_eq_ derives a function comparing values by semantic equality; structural or physical depending on context. _ord_ derives a function defining a total order for values, returning `-1`, `0` or `1`. They're similar to `Pervasives.(=)` and `Pervasives.compare`, but are faster, allow to customize the comparison rules, and never raise at runtime. _eq_ and _ord_ are short-circuiting.
+_eq_ derives a function comparing values by semantic equality; structural or physical depending on context. _ord_ derives a function defining a total order for values, returning a negative value if lower, `0` if equal or a positive value is greater. They're similar to `Pervasives.(=)` and `Pervasives.compare`, but are faster, allow to customize the comparison rules, and never raise at runtime. _eq_ and _ord_ are short-circuiting.
 
 ``` ocaml
 # type t = [ `A | `B of int ] [@@deriving eq, ord];;
