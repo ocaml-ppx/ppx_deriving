@@ -98,6 +98,22 @@ let test_mutualy_recursive ctxt =
   assert_equal ~printer (-1) (compare_e ce1 ce2);
   assert_equal ~printer (1) (compare_e ce2 ce1)
 
+type es =
+  | ESBool of bool
+  | ESString of string
+and bool =
+  | Bfoo of int * ((int -> int) [@compare fun _ _ -> 0])
+and string =
+  | Sfoo of String.t * ((int -> int) [@compare fun _ _ -> 0])
+  [@@deriving ord{ allow_std_type_masking }]
+
+let test_shadowed_std_type ctxt =
+  let e1 = ESBool (Bfoo (1, (+) 1)) in
+  let e2 = ESString (Sfoo ("lalala", (+) 3)) in
+  assert_equal ~printer (-1) (compare_es e1 e2);
+  assert_equal ~printer (1) (compare_es e2 e1);
+  assert_equal ~printer 0 (compare_es e1 e1);
+  assert_equal ~printer 0 (compare_es e2 e2)
 
 let suite = "Test deriving(ord)" >::: [
     "test_simple"       >:: test_simple;
@@ -107,5 +123,6 @@ let suite = "Test deriving(ord)" >::: [
     "test_placeholder"  >:: test_placeholder;
     "test_mrec"         >:: test_mrec;
     "test_mutualy_recursive" >:: test_mutualy_recursive;
+    "test_shadowed_std_type" >:: test_shadowed_std_type;
   ]
 
