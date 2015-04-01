@@ -41,9 +41,9 @@ let core_type_of_decl ~options ~path type_decl =
   ignore (parse_options options);
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
-    (fun var -> [%type: [%t var] -> [%t var] -> Pervasives.bool])
+    (fun var -> [%type: [%t var] -> [%t var] -> bool])
     type_decl
-    [%type: [%t typ] -> [%t typ] -> Pervasives.bool]
+    [%type: [%t typ] -> [%t typ] -> bool]
 
 let sig_of_type ~options ~path type_decl =
   ignore (parse_options options);
@@ -66,7 +66,8 @@ and expr_of_typ group_def typ =
     | [%type: _] | [%type: unit] -> [%expr fun _ _ -> true]
     | [%type: int] | [%type: int32] | [%type: Int32.t]
     | [%type: int64] | [%type: Int64.t] | [%type: nativeint] | [%type: Nativeint.t]
-    | [%type: float] | [%type: bool] | [%type: char] | [%type: string] | [%type: bytes] ->
+    | [%type: float] | [%type: bool] | [%type: char] | [%type: string] |
+      [%type: String.t] | [%type: bytes] ->
       [%expr (fun (a:[%t typ]) b -> a = b)]
     | [%type: [%t? typ] ref]   -> [%expr fun a b -> [%e expr_of_typ group_def typ] !a !b]
     | [%type: [%t? typ] list]  ->
@@ -163,6 +164,11 @@ let type_decl_str ~options ~path type_decls =
       deriver
       ~allow_shadowing:opts.allow_std_type_masking
       type_decls in
+  let here_loc = (List.hd type_decls).ptype_loc in
+  if StringSet.mem "bool" typename_set then
+    raise_errorf
+      ~loc:here_loc
+      "%s can't derivate types when shadowing bool (even with option)" deriver;
   let code =
     List.map (str_of_type ~options ~path typename_set) type_decls in
   [Str.value Recursive (List.concat code)]

@@ -200,6 +200,11 @@ let type_decl_str ~options ~path type_decls =
       deriver
       ~allow_shadowing:opts.allow_std_type_masking
       type_decls in
+  let here_loc = (List.hd type_decls).ptype_loc in
+  if StringSet.mem "int" typename_set then
+    raise_errorf
+      ~loc:here_loc
+      "%s can't derivate types when shadowing int (even with option)" deriver;
   let code =
     List.map (str_of_type ~options ~path typename_set) type_decls in
   [Str.value Recursive (List.concat code)]
