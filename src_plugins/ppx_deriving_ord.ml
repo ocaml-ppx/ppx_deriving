@@ -165,10 +165,13 @@ let str_of_type ~options ~path group_def ({ ptype_loc = loc } as type_decl) =
         constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args = typs } ->
           exprsn group_def typs |> List.rev |> reduce_compare |>
           Exp.case (ptuple [pconstr name (pattn `lhs typs);
-                            pconstr name (pattn `rhs typs)]))
-      in
+                            pconstr name (pattn `rhs typs)])) in
+      (* if the type as only one constructor, generating wildcard yield a warning. *)
+      let wildcard = match constrs with
+        | [] | [_] -> []
+        | _ :: _ :: _ -> [wildcard_case int_cases] in
       [%expr fun lhs rhs ->
-        [%e Exp.match_ [%expr lhs, rhs] (cases @ [wildcard_case int_cases])]]
+        [%e Exp.match_ [%expr lhs, rhs] (cases @ wildcard)]]
     | Ptype_record labels, _ ->
       let exprs =
         labels |> List.map (fun { pld_name = { txt = name }; pld_type } ->
