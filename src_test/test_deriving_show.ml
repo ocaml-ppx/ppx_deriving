@@ -141,7 +141,7 @@ and bool =
   | Bfoo of int * (int -> int)
 and string =
   | Sfoo of String.t * (int -> int)
-  [@@deriving show{ allow_std_type_masking }]
+  [@@deriving show{ allow_std_type_shadowing }]
 
 let test_shadowed_std_type ctxt =
   let e1 = ESBool (Bfoo (1, (+) 1)) in

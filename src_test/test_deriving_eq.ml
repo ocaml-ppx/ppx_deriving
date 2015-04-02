@@ -90,7 +90,7 @@ and bool_ =
   | Bfoo of int * ((int -> int) [@equal fun _ _ -> true])
 and string =
   | Sfoo of String.t * ((int -> int) [@equal fun _ _ -> true])
-  [@@deriving eq{ allow_std_type_masking }]
+  [@@deriving eq{ allow_std_type_shadowing }]
 
 let test_shadowed_std_type ctxt =
   let e1 = ESBool (Bfoo (1, (+) 1)) in

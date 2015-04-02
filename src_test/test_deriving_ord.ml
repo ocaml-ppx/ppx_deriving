@@ -105,7 +105,7 @@ and bool =
   | Bfoo of int * ((int -> int) [@compare fun _ _ -> 0])
 and string =
   | Sfoo of String.t * ((int -> int) [@compare fun _ _ -> 0])
-  [@@deriving ord{ allow_std_type_masking }]
+  [@@deriving ord{ allow_std_type_shadowing }]
 
 let test_shadowed_std_type ctxt =
   let e1 = ESBool (Bfoo (1, (+) 1)) in

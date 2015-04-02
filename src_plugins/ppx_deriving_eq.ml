@@ -12,18 +12,18 @@ let raise_errorf = Ppx_deriving.raise_errorf
 
 type eq_options =
   {
-    allow_std_type_masking: bool;
+    allow_std_type_shadowing: bool;
   }
 
 let default_eq_options =
   {
-    allow_std_type_masking = false;
+    allow_std_type_shadowing= false;
   }
 
 let parse_options options =
   let option_parser acc (name, expr) =
     match name with
-    | "allow_std_type_masking" -> { allow_std_type_masking = true }
+    | "allow_std_type_shadowing" -> { allow_std_type_shadowing = true }
     | _ ->
       raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name in
   List.fold_left option_parser default_eq_options options
@@ -162,7 +162,7 @@ let type_decl_str ~options ~path type_decls =
   let typename_set =
     Ppx_deriving.extract_typename_of_type_group 
       deriver
-      ~allow_shadowing:opts.allow_std_type_masking
+      ~allow_shadowing:opts.allow_std_type_shadowing
       type_decls in
   let here_loc = (List.hd type_decls).ptype_loc in
   if StringSet.mem "bool" typename_set then
