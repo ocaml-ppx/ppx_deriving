@@ -5,6 +5,8 @@ open Parsetree
 open Ast_helper
 open Ast_convenience
 
+module StringSet = Set.Make(String)
+
 type deriver = {
   name : string ;
   core_type : (core_type -> expression) option;
@@ -268,4 +270,37 @@ let binop_reduce x a b =
 let strong_type_of_type ty =
   let free_vars = free_vars_in_core_type ty in
   Typ.force_poly @@ Typ.poly free_vars ty
+
+let predefined_types =
+  [
+    "unit";
+    "int";
+    "int32";
+    "int64";
+    "nativeint";
+    "float";
+    "bool";
+    "char";
+    "string";
+    "bytes"
+  ]
+
+let predefined_set =
+  List.fold_right StringSet.add predefined_types StringSet.empty
+
+let extract_typename_of_type_group deriver ~allow_shadowing type_list =
+  let add_name acc ty =
+    let typename = ty.ptype_name.txt in
+    let is_shadowing_predefined =
+      StringSet.mem typename predefined_set in
+    if is_shadowing_predefined && not allow_shadowing then
+      raise_errorf
+        ~loc:ty.ptype_loc
+        ("%s don't allow derivation of shadowed standard type %s. " ^^
+         "Use option 'allow_std_type_masking' to lift the restriction.")
+        deriver
+        typename
+    else
+      StringSet.add ty.ptype_name.txt acc in
+  List.fold_left add_name StringSet.empty type_list
 

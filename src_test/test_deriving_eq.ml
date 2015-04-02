@@ -83,6 +83,23 @@ let test_mut_rec ctxt =
   assert_equal ~printer false (equal_e e1 e2);
   assert_equal ~printer false (equal_e e2 e1)
 
+type es =
+  | ESBool of bool_
+  | ESString of string
+and bool_ =
+  | Bfoo of int * ((int -> int) [@equal fun _ _ -> true])
+and string =
+  | Sfoo of String.t * ((int -> int) [@equal fun _ _ -> true])
+  [@@deriving eq{ allow_std_type_shadowing }]
+
+let test_shadowed_std_type ctxt =
+  let e1 = ESBool (Bfoo (1, (+) 1)) in
+  let e2 = ESString (Sfoo ("lalala", (+) 3)) in
+  assert_equal ~printer false (equal_es e1 e2);
+  assert_equal ~printer false (equal_es e2 e1);
+  assert_equal ~printer true (equal_es e1 e1);
+  assert_equal ~printer true (equal_es e2 e2)
+
 
 let suite = "Test deriving(eq)" >::: [
     "test_simple"       >:: test_simple;
