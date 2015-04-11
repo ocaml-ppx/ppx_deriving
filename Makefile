@@ -1,3 +1,5 @@
+include $(shell ocamlc -where)/Makefile.config
+
 build:
 	cp pkg/META.in pkg/META
 	ocaml pkg/build.ml native=true native-dynlink=true
@@ -45,5 +47,13 @@ release:
 	opam publish prepare $(NAME_VERSION) $(ARCHIVE)
 	opam publish submit $(NAME_VERSION)
 	rm -rf $(NAME_VERSION)
+
+install:
+	ocamlfind remove ppx_deriving
+	grep -E '^[[:space:]]+' ppx_deriving.install | \
+		awk '{ print $$1 }' | \
+		sed -e 's:"?*::g'  | \
+		xargs ocamlfind install ppx_deriving
+	mv `ocamlfind query ppx_deriving`/ppx_deriving_main.native `ocamlfind query ppx_deriving`/ppx_deriving$(EXE)
 
 .PHONY: gh-pages release

@@ -27,8 +27,14 @@ module type Exts = sig
   val interface_opt : string list
   (** [interface_opt] is [".cmx" :: interface] *) 
 
+  val c_library : string list
+  (** Extension of the native platform library, [".a"] for
+      unices and [".lib"] for win32 *)
+  val c_dll_library : string list
+  (** Extension of the native platform dynamic library,
+      [".so"] for unices and [".dll"] for win32 *)
   val library : string list 
-  (** [library] is [[".cma"; ".cmxa"; ".cmxs"; ".a"]] *) 
+  (** [library] is [[".cma"; ".cmxa"; ".cmxs"] @ c_library] *)
 
   val module_library : string list
   (** [module_library] is [(interface_opt @ library)]. *)
@@ -56,12 +62,12 @@ module type Pkg = sig
          [Filename.basename path].} *)
 
   val lib : field
-  val lib_exec : ?auto:bool -> field
   val bin : ?auto:bool -> field
   (** If [auto] is true (defaults to false) generates
       [path ^ ".native"] if {!Env.native} is [true] and
       [path ^ ".byte"] if {!Env.native} is [false]. *)
   val sbin : ?auto:bool -> field (** See {!bin}. *) 
+  val libexec : ?auto:bool -> field (** See {!bin}. *)
   val toplevel : field
   val share : field
   val share_root : field
@@ -143,8 +149,10 @@ end
 
 module Exts : Exts = struct
   let interface = [".mli"; ".cmi"; ".cmti"]
-  let interface_opt = ".cmx" :: interface 
-  let library = [".cma"; ".cmxa"; ".cmxs"; ".a"]
+  let interface_opt = ".cmx" :: interface
+  let c_library = if Sys.win32 then [".lib"] else [".a"]
+  let c_dll_library = if Sys.win32 then [".dll"] else [".so"]
+  let library = [".cma"; ".cmxa"; ".cmxs"] @ c_library
   let module_library = (interface_opt @ library)
 end
 
@@ -225,11 +233,12 @@ module Pkg : Pkg = struct
     let files = if exts = [] then [mv src dst] else expand exts src dst in
     let keep (_, (src, _)) = not (List.exists (has_suffix src) drop_exts) in
     List.find_all keep files
-    
-  let lib = 
-    let drop_exts = 
-      if Env.native && not Env.native_dynlink then [ ".cmxs" ] else 
-      if not Env.native then [ ".a"; ".cmx"; ".cmxa"; ".cmxs" ] else []
+
+  let lib =
+    let drop_exts =
+      if Env.native && not Env.native_dynlink then [ ".cmxs" ] else
+      if not Env.native then Exts.c_library @ [".cmx"; ".cmxa"; ".cmxs" ]
+      else []
     in
     mvs ~drop_exts "lib"
       
@@ -257,7 +266,7 @@ module Pkg : Pkg = struct
 
   let bin = bin_mvs "bin"
   let sbin = bin_mvs "sbin"
-  let lib_exec = bin_mvs "lib"
+  let libexec = bin_mvs "libexec"
 
   let describe pkg ~builder mvs =
     let mvs = List.sort compare (List.flatten mvs) in
