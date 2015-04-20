@@ -250,3 +250,6 @@ val strong_type_of_type: core_type -> core_type
 val extract_typename_of_type_group : string -> allow_shadowing:bool ->
                                      type_declaration list -> StringSet.t
 
+val mapper : Ast_mapper.mapper
+(** The mapper for the currently loaded deriving plugins. It is useful for
+    recursively processing expression-valued attributes. *)

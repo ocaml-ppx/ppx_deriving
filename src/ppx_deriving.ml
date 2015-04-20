@@ -304,3 +304,157 @@ let extract_typename_of_type_group deriver ~allow_shadowing type_list =
       StringSet.add ty.ptype_name.txt acc in
   List.fold_left add_name StringSet.empty type_list
 
+let derive path pstr_loc item attributes fn arg =
+  let deriving = find_attr "deriving" attributes in
+  let deriver_exprs, loc =
+    match deriving with
+    | Some (PStr [{ pstr_desc = Pstr_eval (
+                    { pexp_desc = Pexp_tuple exprs }, []); pstr_loc }]) ->
+      exprs, pstr_loc
+    | Some (PStr [{ pstr_desc = Pstr_eval (
+                    { pexp_desc = (Pexp_ident _ | Pexp_apply _) } as expr, []); pstr_loc }]) ->
+      [expr], pstr_loc
+    | _ -> raise_errorf ~loc:pstr_loc "Unrecognized [@@deriving] annotation syntax"
+  in
+  List.fold_left (fun items deriver_expr ->
+      let name, options =
+        match deriver_expr with
+        | { pexp_desc = Pexp_ident name } ->
+          name, []
+        | { pexp_desc = Pexp_apply ({ pexp_desc = Pexp_ident name }, ["",
+            { pexp_desc = Pexp_record (options, None) }]) } ->
+          name, options |> List.map (fun ({ txt }, expr) ->
+            String.concat "." (Longident.flatten txt), expr)
+        | { pexp_loc } ->
+          raise_errorf ~loc:pexp_loc "Unrecognized [@@deriving] option syntax"
+      in
+      let name, loc = String.concat "_" (Longident.flatten name.txt), name.loc in
+      let is_optional, options =
+        match List.assoc "optional" options with
+        | exception Not_found -> false, options
+        | expr ->
+          Arg.(get_expr ~deriver:name bool) expr,
+          List.remove_assoc "optional" options
+      in
+      match lookup name with
+      | Some deriver ->
+        items @ ((fn deriver) ~options ~path:(!path) arg)
+      | None ->
+        if is_optional then items
+        else raise_errorf ~loc "Cannot locate deriver %s" name)
+    [item] deriver_exprs
+
+let derive_type_decl path typ_decls pstr_loc item fn =
+  let attributes = List.concat (List.map (fun { ptype_attributes = attrs } -> attrs) typ_decls) in
+  derive path pstr_loc item attributes fn typ_decls
+
+let derive_type_ext path typ_ext pstr_loc item fn =
+  let attributes = typ_ext.ptyext_attributes in
+  derive path pstr_loc item attributes fn typ_ext
+
+let module_from_input_name () =
+  match !Location.input_name with
+  | "//toplevel//" -> []
+  | filename -> [String.capitalize (Filename.(basename (chop_suffix filename ".ml")))]
+
+let mapper =
+  let module_nesting = ref [] in
+  let with_module name f =
+    let old_nesting = !module_nesting in
+    module_nesting := !module_nesting @ [name];
+    let result = f () in
+    module_nesting := old_nesting;
+    result
+  in
+  let expression mapper expr =
+    match expr with
+    | { pexp_desc = Pexp_extension ({ txt = name; loc }, payload) }
+        when String.(length name >= 7 && sub name 0 7 = "derive.") ->
+      let name = String.sub name 7 ((String.length name) - 7) in
+      let deriver =
+        match lookup name with
+        | Some { core_type = Some deriver } -> deriver
+        | Some _ -> raise_errorf ~loc "Deriver %s does not support inline notation" name
+        | None -> raise_errorf ~loc "Cannot locate deriver %s" name
+      in
+      begin match payload with
+      | PTyp typ -> deriver typ
+      | _ -> raise_errorf ~loc "Unrecognized [%%derive.*] syntax"
+      end
+    | { pexp_desc = Pexp_extension ({ txt = name; loc }, PTyp typ) } ->
+      begin match lookup name with
+      | Some { core_type = Some deriver } ->
+        Ast_helper.with_default_loc typ.ptyp_loc (fun () -> deriver typ)
+      | _ -> Ast_mapper.(default_mapper.expr) mapper expr
+      end
+    | _ -> Ast_mapper.(default_mapper.expr) mapper expr
+  in
+  let structure mapper items =
+    match items with
+    | { pstr_desc = Pstr_type typ_decls; pstr_loc } as item :: rest when
+        List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
+      Ast_helper.with_default_loc pstr_loc (fun () ->
+        derive_type_decl module_nesting typ_decls pstr_loc item
+          (fun deriver -> deriver.type_decl_str)
+	@ mapper.Ast_mapper.structure mapper rest)
+    | { pstr_desc = Pstr_typext typ_ext; pstr_loc } as item :: rest when
+          has_attr "deriving" typ_ext.ptyext_attributes ->
+      Ast_helper.with_default_loc pstr_loc (fun () ->
+        derive_type_ext module_nesting typ_ext pstr_loc item
+          (fun deriver -> deriver.type_ext_str)
+	@ mapper.Ast_mapper.structure mapper rest)
+    | { pstr_desc = Pstr_module ({ pmb_name = { txt = name } } as mb) } as item :: rest ->
+      { item with pstr_desc = Pstr_module (
+          with_module name
+	    (fun () -> mapper.Ast_mapper.module_binding mapper mb)) }
+        :: mapper.Ast_mapper.structure mapper rest
+    | { pstr_desc = Pstr_recmodule mbs } as item :: rest ->
+      { item with pstr_desc = Pstr_recmodule (
+          mbs |> List.map (fun ({ pmb_name = { txt = name } } as mb) ->
+            with_module name
+	      (fun () -> mapper.Ast_mapper.module_binding mapper mb))) }
+        :: mapper.Ast_mapper.structure mapper rest
+    | { pstr_loc } as item :: rest ->
+      mapper.Ast_mapper.structure_item mapper item
+      :: mapper.Ast_mapper.structure mapper rest
+    | [] -> []
+  in
+  let signature mapper items =
+    match items with
+    | { psig_desc = Psig_type typ_decls; psig_loc } as item :: rest when
+        List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
+      Ast_helper.with_default_loc psig_loc (fun () ->
+        derive_type_decl module_nesting typ_decls psig_loc item
+          (fun deriver -> deriver.type_decl_sig)
+	@ mapper.Ast_mapper.signature mapper rest)
+    | { psig_desc = Psig_typext typ_ext; psig_loc } as item :: rest when
+        has_attr "deriving" typ_ext.ptyext_attributes ->
+      Ast_helper.with_default_loc psig_loc (fun () ->
+        derive_type_ext module_nesting typ_ext psig_loc item
+          (fun deriver -> deriver.type_ext_sig)
+	@ mapper.Ast_mapper.signature mapper rest)
+    | { psig_desc = Psig_module ({ pmd_name = { txt = name } } as md) } as item :: rest ->
+      { item with psig_desc = Psig_module (
+          with_module name
+	    (fun () -> mapper.Ast_mapper.module_declaration mapper md)) }
+        :: mapper.Ast_mapper.signature mapper rest
+    | { psig_desc = Psig_recmodule mds } as item :: rest ->
+      { item with psig_desc = Psig_recmodule (
+          mds |> List.map (fun ({ pmd_name = { txt = name } } as md) ->
+            with_module name
+	      (fun () -> mapper.Ast_mapper.module_declaration mapper md))) }
+        :: mapper.Ast_mapper.signature mapper rest
+    | { psig_loc } as item :: rest ->
+      mapper.Ast_mapper.signature_item mapper item
+      :: mapper.Ast_mapper.signature mapper rest
+    | [] -> []
+  in
+  Ast_mapper.{default_mapper with
+    expr = expression;
+    structure = (fun mapper items ->
+      module_nesting := module_from_input_name ();
+      structure { mapper with structure; signature } items);
+    signature = (fun mapper items ->
+      module_nesting := module_from_input_name ();
+      signature { mapper with structure; signature } items)
+  }
