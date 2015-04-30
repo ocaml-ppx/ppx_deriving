@@ -46,14 +46,9 @@ let wildcard_case int_cases =
     let to_int = [%e Exp.function_ int_cases] in
     Pervasives.compare (to_int lhs) (to_int rhs)]
 
-let attr_warning expr =
-  let loc = !default_loc in
-  let structure = {pstr_desc = Pstr_eval (expr, []); pstr_loc = loc} in
-  {txt = "ocaml.warning"; loc}, PStr [structure]
-
 (* deactivate warning 4 in code that uses [wildcard_case] *)
 let warning_minus_4 =
-  attr_warning [%expr "-4"]
+  Ppx_deriving.attr_warning [%expr "-4"]
 
 let pattn side typs =
   List.mapi (fun i _ -> pvar (argn side i)) typs
