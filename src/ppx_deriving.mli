@@ -159,7 +159,7 @@ val mangle_lid : ?fixpoint:string ->
     or [\[\@attr\]] otherwise. *)
 val attr : deriver:string -> string -> attributes -> attribute option
 
-(** [attr_warning expr] builds the attribute [@ocaml.warning expr] *)
+(** [attr_warning expr] builds the attribute [\@ocaml.warning expr] *)
 val attr_warning: expression -> attribute
 
 (** [free_vars_in_core_type typ] returns unique free variables in [typ] in
