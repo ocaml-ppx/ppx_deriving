@@ -46,6 +46,10 @@ let wildcard_case int_cases =
     let to_int = [%e Exp.function_ int_cases] in
     Pervasives.compare (to_int lhs) (to_int rhs)]
 
+(* deactivate warning 4 in code that uses [wildcard_case] *)
+let warning_minus_4 =
+  Ppx_deriving.attr_warning [%expr "-4"]
+
 let pattn side typs =
   List.mapi (fun i _ -> pvar (argn side i)) typs
 
@@ -131,7 +135,7 @@ and expr_of_typ group_def typ =
             | _ -> assert false)
         in
         [%expr fun lhs rhs ->
-          [%e Exp.match_ [%expr lhs, rhs] (cases @ [wildcard_case int_cases])]]
+          [%e Exp.match_ ~attrs:[warning_minus_4] [%expr lhs, rhs] (cases @ [wildcard_case int_cases])]]
       | { ptyp_desc = Ptyp_var name } -> evar ("poly_"^name)
       | { ptyp_desc = Ptyp_alias (typ, _) } -> aux typ
       | { ptyp_loc } ->
@@ -171,7 +175,7 @@ let str_of_type ~options ~path group_def ({ ptype_loc = loc } as type_decl) =
         | [] | [_] -> []
         | _ :: _ :: _ -> [wildcard_case int_cases] in
       [%expr fun lhs rhs ->
-        [%e Exp.match_ [%expr lhs, rhs] (cases @ wildcard)]]
+        [%e Exp.match_ ~attrs:[warning_minus_4] [%expr lhs, rhs] (cases @ wildcard)]]
     | Ptype_record labels, _ ->
       let exprs =
         labels |> List.map (fun { pld_name = { txt = name }; pld_type } ->
@@ -196,7 +200,7 @@ let str_of_type ~options ~path group_def ({ ptype_loc = loc } as type_decl) =
 let type_decl_str ~options ~path type_decls =
   let opts = parse_options options in
   let typename_set =
-    Ppx_deriving.extract_typename_of_type_group 
+    Ppx_deriving.extract_typename_of_type_group
       deriver
       ~allow_shadowing:opts.allow_std_type_shadowing
       type_decls in
@@ -217,4 +221,3 @@ let () =
       List.concat (List.map (sig_of_type ~options ~path) type_decls))
     ()
   ))
-

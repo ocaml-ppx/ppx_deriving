@@ -161,6 +161,11 @@ let attr ~deriver name attrs =
   try Some (List.find (fun ({ txt }, _) -> txt = name) attrs)
   with Not_found -> None
 
+let attr_warning expr =
+  let loc = !default_loc in
+  let structure = {pstr_desc = Pstr_eval (expr, []); pstr_loc = loc} in
+  {txt = "ocaml.warning"; loc}, PStr [structure]
+
 let fold_left_type_params fn accum params =
   List.fold_left (fun accum (param, _) ->
       match param with

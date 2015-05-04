@@ -159,6 +159,9 @@ val mangle_lid : ?fixpoint:string ->
     or [\[\@attr\]] otherwise. *)
 val attr : deriver:string -> string -> attributes -> attribute option
 
+(** [attr_warning expr] builds the attribute [\@ocaml.warning expr] *)
+val attr_warning: expression -> attribute
+
 (** [free_vars_in_core_type typ] returns unique free variables in [typ] in
     lexical order. *)
 val free_vars_in_core_type : core_type -> string list
@@ -239,7 +242,7 @@ val seq_reduce : ?sep:expression -> expression -> expression -> expression
 (** [binop_reduce] ≡ [fun x a b -> [%expr [%e x] [%e a] [%e b]]]. *)
 val binop_reduce : expression -> expression -> expression -> expression
 
-(** [strong_type_of_type ty] transform a type ty to 
+(** [strong_type_of_type ty] transform a type ty to
     [freevars . ty], giving a strong polymorphic type *)
 val strong_type_of_type: core_type -> core_type
 

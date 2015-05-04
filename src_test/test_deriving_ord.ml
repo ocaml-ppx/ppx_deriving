@@ -115,6 +115,20 @@ let test_shadowed_std_type ctxt =
   assert_equal ~printer 0 (compare_es e1 e1);
   assert_equal ~printer 0 (compare_es e2 e2)
 
+module Warnings = struct
+  module W4 = struct
+    (* Module does not compile if warning 4 is triggered by the ord
+       deriver. *)
+
+    [@@@ocaml.warning "@4"]
+
+    type t =
+      | A of int
+      | B
+          [@@deriving ord]
+  end
+end
+
 let suite = "Test deriving(ord)" >::: [
     "test_simple"       >:: test_simple;
     "test_variant"      >:: test_variant;
@@ -125,4 +139,3 @@ let suite = "Test deriving(ord)" >::: [
     "test_mutualy_recursive" >:: test_mutualy_recursive;
     "test_shadowed_std_type" >:: test_shadowed_std_type;
   ]
-
