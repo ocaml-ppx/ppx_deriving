@@ -181,7 +181,7 @@ _eq_ and _ord_ allow to specify custom comparison functions for types to overrid
 # type file = {
   name : string [@equal fun a b -> String.(lowercase a = lowercase b)];
   perm : int    [@compare fun a b -> compare b a]
-} [@@deriving eq, Ord];;
+} [@@deriving eq, ord];;
 type file = { name : bytes; perm : int; }
 val equal_file : file -> file -> bool = <fun>
 val compare_file : file -> file -> int = <fun>
@@ -247,7 +247,7 @@ type record = {
   def  : int [@default 42];
   args : (int * int list) [@split];
   norm : int;
-} [@@deriving create]
+} [@@deriving create] ;;
 val create_record :
   ?opt:int ->
   ?lst:int list ->
