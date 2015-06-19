@@ -178,7 +178,9 @@ let str_of_type ~options ~path group_def ({ ptype_loc = loc } as type_decl) =
         [%e Exp.match_ ~attrs:[warning_minus_4] [%expr lhs, rhs] (cases @ wildcard)]]
     | Ptype_record labels, _ ->
       let exprs =
-        labels |> List.map (fun { pld_name = { txt = name }; pld_type } ->
+        labels |> List.map (fun { pld_name = { txt = name }; pld_type; pld_attributes } ->
+          let attrs = pld_attributes @ pld_type.ptyp_attributes in
+          let pld_type = {pld_type with ptyp_attributes=attrs} in
           let field obj = Exp.field obj (mknoloc (Lident name)) in
           app (expr_of_typ group_def pld_type) [field (evar "lhs"); field (evar "rhs")])
       in
