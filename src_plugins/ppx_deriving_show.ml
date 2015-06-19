@@ -186,8 +186,9 @@ let str_of_type ~options ~path group_def ({ ptype_loc = loc } as type_decl) =
       [%expr fun fmt -> [%e Exp.function_ cases]]
     | Ptype_record labels, _ ->
       let fields =
-        labels |> List.mapi (fun i { pld_name = { txt = name }; pld_type } ->
+        labels |> List.mapi (fun i { pld_name = { txt = name }; pld_type; pld_attributes } ->
           let field_name = if i = 0 then Ppx_deriving.expand_path ~path name else name in
+          let pld_type = {pld_type with ptyp_attributes=pld_attributes@pld_type.ptyp_attributes} in
           [%expr Format.pp_print_string fmt [%e str (field_name ^ " = ")];
             [%e expr_of_typ group_def pld_type] [%e Exp.field (evar "x") (mknoloc (Lident name))]])
       in

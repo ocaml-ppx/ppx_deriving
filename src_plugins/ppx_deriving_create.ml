@@ -20,8 +20,8 @@ let attr_split attrs =
   Ppx_deriving.(attrs |> attr ~deriver "split" |> Arg.get_flag ~deriver)
 
 let find_main labels =
-  List.fold_left (fun (main, labels) ({ pld_type; pld_loc } as label) ->
-    if Ppx_deriving.(pld_type.ptyp_attributes |>
+  List.fold_left (fun (main, labels) ({ pld_type; pld_loc; pld_attributes } as label) ->
+    if Ppx_deriving.(pld_type.ptyp_attributes @ pld_attributes |>
                      attr ~deriver "main" |> Arg.get_flag ~deriver) then
       match main with
       | Some _ -> raise_errorf ~loc:pld_loc "Duplicate [@deriving.%s.main] annotation" deriver
@@ -46,11 +46,12 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
         | None ->
           Exp.fun_ "" None (punit ()) (record fields)
       in
-      List.fold_left (fun accum { pld_name = { txt = name }; pld_type } ->
-        match attr_default pld_type.ptyp_attributes with
+      List.fold_left (fun accum { pld_name = { txt = name }; pld_type; pld_attributes } ->
+        let attrs = pld_attributes @ pld_type.ptyp_attributes in
+        match attr_default attrs with
         | Some default -> Exp.fun_ ("?"^name) (Some default) (pvar name) accum
         | None ->
-        if attr_split pld_type.ptyp_attributes then
+        if attr_split attrs then
           match pld_type with
           | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
             let name' = String.sub name 0 (String.length name - 1) in
@@ -89,11 +90,12 @@ let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
         | None ->
           Typ.arrow "" (tconstr "unit" []) typ
       in
-      List.fold_left (fun accum { pld_name = { txt = name; loc }; pld_type } ->
-        match attr_default pld_type.ptyp_attributes with
+      List.fold_left (fun accum { pld_name = { txt = name; loc }; pld_type; pld_attributes } ->
+        let attrs = pld_type.ptyp_attributes @ pld_attributes in
+        match attr_default attrs with
         | Some _ -> Typ.arrow ("?"^name) (wrap_predef_option pld_type) accum
         | None ->
-        if attr_split pld_type.ptyp_attributes then
+        if attr_split attrs then
           match pld_type with
           | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
             let name' = String.sub name 0 (String.length name - 1) in
