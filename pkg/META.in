@@ -115,3 +115,14 @@ package "create" (
   archive(ppx_driver, native) = "ppx_deriving_create.cmxa"
   exists_if = "ppx_deriving_create.cma"
 )
+
+package "lens" (
+  version = "%{version}%"
+  description = "[@@deriving lens]"
+  requires(-ppx_driver) = "ppx_deriving"
+  ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_lens.cma"
+  requires(ppx_driver) = "ppx_deriving.api"
+  archive(ppx_driver, byte) = "ppx_deriving_lens.cma"
+  archive(ppx_driver, native) = "ppx_deriving_lens.cmxa"
+  exists_if = "ppx_deriving_lens.cma"
+)
