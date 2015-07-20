@@ -259,6 +259,25 @@ val create_record :
   record
 ```
 
+Plugin: lens
+------------
+
+_lens_ is a plugin that generates lenses for all fields of a record.
+
+``` ocaml
+type car = {
+  make : string;
+  model: string;
+  mileage: int;
+} [@@deriving lens];;
+
+val car_make: (car, string) Lens.t
+val car_model: (car, string) Lens.t
+val car_mileage: (car, int) Lens.t
+```
+
+These lenses can than be used with the opam `lens` package.
+
 Building ppx drivers
 --------------------
 
