@@ -206,7 +206,12 @@ let free_vars_in_core_type typ =
       List.map free_in xs |> List.concat
     | { ptyp_desc = Ptyp_alias (x, name) } -> [name] @ free_in x
     | { ptyp_desc = Ptyp_poly (bound, x) } ->
-      List.filter (fun y -> not (List.mem y bound)) (free_in x)
+       List.filter (fun y -> not (List.mem y bound)) (free_in x)
+    | { ptyp_desc = Ptyp_variant (rows, _, _) } ->
+       List.map (
+           function Rtag (_,_,_,ts) -> List.map free_in ts
+                  | Rinherit t -> [free_in t]
+         ) rows |> List.concat |> List.concat
     | _ -> assert false
   in
   let rec uniq acc lst =
