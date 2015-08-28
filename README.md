@@ -31,7 +31,7 @@ For example, if you are using ocamlbuild, add the following to `_tags` to use th
 
     <src/*>: package(ppx_deriving.std)
 
-If you are using another buildsystem, just make sure it passes `-package ppx_deriving_whatever` to ocamlfind.
+If you are using another buildsystem, just make sure it passes `-package ppx_deriving.whatever` to ocamlfind.
 
 Usage
 -----
