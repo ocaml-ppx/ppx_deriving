@@ -1,6 +1,8 @@
 version = "%{version}%"
 description = "Type-driven code generation"
 ppx = "./ppx_deriving"
+archive(byte) = "ppx_deriving_runtime.cma"
+archive(native) = "ppx_deriving_runtime.cmxa"
 
 package "api" (
   version = "%{version}%"

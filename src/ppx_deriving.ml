@@ -113,6 +113,25 @@ module Arg = struct
     | `Ok v -> v
 end
 
+type quoter = {
+  mutable next_id : int;
+  mutable bindings : value_binding list;
+}
+
+let create_quoter () = { next_id = 0; bindings = [] }
+
+let quote ~quoter expr =
+  let name = "__" ^ string_of_int quoter.next_id in
+  quoter.bindings <- (Vb.mk (pvar name) [%expr fun () -> [%e expr]]) :: quoter.bindings;
+  quoter.next_id <- quoter.next_id + 1;
+  [%expr [%e evar name] ()]
+
+let sanitize ?(quoter=create_quoter ()) expr =
+  Exp.let_ Nonrecursive quoter.bindings [%expr
+    let open! Ppx_deriving_runtime in
+    let open! Pervasives in
+    [%e expr]]
+
 let expand_path ~path ident =
   String.concat "." (path @ [ident])
 

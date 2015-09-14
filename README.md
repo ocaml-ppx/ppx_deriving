@@ -323,6 +323,44 @@ As such, _deriving_:
 
 Complete API documentation is available [online](http://whitequark.github.io/ppx_deriving/Ppx_deriving.html).
 
+#### Hygiene
+
+A very important aspect of a syntax extension is **hygiene**. Consider a case where a _deriving_ plugin makes assumptions about the interface provided by the `List` module: it will normally work as expected, but not in case where someone shadows the `List` identifier! This happens quite often in the OCaml ecosystem, e.g. the Jane Street [Core] library encourages developers to use `open Core.Std`.
+
+Additionally, if your _deriving_ plugin inserts user-provided expressions into the generated code, a name you are using internally may accidentally collide with a user-defined name.
+
+With _deriving_, both of these problems are solved in three easy steps:
+
+  * Create a _quoter_:
+
+    ``` ocaml
+    let quoter = Ppx_deriving.create_quoter () in
+    ...
+    ```
+
+  * Pass the user-provided expressions, if any, through the quoter, such as
+    by using a helper function:
+
+    ```ocaml
+    let attr_custom_fn attrs =
+      Ppx_deriving.(attrs |> attr ~deriver "custom_fn" |> Arg.(get_attr ~deriver expr)
+                          |> quote ~quoter)
+    ```
+
+  * Wrap the generated code:
+
+    ```ocaml
+    let expr_of_typ typ =
+      let quoter = ...
+      and expr = ... in
+      sanitize ~quoter expr
+    ```
+
+    If the plugin does not accept user-provided expressions, `sanitize expr` could be used
+    instead.
+
+#### FAQ
+
 The following is a list of tips for developers trying to use the ppx interface:
 
   * Module paths overwhelm you? Open all of the following modules, they don't conflict with each other: `Longident`, `Location`, `Asttypes`, `Parsetree`, `Ast_helper`, `Ast_convenience`.

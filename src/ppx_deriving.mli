@@ -125,6 +125,24 @@ let deriver = "index"
                  expression -> 'a
 end
 
+(** {2 Hygiene} *)
+
+(** A [quoter] remembers a set of expressions. *)
+type quoter
+
+(** [quoter ()] creates an empty quoter. *)
+val create_quoter : unit -> quoter
+
+(** [quote quoter expr] records a pure expression [expr] within [quoter] and
+    returns an expression which has the same value as [expr] in the context
+    that [sanitize] provides. *)
+val quote : quoter:quoter -> expression -> expression
+
+(** [sanitize quoter expr] wraps [expr] in a way that ensures that the contents of
+    {!Ppx_deriving_runtime} and {!Pervasives}, as well as the identifiers in
+    expressions returned by [quote] are in scope, and returns the wrapped expression. *)
+val sanitize : ?quoter:quoter -> expression -> expression
+
 (** {2 AST manipulation} *)
 
 (** [expand_path name] returns [name] with the [path] module path prepended,
