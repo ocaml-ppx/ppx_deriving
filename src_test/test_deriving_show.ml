@@ -126,11 +126,10 @@ end
 
 
 type foo = F of int | B of int bar | C of float bar
-and 'a bar = { x : 'a ; r : foo } 
-  [@@deriving show]
+and 'a bar = { x : 'a ; r : foo }
+[@@deriving show]
 
-
-let test_mut_rec ctxt =
+let test_mrec ctxt =
   let e1 =  B { x = 12; r = F 16 } in
   assert_equal ~printer "(Test_deriving_show.B\n   { Test_deriving_show.x = 12; r = (Test_deriving_show.F 16) })" (show_foo e1)
 
@@ -141,9 +140,9 @@ and bool =
   | Bfoo of int * (int -> int)
 and string =
   | Sfoo of String.t * (int -> int)
-  [@@deriving show{ allow_std_type_shadowing }]
+[@@deriving show]
 
-let test_shadowed_std_type ctxt =
+let test_std_shadowing ctxt =
   let e1 = ESBool (Bfoo (1, (+) 1)) in
   let e2 = ESString (Sfoo ("lalala", (+) 3)) in
   assert_equal ~printer
@@ -154,19 +153,19 @@ let test_shadowed_std_type ctxt =
     (show_es e2)
 
 let suite = "Test deriving(show)" >::: [
-    "test_alias"        >:: test_alias;
-    "test_variant"      >:: test_variant;
-    "test_variant_nest" >:: test_variant_nest;
-    "test_tuple"        >:: test_tuple;
-    "test_poly"         >:: test_poly;
-    "test_poly_inherit" >:: test_poly_inherit;
-    "test_record"       >:: test_record;
-    "test_abstr"        >:: test_abstr;
-    "test_custom"       >:: test_custom;
-    "test_parametric"   >:: test_parametric;
-    "test_alias_path"   >:: test_alias_path;
-    "test_polypr"       >:: test_polypr;
-    "test_placeholder"  >:: test_placeholder;
-    "test_mut_rec"      >:: test_mut_rec;
-    "test_shadowed_std_type" >:: test_shadowed_std_type;
+    "test_alias"         >:: test_alias;
+    "test_variant"       >:: test_variant;
+    "test_variant_nest"  >:: test_variant_nest;
+    "test_tuple"         >:: test_tuple;
+    "test_poly"          >:: test_poly;
+    "test_poly_inherit"  >:: test_poly_inherit;
+    "test_record"        >:: test_record;
+    "test_abstr"         >:: test_abstr;
+    "test_custom"        >:: test_custom;
+    "test_parametric"    >:: test_parametric;
+    "test_alias_path"    >:: test_alias_path;
+    "test_polypr"        >:: test_polypr;
+    "test_placeholder"   >:: test_placeholder;
+    "test_mut_rec"       >:: test_mut_rec;
+    "test_std_shadowing" >:: test_std_shadowing;
   ]
