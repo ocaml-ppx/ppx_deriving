@@ -16,6 +16,7 @@ type l  = int list   [@@deriving show]
 type a  = int array  [@@deriving show]
 type o  = int option [@@deriving show]
 type f  = int -> int [@@deriving show]
+type y  = int lazy_t [@@deriving show]
 let test_alias ctxt =
   assert_equal ~printer "1"       (show_a1 1);
   assert_equal ~printer "1l"      (show_a2 1l);
@@ -30,7 +31,11 @@ let test_alias ctxt =
   assert_equal ~printer "[1; 2; 3]" (show_l [1;2;3]);
   assert_equal ~printer "[|1; 2; 3|]" (show_a [|1;2;3|]);
   assert_equal ~printer "(Some 1)" (show_o (Some 1));
-  assert_equal ~printer "<fun>"   (show_f (fun x -> x))
+  assert_equal ~printer "<fun>"   (show_f (fun x -> x));
+  let y = lazy (1 + 1) in
+  assert_equal ~printer "<not evaluated>" (show_y y);
+  ignore (Lazy.force y);
+  assert_equal ~printer "2" (show_y y)
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving show]
 let test_variant ctxt =

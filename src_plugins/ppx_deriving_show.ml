@@ -109,6 +109,10 @@ let rec expr_of_typ quoter typ =
             Format.pp_print_string fmt "(Some ";
             [%e expr_of_typ typ] x;
             Format.pp_print_string fmt ")"]
+      | true, ([%type: [%t? typ] lazy_t] | [%type: [%t? typ] Lazy.t]) ->
+        [%expr fun x ->
+          if Lazy.is_val x then [%e expr_of_typ typ] (Lazy.force x)
+          else Format.pp_print_string fmt "<not evaluated>"]
       | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
         let args_pp = List.map (fun typ -> [%expr fun fmt -> [%e expr_of_typ typ]]) args in
         begin match attr_polyprinter typ.ptyp_attributes with

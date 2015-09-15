@@ -80,6 +80,8 @@ and expr_of_typ quoter typ =
           | None, None -> true
           | Some a, Some b -> [%e expr_of_typ typ] a b
           | _ -> false]
+      | true, ([%type: [%t? typ] lazy_t] | [%type: [%t? typ] Lazy.t]) ->
+        [%expr fun (lazy x) (lazy y) -> [%e expr_of_typ typ] x y]
       | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
         let equal_fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "equal") lid)) in
         app equal_fn (List.map expr_of_typ args)

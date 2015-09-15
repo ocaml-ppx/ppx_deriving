@@ -17,6 +17,7 @@ type r  = int ref    [@@deriving ord]
 type l  = int list   [@@deriving ord]
 type a  = int array  [@@deriving ord]
 type o  = int option [@@deriving ord]
+type y  = int lazy_t [@@deriving ord]
 
 let test_simple ctxt =
   assert_equal ~printer  (1) (compare_a1 1 0);

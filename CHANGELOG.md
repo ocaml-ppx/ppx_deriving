@@ -4,8 +4,9 @@ Changelog
 3.0
 ---
 
-  * Add support for `[@nobuiltin]` attribute.
   * Implement hygiene: Ppx_deriving.{create_quoter,quote,sanitize,with_quoter}.
+  * Show, eq, ord: add support for `lazy_t`.
+  * Add support for `[@nobuiltin]` attribute.
   * Remove allow_std_type_shadowing option.
   * Remove Ppx_deriving.extract_typename_of_type_group.
 
