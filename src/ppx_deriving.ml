@@ -126,9 +126,10 @@ let quote ~quoter expr =
 
 let sanitize ?(quoter=create_quoter ()) expr =
   Exp.let_ Nonrecursive quoter.bindings [%expr
-    let open! Ppx_deriving_runtime in
-    let open! Pervasives in
-    [%e expr]]
+    (let open! Ppx_deriving_runtime in
+     let open! Pervasives in
+     [%e expr])
+    [@ocaml.warning "-A"]]
 
 let expand_path ~path ident =
   String.concat "." (path @ [ident])
