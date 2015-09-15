@@ -141,6 +141,10 @@ val quote : quoter:quoter -> expression -> expression
     expressions returned by [quote] are in scope, and returns the wrapped expression. *)
 val sanitize : ?quoter:quoter -> expression -> expression
 
+(** [with_quoter fn] ≡
+    [fun fn a -> let quoter = create_quoter () in sanitize ~quoter (fn quoter a)] *)
+val with_quoter : (quoter -> 'a -> expression) -> 'a -> expression
+
 (** {2 AST manipulation} *)
 
 (** [expand_path name] returns [name] with the [path] module path prepended,

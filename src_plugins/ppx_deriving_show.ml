@@ -47,10 +47,12 @@ let sig_of_type ~options ~path type_decl =
    Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl))
               (show_type_of_decl ~options ~path type_decl))]
 
-let rec expr_of_typ typ =
+let rec expr_of_typ quoter typ =
+  let expr_of_typ = expr_of_typ quoter in
   match attr_printer typ.ptyp_attributes with
   | Some printer ->
-    [%expr (let fprintf = Format.fprintf in [%e printer]) fmt [@ocaml.warning "-26"]]
+    let printer = [%expr let fprintf = Format.fprintf in [%e printer]] in
+    [%expr [%e Ppx_deriving.quote quoter printer] fmt]
   | None ->
   if attr_opaque typ.ptyp_attributes then
     [%expr fun _ -> Format.pp_print_string fmt "<opaque>"]
@@ -97,7 +99,8 @@ let rec expr_of_typ typ =
       let args_pp = List.map (fun typ -> [%expr fun fmt -> [%e expr_of_typ typ]]) args in
       begin match attr_polyprinter typ.ptyp_attributes with
       | Some printer ->
-        app [%expr (let fprintf = Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
+        let printer = [%expr (let fprintf = Format.fprintf in [%e printer])] in
+        app (Ppx_deriving.quote quoter printer)
             (args_pp @ [[%expr fmt]])
       | None ->
         app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid)))
@@ -139,16 +142,19 @@ let rec expr_of_typ typ =
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   parse_options options;
+  let quoter = Ppx_deriving.create_quoter () in
   let path = Ppx_deriving.path_of_type_decl ~path type_decl in
   let prettyprinter =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest ->
-      [%expr fun fmt -> [%e expr_of_typ manifest]]
+      [%expr fun fmt -> [%e expr_of_typ quoter manifest]]
     | Ptype_variant constrs, _ ->
       let cases =
         constrs |> List.map (fun { pcd_name = { txt = name' }; pcd_args } ->
           let constr_name = Ppx_deriving.expand_path ~path name' in
-          let args = List.mapi (fun i typ -> app (expr_of_typ typ) [evar (argn i)]) pcd_args in
+          let args =
+            List.mapi (fun i typ -> app (expr_of_typ quoter typ) [evar (argn i)]) pcd_args
+          in
           let result =
             match args with
             | []   -> [%expr Format.pp_print_string fmt [%e str constr_name]]
@@ -172,7 +178,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           let field_name = if i = 0 then Ppx_deriving.expand_path ~path name else name in
           let pld_type = {pld_type with ptyp_attributes=pld_attributes@pld_type.ptyp_attributes} in
           [%expr Format.pp_print_string fmt [%e str (field_name ^ " = ")];
-            [%e expr_of_typ pld_type] [%e Exp.field (evar "x") (mknoloc (Lident name))]])
+            [%e expr_of_typ quoter pld_type] [%e Exp.field (evar "x") (mknoloc (Lident name))]])
       in
       [%expr fun fmt x ->
         Format.fprintf fmt "{ @[<hov>";
@@ -197,13 +203,14 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl) in
   let show_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl) in
-  [Vb.mk (Pat.constraint_ pp_var pp_type) (polymorphize prettyprinter);
+  [Vb.mk (Pat.constraint_ pp_var pp_type)
+         (Ppx_deriving.sanitize ~quoter (polymorphize prettyprinter));
    Vb.mk (Pat.constraint_ show_var show_type) (polymorphize stringprinter);]
 
 let () =
   Ppx_deriving.(register (create deriver
-    ~core_type: (fun typ ->
-      [%expr fun x -> Format.asprintf "%a" (fun fmt -> [%e expr_of_typ typ]) x])
+    ~core_type: (Ppx_deriving.with_quoter (fun quoter typ ->
+      [%expr fun x -> Format.asprintf "%a" (fun fmt -> [%e expr_of_typ quoter typ]) x]))
     ~type_decl_str: (fun ~options ~path type_decls ->
       [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
     ~type_decl_sig: (fun ~options ~path type_decls ->

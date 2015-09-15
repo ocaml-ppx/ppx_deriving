@@ -31,20 +31,17 @@ let wildcard_case int_cases =
     let to_int = [%e Exp.function_ int_cases] in
     Pervasives.compare (to_int lhs) (to_int rhs)]
 
-(* deactivate warning 4 in code that uses [wildcard_case] *)
-let warning_minus_4 =
-  Ppx_deriving.attr_warning [%expr "-4"]
-
 let pattn side typs =
   List.mapi (fun i _ -> pvar (argn side i)) typs
 
-let rec exprsn typs =
+let rec exprsn quoter typs =
   typs |> List.mapi (fun i typ ->
-    app (expr_of_typ typ) [evar (argn `lhs i); evar (argn `rhs i)])
+    app (expr_of_typ quoter typ) [evar (argn `lhs i); evar (argn `rhs i)])
 
-and expr_of_typ typ =
+and expr_of_typ quoter typ =
+  let expr_of_typ = expr_of_typ quoter in
   match attr_compare typ.ptyp_attributes with
-  | Some fn -> fn
+  | Some fn -> Ppx_deriving.quote quoter fn
   | None ->
     match typ with
     | [%type: _] | [%type: unit] -> [%expr fun _ _ -> 0]
@@ -84,7 +81,7 @@ and expr_of_typ typ =
       app compare_fn (List.map expr_of_typ args)
     | { ptyp_desc = Ptyp_tuple typs } ->
       [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
-        [%e exprsn typs |> List.rev |> reduce_compare]]
+        [%e exprsn quoter typs |> List.rev |> reduce_compare]]
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
       let cases =
         fields |> List.map (fun field ->
@@ -134,9 +131,10 @@ let sig_of_type ~options ~path type_decl =
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   parse_options options;
+  let quoter = Ppx_deriving.create_quoter () in
   let comparator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
-    | Ptype_abstract, Some manifest -> expr_of_typ manifest
+    | Ptype_abstract, Some manifest -> expr_of_typ quoter manifest
     | Ptype_variant constrs, _ ->
       let int_cases =
           constrs |> List.mapi (fun i { pcd_name = { txt = name }; pcd_args } ->
@@ -145,19 +143,19 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
             | _  -> Exp.case (pconstr name (List.map (fun _ -> [%pat? _]) pcd_args)) (int i))
       and cases =
         constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args = typs } ->
-          exprsn typs |> List.rev |> reduce_compare |>
+          exprsn quoter typs |> List.rev |> reduce_compare |>
           Exp.case (ptuple [pconstr name (pattn `lhs typs);
                             pconstr name (pattn `rhs typs)]))
       in
       [%expr fun lhs rhs ->
-        [%e Exp.match_ ~attrs:[warning_minus_4] [%expr lhs, rhs] (cases @ [wildcard_case int_cases])]]
+        [%e Exp.match_ [%expr lhs, rhs] (cases @ [wildcard_case int_cases])]]
     | Ptype_record labels, _ ->
       let exprs =
         labels |> List.map (fun { pld_name = { txt = name }; pld_type; pld_attributes } ->
           let attrs = pld_attributes @ pld_type.ptyp_attributes in
           let pld_type = {pld_type with ptyp_attributes=attrs} in
           let field obj = Exp.field obj (mknoloc (Lident name)) in
-          app (expr_of_typ pld_type) [field (evar "lhs"); field (evar "rhs")])
+          app (expr_of_typ quoter pld_type) [field (evar "lhs"); field (evar "rhs")])
       in
       [%expr fun lhs rhs -> [%e reduce_compare exprs]]
     | Ptype_abstract, None ->
@@ -172,11 +170,11 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   let out_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "compare") type_decl) in
   [Vb.mk (Pat.constraint_ out_var out_type)
-         (polymorphize comparator)]
+         (Ppx_deriving.sanitize ~quoter (polymorphize comparator))]
 
 let () =
   Ppx_deriving.(register (create deriver
-    ~core_type: expr_of_typ
+    ~core_type: (Ppx_deriving.with_quoter expr_of_typ)
     ~type_decl_str: (fun ~options ~path type_decls ->
       [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
     ~type_decl_sig: (fun ~options ~path type_decls ->

@@ -131,6 +131,10 @@ let sanitize ?(quoter=create_quoter ()) expr =
      [%e expr])
     [@ocaml.warning "-A"]]
 
+let with_quoter fn a =
+  let quoter = create_quoter () in
+  sanitize ~quoter (fn quoter a)
+
 let expand_path ~path ident =
   String.concat "." (path @ [ident])
 

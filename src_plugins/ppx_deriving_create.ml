@@ -32,7 +32,8 @@ let find_main labels =
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   parse_options options;
-  let mapper =
+  let quoter = Ppx_deriving.create_quoter () in
+  let creator =
     match type_decl.ptype_kind with
     | Ptype_record labels ->
       let fields =
@@ -49,7 +50,8 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       List.fold_left (fun accum { pld_name = { txt = name }; pld_type; pld_attributes } ->
         let attrs = pld_attributes @ pld_type.ptyp_attributes in
         match attr_default attrs with
-        | Some default -> Exp.fun_ ("?"^name) (Some default) (pvar name) accum
+        | Some default -> Exp.fun_ ("?"^name) (Some (Ppx_deriving.quote ~quoter default))
+                                   (pvar name) accum
         | None ->
         if attr_split attrs then
           match pld_type with
@@ -70,7 +72,8 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           fn labels
     | _ -> raise_errorf ~loc "%s can be derived only for record types" deriver
   in
-  [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl)) mapper]
+  [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
+         (Ppx_deriving.sanitize ~quoter creator)]
 
 let wrap_predef_option typ =
   let predef_option = mknoloc (Ldot (Lident "*predef*", "option")) in

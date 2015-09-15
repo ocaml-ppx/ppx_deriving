@@ -35,13 +35,14 @@ let sig_of_type ~options ~path type_decl =
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "equal") type_decl))
              (core_type_of_decl ~options ~path type_decl))]
 
-let rec exprsn typs =
+let rec exprsn quoter typs =
   typs |> List.mapi (fun i typ ->
-    app (expr_of_typ typ) [evar (argn `lhs i); evar (argn `rhs i)])
+    app (expr_of_typ quoter typ) [evar (argn `lhs i); evar (argn `rhs i)])
 
-and expr_of_typ typ =
+and expr_of_typ quoter typ =
+  let expr_of_typ = expr_of_typ quoter in
   match attr_equal typ.ptyp_attributes with
-  | Some fn -> fn
+  | Some fn -> Ppx_deriving.quote quoter fn
   | None ->
     match typ with
     | [%type: _] | [%type: unit] -> [%expr fun _ _ -> true]
@@ -74,7 +75,7 @@ and expr_of_typ typ =
       app equal_fn (List.map expr_of_typ args)
     | { ptyp_desc = Ptyp_tuple typs } ->
       [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
-        [%e exprsn typs |> Ppx_deriving.(fold_exprs (binop_reduce [%expr (&&)]))]]
+        [%e exprsn quoter typs |> Ppx_deriving.(fold_exprs (binop_reduce [%expr (&&)]))]]
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
       let cases =
         (fields |> List.map (fun field ->
@@ -102,13 +103,14 @@ and expr_of_typ typ =
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   parse_options options;
+  let quoter = Ppx_deriving.create_quoter () in
   let comparator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
-    | Ptype_abstract, Some manifest -> expr_of_typ manifest
+    | Ptype_abstract, Some manifest -> expr_of_typ quoter manifest
     | Ptype_variant constrs, _ ->
       let cases =
         (constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args = typs } ->
-          exprsn typs |>
+          exprsn quoter typs |>
           Ppx_deriving.(fold_exprs ~unit:[%expr true] (binop_reduce [%expr (&&)])) |>
           Exp.case (ptuple [pconstr name (pattn `lhs typs);
                             pconstr name (pattn `rhs typs)]))) @
@@ -122,7 +124,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           let attrs =  pld_type.ptyp_attributes @ pld_attributes in
           let pld_type = {pld_type with ptyp_attributes=attrs} in
           let field obj = Exp.field obj (mknoloc (Lident name)) in
-          app (expr_of_typ pld_type) [field (evar "lhs"); field (evar "rhs")])
+          app (expr_of_typ quoter pld_type) [field (evar "lhs"); field (evar "rhs")])
       in
       [%expr fun lhs rhs -> [%e exprs |> Ppx_deriving.(fold_exprs (binop_reduce [%expr (&&)]))]]
     | Ptype_abstract, None ->
@@ -134,13 +136,14 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   let out_type =
     Ppx_deriving.strong_type_of_type @@
       core_type_of_decl  ~options ~path type_decl in
-  let eq_var = 
+  let eq_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "equal") type_decl) in
-  [Vb.mk (Pat.constraint_ eq_var out_type) (polymorphize comparator)]
+  [Vb.mk (Pat.constraint_ eq_var out_type)
+         (Ppx_deriving.sanitize ~quoter (polymorphize comparator))]
 
 let () =
   Ppx_deriving.(register (create "eq"
-    ~core_type: expr_of_typ
+    ~core_type: (Ppx_deriving.with_quoter expr_of_typ)
     ~type_decl_str: (fun ~options ~path type_decls ->
        [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
     ~type_decl_sig: (fun ~options ~path type_decls ->
