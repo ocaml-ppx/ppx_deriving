@@ -13,6 +13,9 @@ let parse_options options =
     match name with
     | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
 
+let attr_nobuiltin attrs =
+  Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
+
 let argn = Printf.sprintf "a%d"
 
 let reduce_acc a b = [%expr let acc = [%e a] in [%e b]]
@@ -20,14 +23,19 @@ let reduce_acc a b = [%expr let acc = [%e a] in [%e b]]
 let rec expr_of_typ typ =
   match typ with
   | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun acc _ -> acc]
-  | [%type: [%t? typ] ref]   -> [%expr fun x -> [%e expr_of_typ typ] !x]
-  | [%type: [%t? typ] list]  -> [%expr List.fold_left [%e expr_of_typ typ]]
-  | [%type: [%t? typ] array] -> [%expr Array.fold_left [%e expr_of_typ typ]]
-  | [%type: [%t? typ] option] ->
-    [%expr fun acc -> function None -> acc | Some x -> [%e expr_of_typ typ] acc x]
   | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-    app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix deriver) lid)))
-        (List.map expr_of_typ args)
+    let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
+    begin match builtin, typ with
+    | true, [%type: [%t? typ] ref]   -> [%expr fun x -> [%e expr_of_typ typ] !x]
+    | true, [%type: [%t? typ] list]  -> [%expr List.fold_left [%e expr_of_typ typ]]
+    | true, [%type: [%t? typ] array] -> [%expr Array.fold_left [%e expr_of_typ typ]]
+    | true, [%type: [%t? typ] option] ->
+      [%expr fun acc -> function None -> acc | Some x -> [%e expr_of_typ typ] acc x]
+    | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
+      app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix deriver) lid)))
+          (List.map expr_of_typ args)
+    | _ -> assert false
+    end
   | { ptyp_desc = Ptyp_tuple typs } ->
     let args = typs |> List.mapi (fun i typ ->
                   [%expr [%e expr_of_typ typ] acc [%e evar (argn i)]]) in

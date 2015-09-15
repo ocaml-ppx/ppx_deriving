@@ -13,6 +13,9 @@ let parse_options options =
     match name with
     | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
 
+let attr_nobuiltin attrs =
+  Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
+
 let attr_equal attrs =
   Ppx_deriving.(attrs |> attr ~deriver "equal" |> Arg.(get_attr ~deriver expr))
 
@@ -26,9 +29,9 @@ let core_type_of_decl ~options ~path type_decl =
   parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
-    (fun var -> [%type: [%t var] -> [%t var] -> bool])
+    (fun var -> [%type: [%t var] -> [%t var] -> Ppx_deriving_runtime.bool])
     type_decl
-    [%type: [%t typ] -> [%t typ] -> bool]
+    [%type: [%t typ] -> [%t typ] -> Ppx_deriving_runtime.bool]
 
 let sig_of_type ~options ~path type_decl =
   parse_options options;
@@ -45,34 +48,43 @@ and expr_of_typ quoter typ =
   | Some fn -> Ppx_deriving.quote quoter fn
   | None ->
     match typ with
-    | [%type: _] | [%type: unit] -> [%expr fun _ _ -> true]
-    | [%type: int] | [%type: int32] | [%type: Int32.t]
-    | [%type: int64] | [%type: Int64.t] | [%type: nativeint] | [%type: Nativeint.t]
-    | [%type: float] | [%type: bool] | [%type: char] | [%type: string] | [%type: bytes] ->
-      [%expr (fun (a:[%t typ]) b -> a = b)]
-    | [%type: [%t? typ] ref]   -> [%expr fun a b -> [%e expr_of_typ typ] !a !b]
-    | [%type: [%t? typ] list]  ->
-      [%expr
-        let rec loop x y =
+    | [%type: _] -> [%expr fun _ _ -> true]
+    | { ptyp_desc = Ptyp_constr _ } ->
+      let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
+      begin match builtin, typ with
+      | true, [%type: unit] ->
+        [%expr fun _ _ -> true]
+      | true, ([%type: int] | [%type: int32] | [%type: Int32.t] |
+               [%type: int64] | [%type: Int64.t] | [%type: nativeint] |
+               [%type: Nativeint.t] | [%type: float] | [%type: bool] |
+               [%type: char] | [%type: string] | [%type: bytes]) ->
+        [%expr (fun (a:[%t typ]) b -> a = b)]
+      | true, [%type: [%t? typ] ref] ->
+        [%expr fun a b -> [%e expr_of_typ typ] !a !b]
+      | true, [%type: [%t? typ] list] ->
+        [%expr
+          let rec loop x y =
+            match x, y with
+            | [], [] -> true
+            | a :: x, b :: y -> [%e expr_of_typ typ] a b && loop x y
+            | _ -> false
+          in (fun x y -> loop x y)]
+      | true, [%type: [%t? typ] array] ->
+        [%expr fun x y ->
+          let rec loop i =
+            (i = Array.length x || [%e expr_of_typ typ] x.(i) y.(i)) && loop (i + 1)
+          in Array.length x = Array.length y && loop 0]
+      | true, [%type: [%t? typ] option] ->
+        [%expr fun x y ->
           match x, y with
-          | [], [] -> true
-          | a :: x, b :: y -> [%e expr_of_typ typ] a b && loop x y
-          | _ -> false
-        in (fun x y -> loop x y)]
-    | [%type: [%t? typ] array] ->
-      [%expr fun x y ->
-        let rec loop i =
-          (i = Array.length x || [%e expr_of_typ typ] x.(i) y.(i)) && loop (i + 1)
-        in Array.length x = Array.length y && loop 0]
-    | [%type: [%t? typ] option] ->
-      [%expr fun x y ->
-        match x, y with
-        | None, None -> true
-        | Some a, Some b -> [%e expr_of_typ typ] a b
-        | _ -> false]
-    | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-      let equal_fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "equal") lid)) in
-      app equal_fn (List.map expr_of_typ args)
+          | None, None -> true
+          | Some a, Some b -> [%e expr_of_typ typ] a b
+          | _ -> false]
+      | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
+        let equal_fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "equal") lid)) in
+        app equal_fn (List.map expr_of_typ args)
+      | _ -> assert false
+      end
     | { ptyp_desc = Ptyp_tuple typs } ->
       [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
         [%e exprsn quoter typs |> Ppx_deriving.(fold_exprs (binop_reduce [%expr (&&)]))]]

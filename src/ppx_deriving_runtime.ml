@@ -54,3 +54,5 @@ module Weak = Weak
 module Printf = Printf
 module Format = Format
 module Buffer = Buffer
+
+include Pervasives

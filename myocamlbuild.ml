@@ -23,5 +23,9 @@ let () = dispatch (
       S[A"-ppx"; A("src/ppx_deriving_main.byte " ^ (plugin_cmas names))]);
     pflag ["ocaml"; "compile"; "ppx_native"] "deriving" (fun names ->
       S[A"-ppx"; A("src/ppx_deriving_main.native " ^ (plugin_cmas names))]);
+    flag ["ocaml"; "link"; "byte"; "use_deriving"] &
+      A"src/ppx_deriving_runtime.cma";
+    flag ["ocaml"; "link"; "native"; "use_deriving"] &
+      A"src/ppx_deriving_runtime.cmxa";
 
   | _ -> ())

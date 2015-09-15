@@ -13,19 +13,27 @@ let parse_options options =
     match name with
     | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
 
+let attr_nobuiltin attrs =
+  Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
+
 let argn = Printf.sprintf "a%d"
 
 let rec expr_of_typ typ =
   match typ with
   | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun _ -> ()]
-  | [%type: [%t? typ] ref]   -> [%expr fun x -> [%e expr_of_typ typ] !x]
-  | [%type: [%t? typ] list]  -> [%expr List.iter [%e expr_of_typ typ]]
-  | [%type: [%t? typ] array] -> [%expr Array.iter [%e expr_of_typ typ]]
-  | [%type: [%t? typ] option] ->
-    [%expr function None -> () | Some x -> [%e expr_of_typ typ] x]
-  | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-    app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix deriver) lid)))
-        (List.map expr_of_typ args)
+  | { ptyp_desc = Ptyp_constr _ } ->
+    let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
+    begin match builtin, typ with
+    | true, [%type: [%t? typ] ref]   -> [%expr fun x -> [%e expr_of_typ typ] !x]
+    | true, [%type: [%t? typ] list]  -> [%expr List.iter [%e expr_of_typ typ]]
+    | true, [%type: [%t? typ] array] -> [%expr Array.iter [%e expr_of_typ typ]]
+    | true, [%type: [%t? typ] option] ->
+      [%expr function None -> () | Some x -> [%e expr_of_typ typ] x]
+    | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
+      app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix deriver) lid)))
+          (List.map expr_of_typ args)
+    | _ -> assert false
+    end
   | { ptyp_desc = Ptyp_tuple typs } ->
     [%expr fun [%p ptuple (List.mapi (fun i _ -> pvar (argn i)) typs)] ->
       [%e Ppx_deriving.(fold_exprs seq_reduce
@@ -89,9 +97,9 @@ let sig_of_type ~options ~path type_decl =
   parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
-                        (fun var -> [%type: [%t var] -> unit]) type_decl in
+                        (fun var -> [%type: [%t var] -> Ppx_deriving_runtime.unit]) type_decl in
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
-              (polymorphize [%type: [%t typ] -> unit]))]
+              (polymorphize [%type: [%t typ] -> Ppx_deriving_runtime.unit]))]
 
 let () =
   Ppx_deriving.(register (create deriver

@@ -13,6 +13,9 @@ let parse_options options =
     match name with
     | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
 
+let attr_nobuiltin attrs =
+  Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
+
 let attr_compare attrs =
   Ppx_deriving.(attrs |> attr ~deriver "compare" |> Arg.(get_attr ~deriver expr))
 
@@ -44,41 +47,50 @@ and expr_of_typ quoter typ =
   | Some fn -> Ppx_deriving.quote quoter fn
   | None ->
     match typ with
-    | [%type: _] | [%type: unit] -> [%expr fun _ _ -> 0]
-    | [%type: int] | [%type: int32] | [%type: Int32.t]
-    | [%type: int64] | [%type: Int64.t] | [%type: nativeint] | [%type: Nativeint.t]
-    | [%type: float] | [%type: bool] | [%type: char] | [%type: string] | [%type: bytes] ->
-      [%expr Pervasives.compare]
-    | [%type: [%t? typ] ref]   -> [%expr fun a b -> [%e expr_of_typ typ] !a !b]
-    | [%type: [%t? typ] list]  ->
-      [%expr
-        let rec loop x y =
+    | [%type: _] -> [%expr fun _ _ -> 0]
+    | { ptyp_desc = Ptyp_constr _ } ->
+      let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
+      begin match builtin, typ with
+      | true, ([%type: _] | [%type: unit]) ->
+        [%expr fun _ _ -> 0]
+      | true, ([%type: int] | [%type: int32] | [%type: Int32.t]
+              | [%type: int64] | [%type: Int64.t] | [%type: nativeint]
+              | [%type: Nativeint.t] | [%type: float] | [%type: bool]
+              | [%type: char] | [%type: string] | [%type: bytes]) ->
+        [%expr Pervasives.compare]
+      | true, [%type: [%t? typ] ref] ->
+        [%expr fun a b -> [%e expr_of_typ typ] !a !b]
+      | true, [%type: [%t? typ] list]  ->
+        [%expr
+          let rec loop x y =
+            match x, y with
+            | [], [] -> 0
+            | [], _ -> -1
+            | _, [] -> 1
+            | a :: x, b :: y ->
+              [%e compare_reduce [%expr loop x y] [%expr [%e expr_of_typ typ] a b]]
+          in (fun x y -> loop x y)]
+      | true, [%type: [%t? typ] array] ->
+        [%expr fun x y ->
+          let rec loop i =
+            if i = Array.length x then 0
+            else [%e compare_reduce [%expr loop (i + 1)]
+                                    [%expr [%e expr_of_typ typ] x.(i) y.(i)]]
+          in
+          [%e compare_reduce [%expr loop 0]
+                             [%expr Pervasives.compare (Array.length x) (Array.length y)]]]
+      | true, [%type: [%t? typ] option] ->
+        [%expr fun x y ->
           match x, y with
-          | [], [] -> 0
-          | [], _ -> -1
-          | _, [] -> 1
-          | a :: x, b :: y ->
-            [%e compare_reduce [%expr loop x y] [%expr [%e expr_of_typ typ] a b]]
-        in (fun x y -> loop x y)]
-    | [%type: [%t? typ] array] ->
-      [%expr fun x y ->
-        let rec loop i =
-          if i = Array.length x then 0
-          else [%e compare_reduce [%expr loop (i + 1)]
-                                  [%expr [%e expr_of_typ typ] x.(i) y.(i)]]
-        in
-        [%e compare_reduce [%expr loop 0]
-                           [%expr Pervasives.compare (Array.length x) (Array.length y)]]]
-    | [%type: [%t? typ] option] ->
-      [%expr fun x y ->
-        match x, y with
-        | None, None -> 0
-        | Some a, Some b -> [%e expr_of_typ typ] a b
-        | None, Some _ -> -1
-        | Some _, None -> 1]
-    | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-      let compare_fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "compare") lid)) in
-      app compare_fn (List.map expr_of_typ args)
+          | None, None -> 0
+          | Some a, Some b -> [%e expr_of_typ typ] a b
+          | None, Some _ -> -1
+          | Some _, None -> 1]
+      | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
+        let compare_fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "compare") lid)) in
+        app compare_fn (List.map expr_of_typ args)
+      | _ -> assert false
+      end
     | { ptyp_desc = Ptyp_tuple typs } ->
       [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
         [%e exprsn quoter typs |> List.rev |> reduce_compare]]
@@ -122,8 +134,8 @@ let core_type_of_decl ~options ~path type_decl =
   parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
-          (fun var -> [%type: [%t var] -> [%t var] -> int]) type_decl in
-  (polymorphize [%type: [%t typ] -> [%t typ] -> int])
+          (fun var -> [%type: [%t var] -> [%t var] -> Ppx_deriving_runtime.int]) type_decl in
+  (polymorphize [%type: [%t typ] -> [%t typ] -> Ppx_deriving_runtime.int])
 
 let sig_of_type ~options ~path type_decl =
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "compare") type_decl))

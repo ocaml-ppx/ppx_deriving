@@ -2,7 +2,7 @@
     modules operating on them, so that ppx_deriving plugins operate
     in a well-defined environment. *)
 
-(** {1 Predefined types} *)
+(** {2 Predefined types} *)
 
 (** The {!Predef} module is necessary in absence of a [type nonrec]
     construct. *)
@@ -40,7 +40,8 @@ type int64 = Predef._int64
 type 'a lazy_t = 'a Predef._lazy_t
 type bytes = Predef._bytes
 
-(** {1 Operations on predefined types} *)
+(** {2 Predefined modules}
+    {3 Operations on predefined types} *)
 
 module Pervasives : (module type of Pervasives with
   type fpclass = Pervasives.fpclass and
@@ -51,6 +52,16 @@ module Pervasives : (module type of Pervasives with
   type ('a, 'b, 'c, 'd, 'e, 'f) format6 = ('a, 'b, 'c, 'd, 'e, 'f) Pervasives.format6 and
   type ('a, 'b, 'c, 'd) format4 = ('a, 'b, 'c, 'd) Pervasives.format4 and
   type ('a, 'b, 'c) format = ('a, 'b, 'c) Pervasives.format)
+include (module type of Pervasives with
+  type fpclass = Pervasives.fpclass and
+  type in_channel = Pervasives.in_channel and
+  type out_channel = Pervasives.out_channel and
+  type open_flag = Pervasives.open_flag and
+  type 'a ref = 'a Pervasives.ref and
+  type ('a, 'b, 'c, 'd, 'e, 'f) format6 = ('a, 'b, 'c, 'd, 'e, 'f) Pervasives.format6 and
+  type ('a, 'b, 'c, 'd) format4 = ('a, 'b, 'c, 'd) Pervasives.format4 and
+  type ('a, 'b, 'c) format = ('a, 'b, 'c) Pervasives.format)
+
 module Char : (module type of Char)
 module String : (module type of String)
 module Printexc : (module type of Printexc with
@@ -65,7 +76,7 @@ module Int64 : (module type of Int64)
 module Lazy : (module type of Lazy)
 module Bytes : (module type of Bytes)
 
-(** {1 Data structures} *)
+(** {3 Data structures} *)
 
 module Hashtbl : (module type of Hashtbl with
   type ('a, 'b) t := ('a, 'b) Hashtbl.t and
@@ -81,7 +92,7 @@ module Weak : (module type of Weak with
 module Buffer : (module type of Buffer with
   type t := Buffer.t)
 
-(** {1 Formatting} *)
+(** {3 Formatting} *)
 
 module Printf : (module type of Printf)
 module Format : (module type of Format with

@@ -97,13 +97,13 @@ let sig_of_type ~options ~path type_decl =
   parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "min") type_decl))
-             [%type: int]);
+             [%type: Ppx_deriving_runtime.int]);
    Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "max") type_decl))
-             [%type: int]);
+             [%type: Ppx_deriving_runtime.int]);
    Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Suffix "to_enum") type_decl))
-             [%type: [%t typ] -> int]);
+             [%type: [%t typ] -> Ppx_deriving_runtime.int]);
    Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Suffix "of_enum") type_decl))
-             [%type: int -> [%t typ] option])]
+             [%type: Ppx_deriving_runtime.int -> [%t typ] Ppx_deriving_runtime.option])]
 
 let () =
   Ppx_deriving.(register (create deriver

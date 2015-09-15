@@ -134,8 +134,8 @@ let test_mrec ctxt =
   assert_equal ~printer "(Test_deriving_show.B\n   { Test_deriving_show.x = 12; r = (Test_deriving_show.F 16) })" (show_foo e1)
 
 type es =
-  | ESBool of bool
-  | ESString of string
+  | ESBool of (bool [@nobuiltin])
+  | ESString of (string [@nobuiltin])
 and bool =
   | Bfoo of int * (int -> int)
 and string =
@@ -166,6 +166,7 @@ let suite = "Test deriving(show)" >::: [
     "test_alias_path"    >:: test_alias_path;
     "test_polypr"        >:: test_polypr;
     "test_placeholder"   >:: test_placeholder;
-    "test_mut_rec"       >:: test_mut_rec;
+    "test_mrec"          >:: test_mrec;
     "test_std_shadowing" >:: test_std_shadowing;
   ]
+
