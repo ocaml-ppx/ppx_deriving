@@ -20,6 +20,10 @@ type prefix = {
 let test_prefix ctxt =
   assert_equal true (equal_prefix {field=1} {field=2})
 
+let test_hash_variant ctxt =
+  ["a"; "b"; "c"; "Dd"] |> List.iter (fun x ->
+    assert_equal (Btype.hash_variant x) (Ppx_deriving.hash_variant x))
+
 let suite = "Test ppx_deriving" >::: [
     Test_deriving_show.suite;
     Test_deriving_eq.suite;

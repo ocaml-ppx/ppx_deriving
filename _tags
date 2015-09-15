@@ -5,7 +5,7 @@ true: warn(@5@8@10@11@12@14@23@24@26@29@40), bin_annot, safe_string, debug
 <src/*.{ml,mli,byte,native}>: package(dynlink), package(compiler-libs.common), package(ppx_tools.metaquot)
 <src_plugins/*.{ml,mli}>: package(compiler-libs.common), package(ppx_tools.metaquot)
 
-<src_test/*.{ml,byte,native}>: debug, package(oUnit), use_deriving
+<src_test/*.{ml,byte,native}>: debug, package(oUnit ppx_tools compiler-libs.common), use_deriving
 "src_test/test_deriving_show.ml": deriving(show)
 "src_test/test_deriving_eq.ml": deriving(eq)
 "src_test/test_deriving_ord.ml": deriving(ord)

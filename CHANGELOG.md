@@ -7,6 +7,7 @@ Changelog
   * Implement hygiene: Ppx_deriving.{create_quoter,quote,sanitize,with_quoter}.
   * Show, eq, ord: add support for `lazy_t`.
   * Add support for `[@nobuiltin]` attribute.
+  * Add Ppx_deriving.hash_variant.
   * Remove allow_std_type_shadowing option.
   * Remove Ppx_deriving.extract_typename_of_type_group.
 

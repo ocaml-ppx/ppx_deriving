@@ -266,6 +266,11 @@ val binop_reduce : expression -> expression -> expression -> expression
     [freevars . ty], giving a strong polymorphic type *)
 val strong_type_of_type: core_type -> core_type
 
-val mapper : Ast_mapper.mapper
 (** The mapper for the currently loaded deriving plugins. It is useful for
     recursively processing expression-valued attributes. *)
+val mapper : Ast_mapper.mapper
+
+(** {2 Miscellanea} *)
+
+(** [hash_variant x] ≡ [Btype.hash_variant x]. *)
+val hash_variant : string -> int
