@@ -84,7 +84,9 @@ and expr_of_typ quoter typ =
         [%expr fun (lazy x) (lazy y) -> [%e expr_of_typ typ] x y]
       | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
         let equal_fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "equal") lid)) in
-        app equal_fn (List.map expr_of_typ args)
+        let fwd = app equal_fn (List.map expr_of_typ args) in
+        (* eta-expansion is necessary for recursive groups *)
+        [%expr fun x -> [%e fwd] x]
       | _ -> assert false
       end
     | { ptyp_desc = Ptyp_tuple typs } ->

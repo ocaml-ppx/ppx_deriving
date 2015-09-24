@@ -101,6 +101,13 @@ let test_std_shadowing ctxt =
   assert_equal ~printer true (equal_es e1 e1);
   assert_equal ~printer true (equal_es e2 e2)
 
+type poly_app = float poly_abs
+
+and 'a poly_abs = 'a [@@deriving eq]
+
+let test_poly_app ctxt =
+  assert_equal ~printer true (equal_poly_app 1.0 1.0) ;
+  assert_equal ~printer false (equal_poly_app 1.0 2.0)
 
 let suite = "Test deriving(eq)" >::: [
     "test_simple"        >:: test_simple;
@@ -108,6 +115,7 @@ let suite = "Test deriving(eq)" >::: [
     "test_placeholder"   >:: test_placeholder;
     "test_mrec"          >:: test_mrec;
     "test_mut_rec"       >:: test_mut_rec;
-    "test_std_shadowing" >:: test_std_shadowing
+    "test_std_shadowing" >:: test_std_shadowing;
+    "test_poly_app"      >:: test_poly_app
   ]
 
