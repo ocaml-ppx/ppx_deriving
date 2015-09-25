@@ -162,7 +162,7 @@ and 'a poly_abs = 'a
 [@@deriving show]
 
 let test_poly_app ctxt =
-  assert_equal ~printer "1.0" (show_poly_app 1.0)
+  assert_equal ~printer "1." (show_poly_app 1.0)
 
 let suite = "Test deriving(show)" >::: [
     "test_alias"         >:: test_alias;
