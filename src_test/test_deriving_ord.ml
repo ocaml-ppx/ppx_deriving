@@ -115,6 +115,14 @@ let test_std_shadowing ctxt =
   assert_equal ~printer 0 (compare_es e1 e1);
   assert_equal ~printer 0 (compare_es e2 e2)
 
+type poly_app = float poly_abs
+and 'a poly_abs = 'a
+[@@deriving ord]
+
+let test_poly_app ctxt =
+  assert_equal ~printer 0 (compare_poly_app 1.0 1.0);
+  assert_equal ~printer (-1) (compare_poly_app 1.0 2.0)
+
 module Warnings = struct
   module W4 = struct
     [@@@ocaml.warning "@4"]
@@ -135,4 +143,5 @@ let suite = "Test deriving(ord)" >::: [
     "test_mrec"          >:: test_mrec;
     "test_mrec2"         >:: test_mrec2;
     "test_std_shadowing" >:: test_std_shadowing;
+    "test_poly_app"      >:: test_poly_app;
   ]

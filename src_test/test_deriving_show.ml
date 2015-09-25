@@ -157,6 +157,13 @@ let test_std_shadowing ctxt =
     "(Test_deriving_show.ESString Test_deriving_show.Sfoo (\"lalala\", <fun>))"
     (show_es e2)
 
+type poly_app = float poly_abs
+and 'a poly_abs = 'a
+[@@deriving show]
+
+let test_poly_app ctxt =
+  assert_equal ~printer "1.0" (show_poly_app 1.0)
+
 let suite = "Test deriving(show)" >::: [
     "test_alias"         >:: test_alias;
     "test_variant"       >:: test_variant;
@@ -173,5 +180,6 @@ let suite = "Test deriving(show)" >::: [
     "test_placeholder"   >:: test_placeholder;
     "test_mrec"          >:: test_mrec;
     "test_std_shadowing" >:: test_std_shadowing;
+    "test_poly_app"      >:: test_poly_app;
   ]
 
