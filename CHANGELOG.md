@@ -1,6 +1,14 @@
 Changelog
 =========
 
+3.1
+---
+
+  * Show, eq, ord: hygienically invoke functions from referenced modules
+    (such as X.pp for X.t when deriving show) to coexist with modules
+    shadowing ones from standard library.
+  * Iter, map, fold: hygienically invoke List and Array functions.
+
 3.0
 ---
 

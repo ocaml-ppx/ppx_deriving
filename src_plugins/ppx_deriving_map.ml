@@ -24,8 +24,10 @@ let rec expr_of_typ typ =
   | { ptyp_desc = Ptyp_constr _ } ->
     let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
     begin match builtin, typ with
-    | true, [%type: [%t? typ] list]  -> [%expr List.map [%e expr_of_typ typ]]
-    | true, [%type: [%t? typ] array] -> [%expr Array.map [%e expr_of_typ typ]]
+    | true, [%type: [%t? typ] list] ->
+      [%expr Ppx_deriving_runtime.List.map [%e expr_of_typ typ]]
+    | true, [%type: [%t? typ] array] ->
+      [%expr Ppx_deriving_runtime.Array.map [%e expr_of_typ typ]]
     | true, [%type: [%t? typ] option] ->
       [%expr function None -> None | Some x -> Some ([%e expr_of_typ typ] x)]
     | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
