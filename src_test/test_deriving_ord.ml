@@ -123,6 +123,13 @@ let test_poly_app ctxt =
   assert_equal ~printer 0 (compare_poly_app 1.0 1.0);
   assert_equal ~printer (-1) (compare_poly_app 1.0 2.0)
 
+module List = struct
+  type 'a t = [`Cons of 'a | `Nil]
+  [@@deriving ord]
+end
+type 'a std_clash = 'a List.t option
+[@@deriving ord]
+
 module Warnings = struct
   module W4 = struct
     [@@@ocaml.warning "@4"]

@@ -109,6 +109,13 @@ let test_poly_app ctxt =
   assert_equal ~printer true (equal_poly_app 1.0 1.0);
   assert_equal ~printer false (equal_poly_app 1.0 2.0)
 
+module List = struct
+  type 'a t = [`Cons of 'a | `Nil]
+  [@@deriving eq]
+end
+type 'a std_clash = 'a List.t option
+[@@deriving eq]
+
 let suite = "Test deriving(eq)" >::: [
     "test_simple"        >:: test_simple;
     "test_custom"        >:: test_custom;

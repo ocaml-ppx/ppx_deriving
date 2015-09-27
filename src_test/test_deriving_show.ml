@@ -164,6 +164,13 @@ and 'a poly_abs = 'a
 let test_poly_app ctxt =
   assert_equal ~printer "1." (show_poly_app 1.0)
 
+module List = struct
+  type 'a t = [`Cons of 'a | `Nil]
+  [@@deriving show]
+end
+type 'a std_clash = 'a List.t option
+[@@deriving show]
+
 let suite = "Test deriving(show)" >::: [
     "test_alias"         >:: test_alias;
     "test_variant"       >:: test_variant;

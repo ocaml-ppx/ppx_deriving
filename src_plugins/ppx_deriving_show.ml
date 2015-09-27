@@ -115,17 +115,15 @@ let rec expr_of_typ quoter typ =
           else Format.pp_print_string fmt "<not evaluated>"]
       | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
         let args_pp = List.map (fun typ -> [%expr fun fmt -> [%e expr_of_typ typ]]) args in
-        begin match attr_polyprinter typ.ptyp_attributes with
-        | Some printer ->
-          let printer =
+        let printer =
+          match attr_polyprinter typ.ptyp_attributes with
+          | Some printer ->
             [%expr (let fprintf = Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
-          in
-          app (Ppx_deriving.quote quoter printer)
-              (args_pp @ [[%expr fmt]])
-        | None ->
-          app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid)))
-              (args_pp @ [[%expr fmt]])
-        end
+          | None ->
+            Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid))
+        in
+        app (Ppx_deriving.quote quoter printer)
+            (args_pp @ [[%expr fmt]])
       | _ -> assert false
       end
     | { ptyp_desc = Ptyp_tuple typs } ->
