@@ -125,8 +125,10 @@ let quote ~quoter expr =
   [%expr [%e evar name] ()]
 
 let sanitize ?(quoter=create_quoter ()) expr =
-  Exp.let_ Nonrecursive quoter.bindings [%expr
-    (let open! Ppx_deriving_runtime in [%e expr]) [@ocaml.warning "-A"]]
+  let bdy = [%expr (let open! Ppx_deriving_runtime in [%e expr]) [@ocaml.warning "-A"]] in
+  match quoter.bindings with
+    [] -> bdy
+  | bindings -> Exp.let_ Nonrecursive bindings bdy
 
 let with_quoter fn a =
   let quoter = create_quoter () in
