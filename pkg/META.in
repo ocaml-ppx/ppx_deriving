@@ -1,8 +1,15 @@
 version = "%{version}%"
 description = "Type-driven code generation"
 ppx = "./ppx_deriving"
-archive(byte) = "ppx_deriving_runtime.cma"
-archive(native) = "ppx_deriving_runtime.cmxa"
+requires = "ppx_deriving.runtime"
+
+package "runtime" (
+  version = "%{version}%"
+  description = "Runtime component of built-in derivers"
+  archive(byte) = "ppx_deriving_runtime.cma"
+  archive(native) = "ppx_deriving_runtime.cmxa"
+  exists_if = "ppx_deriving_runtime.cma"
+)
 
 package "api" (
   version = "%{version}%"
