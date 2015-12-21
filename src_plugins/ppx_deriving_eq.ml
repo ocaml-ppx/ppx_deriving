@@ -158,7 +158,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (Ppx_deriving.sanitize ~quoter (polymorphize comparator))]
 
 let () =
-  Ppx_deriving.(register (create "eq"
+  Ppx_deriving.(register (create deriver
     ~core_type: (Ppx_deriving.with_quoter expr_of_typ)
     ~type_decl_str: (fun ~options ~path type_decls ->
        [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
