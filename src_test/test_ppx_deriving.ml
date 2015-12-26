@@ -33,6 +33,7 @@ let suite = "Test ppx_deriving" >::: [
     Test_deriving_map.suite;
     Test_deriving_fold.suite;
     Test_deriving_create.suite;
+    Test_deriving_make.suite;
     "test_inline"           >:: test_inline;
     "test_inline_shorthand" >:: test_inline_shorthand;
   ]
