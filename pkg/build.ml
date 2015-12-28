@@ -22,6 +22,7 @@ let () =
     Pkg.lib ~exts:Exts.library "src_plugins/ppx_deriving_map";
     Pkg.lib ~exts:Exts.library "src_plugins/ppx_deriving_fold";
     Pkg.lib ~exts:Exts.library "src_plugins/ppx_deriving_create";
+    Pkg.lib ~exts:Exts.library "src_plugins/ppx_deriving_make";
     Pkg.doc "README.md";
     Pkg.doc "LICENSE.txt";
     Pkg.doc "CHANGELOG.md"; ]
