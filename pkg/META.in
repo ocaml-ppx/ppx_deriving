@@ -124,3 +124,14 @@ package "create" (
   archive(ppx_driver, native) = "ppx_deriving_create.cmxa"
   exists_if = "ppx_deriving_create.cma"
 )
+
+package "make" (
+  version = "%{version}%"
+  description = "[@@deriving make]"
+  requires(-ppx_driver) = "ppx_deriving"
+  ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_make.cma"
+  requires(ppx_driver) = "ppx_deriving.api"
+  archive(ppx_driver, byte) = "ppx_deriving_make.cma"
+  archive(ppx_driver, native) = "ppx_deriving_make.cmxa"
+  exists_if = "ppx_deriving_make.cma"
+)
