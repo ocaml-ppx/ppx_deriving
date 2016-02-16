@@ -23,6 +23,12 @@ let test_simple ctxt =
   assert_equal ~printer true  (equal_a1 1 1);
   assert_equal ~printer false (equal_a1 1 2)
 
+let test_arr ctxt =
+  assert_equal ~printer true (equal_a [||] [||]);
+  assert_equal ~printer true (equal_a [|1|] [|1|]);
+  assert_equal ~printer false (equal_a [||] [|1|]);
+  assert_equal ~printer false (equal_a [|2|] [|1|]);
+
 type v = Foo | Bar of int * string | Baz of string [@@deriving eq]
 
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving eq]
@@ -118,6 +124,7 @@ type 'a std_clash = 'a List.t option
 
 let suite = "Test deriving(eq)" >::: [
     "test_simple"        >:: test_simple;
+    "test_array"         >:: test_arr;
     "test_custom"        >:: test_custom;
     "test_placeholder"   >:: test_placeholder;
     "test_mrec"          >:: test_mrec;
