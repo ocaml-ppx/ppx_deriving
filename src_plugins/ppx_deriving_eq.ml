@@ -72,7 +72,7 @@ and expr_of_typ quoter typ =
       | true, [%type: [%t? typ] array] ->
         [%expr fun x y ->
           let rec loop i =
-            (i = Array.length x || [%e expr_of_typ typ] x.(i) y.(i)) && loop (i + 1)
+            i = Array.length x || ([%e expr_of_typ typ] x.(i) y.(i) && loop (i + 1))
           in Array.length x = Array.length y && loop 0]
       | true, [%type: [%t? typ] option] ->
         [%expr fun x y ->
