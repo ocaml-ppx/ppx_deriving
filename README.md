@@ -238,7 +238,7 @@ val tree : int btree = Node (Node (Leaf, 0, Leaf), 1, Node (Leaf, 2, Leaf))
 Plugin: make
 --------------
 
-_create_ is a plugin that generates record constructors. Given a record, a function is generated that accepts all fields as labelled arguments and `()`; alternatively, if one field is specified as `[@main]`, it is accepted last. The fields which have a default value (fields of types `'a option`, `'a list`, and fields with `[@default]` annotation) are mapped to optional arguments; the rest are mandatory. A field of form `xs: ('a * 'a list) [@split]` corresponds to two arguments: mandatory argument `x` and optional argument `xs` with types `'a` and `'a list` correspondingly.
+_make_ is a plugin that generates record constructors. Given a record, a function is generated that accepts all fields as labelled arguments and `()`; alternatively, if one field is specified as `[@main]`, it is accepted last. The fields which have a default value (fields of types `'a option`, `'a list`, and fields with `[@default]` annotation) are mapped to optional arguments; the rest are mandatory. A field of form `xs: ('a * 'a list) [@split]` corresponds to two arguments: mandatory argument `x` and optional argument `xs` with types `'a` and `'a list` correspondingly.
 
 ``` ocaml
 type record = {
