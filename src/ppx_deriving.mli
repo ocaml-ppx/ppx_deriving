@@ -89,6 +89,9 @@ module Arg : sig
       a variant included in [values]. *)
   val enum : string list -> expression -> [ `Ok of string | `Error of string ]
 
+  val list : (expression -> [`Ok of 'a | `Error of string])
+    -> expression -> [`Ok of 'a list | `Error of string]
+
   (** [get_attr ~deriver conv attr] extracts the expression from [attr] and converts
       it with [conv], raising [Location.Error] if [attr] is not a structure with
       a single expression or [conv] fails; or returns [None] if [attr] is [None].
