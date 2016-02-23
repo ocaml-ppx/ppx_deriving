@@ -86,6 +86,17 @@ module Arg = struct
     | _ -> `Error (Printf.sprintf "one of: %s"
                     (String.concat ", " (List.map (fun s -> "`"^s) values)))
 
+  let list expr =
+    let rec loop acc = function
+      | [%expr []] -> `Ok (List.rev acc)
+      | [%expr [%e? x]::[%e? xs]] ->
+        begin match expr x with
+        | `Ok v -> loop (v::acc) xs
+        | `Error e -> `Error ("list:" ^ e)
+        end
+      | _ -> `Error "list"
+    in loop []
+
   let get_attr ~deriver conv attr =
     match attr with
     | None -> None
