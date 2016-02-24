@@ -173,34 +173,36 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
         constrs |> List.map (fun { pcd_name = { txt = name' }; pcd_args; pcd_attributes } ->
           match attr_printer pcd_attributes with
             | Some printer ->
-                let printer =
-                  [%expr (let fprintf = Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
-                in let expr = match pcd_args with
-                  | [] ->
-                      Exp.case (pconstr name' []) [%expr [%e Ppx_deriving.quote quoter printer] fmt ()]
-                  | _ ->
-                      Exp.case (pconstr name' [pvar "a"]) [%expr [%e Ppx_deriving.quote quoter printer] fmt a]
-                in expr
+              let printer =
+                [%expr (let fprintf = Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
+              in
+              let expr = match pcd_args with
+                | [] ->
+                  Exp.case (pconstr name' []) [%expr [%e Ppx_deriving.quote quoter printer] fmt ()]
+                | _ ->
+                  Exp.case (pconstr name' [pvar "a"]) [%expr [%e Ppx_deriving.quote quoter printer] fmt a]
+              in
+              expr
             | None -> 
-                let constr_name = Ppx_deriving.expand_path ~path name' in
-                let args =
-                  List.mapi (fun i typ -> app (expr_of_typ quoter typ) [evar (argn i)]) pcd_args
-                in
-                let result =
-                  match args with
-                    | []   -> [%expr Format.pp_print_string fmt [%e str constr_name]]
-                    | [arg] ->
-                        [%expr
-                         Format.fprintf fmt [%e str ("(@[<hov2>" ^  constr_name ^ "@ ")];
-                       [%e arg];
-                       Format.fprintf fmt "@])"]
-                    | args ->
-                        [%expr Format.fprintf fmt [%e str ("@[<hov2>" ^  constr_name ^ " (@,")];
-                      [%e args |> Ppx_deriving.(fold_exprs
-                                                  (seq_reduce ~sep:[%expr Format.fprintf fmt ",@ "]))];
-                      Format.fprintf fmt "@])"]
-                in
-                  Exp.case (pconstr name' (List.mapi (fun i _ -> pvar (argn i)) pcd_args)) result)
+              let constr_name = Ppx_deriving.expand_path ~path name' in
+              let args =
+                List.mapi (fun i typ -> app (expr_of_typ quoter typ) [evar (argn i)]) pcd_args
+              in
+              let result =
+                match args with
+                | []   -> [%expr Format.pp_print_string fmt [%e str constr_name]]
+                | [arg] ->
+                  [%expr
+                    Format.fprintf fmt [%e str ("(@[<hov2>" ^  constr_name ^ "@ ")];
+                    [%e arg];
+                    Format.fprintf fmt "@])"]
+                | args ->
+                  [%expr Format.fprintf fmt [%e str ("@[<hov2>" ^  constr_name ^ " (@,")];
+                  [%e args |> Ppx_deriving.(fold_exprs
+                        (seq_reduce ~sep:[%expr Format.fprintf fmt ",@ "]))];
+                  Format.fprintf fmt "@])"]
+              in
+              Exp.case (pconstr name' (List.mapi (fun i _ -> pvar (argn i)) pcd_args)) result)
       in
       [%expr fun fmt -> [%e Exp.function_ cases]]
     | Ptype_record labels, _ ->
