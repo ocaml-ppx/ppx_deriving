@@ -171,22 +171,37 @@ end
 type 'a std_clash = 'a List.t option
 [@@deriving show]
 
+type variant_printer =
+  | First [@printer fun fmt _ -> Format.pp_print_string fmt "first"]
+  | Second of int [@printer fun fmt i -> fprintf fmt "second: %d" i]
+  | Third
+  [@@deriving show]
+
+let test_variant_printer ctxt =
+  assert_equal ~printer
+    "first" (show_variant_printer First);
+  assert_equal ~printer
+    "second: 42" (show_variant_printer (Second 42));
+  assert_equal ~printer
+    "Test_deriving_show.Third" (show_variant_printer Third)
+
 let suite = "Test deriving(show)" >::: [
-    "test_alias"         >:: test_alias;
-    "test_variant"       >:: test_variant;
-    "test_variant_nest"  >:: test_variant_nest;
-    "test_tuple"         >:: test_tuple;
-    "test_poly"          >:: test_poly;
-    "test_poly_inherit"  >:: test_poly_inherit;
-    "test_record"        >:: test_record;
-    "test_abstr"         >:: test_abstr;
-    "test_custom"        >:: test_custom;
-    "test_parametric"    >:: test_parametric;
-    "test_alias_path"    >:: test_alias_path;
-    "test_polypr"        >:: test_polypr;
-    "test_placeholder"   >:: test_placeholder;
-    "test_mrec"          >:: test_mrec;
-    "test_std_shadowing" >:: test_std_shadowing;
-    "test_poly_app"      >:: test_poly_app;
+    "test_alias"           >:: test_alias;
+    "test_variant"         >:: test_variant;
+    "test_variant_nest"    >:: test_variant_nest;
+    "test_tuple"           >:: test_tuple;
+    "test_poly"            >:: test_poly;
+    "test_poly_inherit"    >:: test_poly_inherit;
+    "test_record"          >:: test_record;
+    "test_abstr"           >:: test_abstr;
+    "test_custom"          >:: test_custom;
+    "test_parametric"      >:: test_parametric;
+    "test_alias_path"      >:: test_alias_path;
+    "test_polypr"          >:: test_polypr;
+    "test_placeholder"     >:: test_placeholder;
+    "test_mrec"            >:: test_mrec;
+    "test_std_shadowing"   >:: test_std_shadowing;
+    "test_poly_app"        >:: test_poly_app;
+    "test_variant_printer" >:: test_variant_printer;
   ]
 
