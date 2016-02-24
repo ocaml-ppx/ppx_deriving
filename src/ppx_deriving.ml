@@ -79,6 +79,10 @@ module Arg = struct
     | { pexp_desc = Pexp_constant (Const_string (n, None)) } -> `Ok n
     | _ -> `Error "string"
 
+  let char = function
+    | { pexp_desc = Pexp_constant (Const_char c) } -> `Ok c
+    | _ -> `Error "char"
+
   let enum values expr =
     match expr with
     | { pexp_desc = Pexp_variant (name, None) }
