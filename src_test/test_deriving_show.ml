@@ -175,7 +175,7 @@ type variant_printer =
   | First [@printer fun fmt _ -> Format.pp_print_string fmt "first"]
   | Second of int [@printer fun fmt i -> fprintf fmt "second: %d" i]
   | Third
-  [@@deriving show]
+[@@deriving show]
 
 let test_variant_printer ctxt =
   assert_equal ~printer
