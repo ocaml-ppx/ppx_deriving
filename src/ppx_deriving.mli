@@ -84,6 +84,10 @@ module Arg : sig
       [`Error "string"] if [expr] does not contain a string constant. *)
   val string : expression -> [ `Ok of string | `Error of string ]
 
+  (** [char expr] extracts a char constant from [expr], or returns
+      [`Error "char"] if [expr] does not contain a char constant. *)
+  val char : expression -> [ `Ok of char | `Error of string ]
+
   (** [enum values expr] extracts a polymorphic variant constant from [expr],
       or returns [`Error "one of: `a, `b, ..."] if [expr] does not contain
       a variant included in [values]. *)
