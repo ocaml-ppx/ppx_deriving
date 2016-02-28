@@ -54,6 +54,6 @@ install:
 		awk '{ print $$1 }' | \
 		sed -e 's:"?*::g'  | \
 		xargs ocamlfind install ppx_deriving
-	mv `ocamlfind query ppx_deriving`/ppx_deriving_main.native `ocamlfind query ppx_deriving`/ppx_deriving$(EXE)
+	mv `ocamlfind query ppx_deriving -suffix /ppx_deriving_main.native` `ocamlfind query ppx_deriving -suffix /ppx_deriving$(EXE)`
 
 .PHONY: gh-pages release
