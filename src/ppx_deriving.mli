@@ -73,28 +73,31 @@ module Arg : sig
   val expr : expression -> [> `Ok of expression ]
 
   (** [bool expr] extracts a boolean constant from [expr], or returns
-      [`Error "boolean"] if [expr] does not contain a boolean constant. *)
+      [`Error "boolean"] if [expr] does not contain a boolean literal. *)
   val bool : expression -> [ `Ok of bool | `Error of string ]
 
   (** [int expr] extracts an integer constant from [expr], or returns
-      [`Error "integer"] if [expr] does not contain an integer constant. *)
+      [`Error "integer"] if [expr] does not contain an integer literal. *)
   val int : expression -> [ `Ok of int | `Error of string ]
 
   (** [string expr] extracts a string constant from [expr], or returns
-      [`Error "string"] if [expr] does not contain a string constant. *)
+      [`Error "string"] if [expr] does not contain a string literal. *)
   val string : expression -> [ `Ok of string | `Error of string ]
 
   (** [char expr] extracts a char constant from [expr], or returns
-      [`Error "char"] if [expr] does not contain a char constant. *)
+      [`Error "char"] if [expr] does not contain a char literal. *)
   val char : expression -> [ `Ok of char | `Error of string ]
 
   (** [enum values expr] extracts a polymorphic variant constant from [expr],
       or returns [`Error "one of: `a, `b, ..."] if [expr] does not contain
-      a variant included in [values]. *)
+      a polymorphic variant constructor included in [values]. *)
   val enum : string list -> expression -> [ `Ok of string | `Error of string ]
 
-  val list : (expression -> [`Ok of 'a | `Error of string])
-    -> expression -> [`Ok of 'a list | `Error of string]
+  (** [list f expr] extracts a list constant from [expr] and maps every element
+      through [f], or returns [`Error "list:..."] where [...] is the error returned
+      by [f], or returns [`Error "list"] if [expr] does not contain a list. *)
+  val list : (expression -> [`Ok of 'a | `Error of string]) ->
+             expression -> [`Ok of 'a list | `Error of string]
 
   (** [get_attr ~deriver conv attr] extracts the expression from [attr] and converts
       it with [conv], raising [Location.Error] if [attr] is not a structure with
