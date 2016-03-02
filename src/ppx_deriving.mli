@@ -16,7 +16,10 @@ open Parsetree
     A type deriving function accepts a type and returns a corresponding
     derived expression. It is invoked by [[%derive.foo:]] and [[%foo:]]
     annotations. If this function is missing, the corresponding [[%foo:]]
-    annotation is ignored. *)
+    annotation is ignored.
+
+    The structure and signature deriving functions are invoked in
+    the order in which they appear in the source code. *)
 type deriver = {
   name : string ;
   core_type : (core_type -> expression) option;

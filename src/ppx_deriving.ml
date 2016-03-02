@@ -406,60 +406,69 @@ let mapper =
     match items with
     | { pstr_desc = Pstr_type typ_decls; pstr_loc } as item :: rest when
         List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
-      Ast_helper.with_default_loc pstr_loc (fun () ->
-        derive_type_decl module_nesting typ_decls pstr_loc item
-          (fun deriver -> deriver.type_decl_str)
-        @ mapper.Ast_mapper.structure mapper rest)
+      let derived =
+        Ast_helper.with_default_loc pstr_loc (fun () ->
+          derive_type_decl module_nesting typ_decls pstr_loc item
+            (fun deriver -> deriver.type_decl_str))
+      in derived @ mapper.Ast_mapper.structure mapper rest
     | { pstr_desc = Pstr_typext typ_ext; pstr_loc } as item :: rest when
           has_attr "deriving" typ_ext.ptyext_attributes ->
-      Ast_helper.with_default_loc pstr_loc (fun () ->
-        derive_type_ext module_nesting typ_ext pstr_loc item
-          (fun deriver -> deriver.type_ext_str)
-        @ mapper.Ast_mapper.structure mapper rest)
+      let derived =
+        Ast_helper.with_default_loc pstr_loc (fun () ->
+          derive_type_ext module_nesting typ_ext pstr_loc item
+            (fun deriver -> deriver.type_ext_str))
+      in derived @ mapper.Ast_mapper.structure mapper rest
     | { pstr_desc = Pstr_module ({ pmb_name = { txt = name } } as mb) } as item :: rest ->
-      { item with pstr_desc = Pstr_module (
-          with_module name
-            (fun () -> mapper.Ast_mapper.module_binding mapper mb)) }
-        :: mapper.Ast_mapper.structure mapper rest
-    | { pstr_desc = Pstr_recmodule mbs } as item :: rest ->
-      { item with pstr_desc = Pstr_recmodule (
-          mbs |> List.map (fun ({ pmb_name = { txt = name } } as mb) ->
+      let derived =
+        { item with pstr_desc = Pstr_module (
             with_module name
-              (fun () -> mapper.Ast_mapper.module_binding mapper mb))) }
-        :: mapper.Ast_mapper.structure mapper rest
+              (fun () -> mapper.Ast_mapper.module_binding mapper mb)) }
+      in derived :: mapper.Ast_mapper.structure mapper rest
+    | { pstr_desc = Pstr_recmodule mbs } as item :: rest ->
+      let derived =
+        { item with pstr_desc = Pstr_recmodule (
+            mbs |> List.map (fun ({ pmb_name = { txt = name } } as mb) ->
+              with_module name
+                (fun () -> mapper.Ast_mapper.module_binding mapper mb))) }
+      in derived :: mapper.Ast_mapper.structure mapper rest
     | { pstr_loc } as item :: rest ->
-      mapper.Ast_mapper.structure_item mapper item
-      :: mapper.Ast_mapper.structure mapper rest
+      let derived = mapper.Ast_mapper.structure_item mapper item
+      in derived :: mapper.Ast_mapper.structure mapper rest
     | [] -> []
   in
   let signature mapper items =
     match items with
     | { psig_desc = Psig_type typ_decls; psig_loc } as item :: rest when
         List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
-      Ast_helper.with_default_loc psig_loc (fun () ->
-        derive_type_decl module_nesting typ_decls psig_loc item
-          (fun deriver -> deriver.type_decl_sig)
-        @ mapper.Ast_mapper.signature mapper rest)
+      let derived =
+        Ast_helper.with_default_loc psig_loc (fun () ->
+          derive_type_decl module_nesting typ_decls psig_loc item
+            (fun deriver -> deriver.type_decl_sig))
+      in derived @ mapper.Ast_mapper.signature mapper rest
     | { psig_desc = Psig_typext typ_ext; psig_loc } as item :: rest when
         has_attr "deriving" typ_ext.ptyext_attributes ->
-      Ast_helper.with_default_loc psig_loc (fun () ->
-        derive_type_ext module_nesting typ_ext psig_loc item
-          (fun deriver -> deriver.type_ext_sig)
-        @ mapper.Ast_mapper.signature mapper rest)
+      let derived =
+        Ast_helper.with_default_loc psig_loc (fun () ->
+          derive_type_ext module_nesting typ_ext psig_loc item
+            (fun deriver -> deriver.type_ext_sig))
+      in derived @ mapper.Ast_mapper.signature mapper rest
     | { psig_desc = Psig_module ({ pmd_name = { txt = name } } as md) } as item :: rest ->
-      { item with psig_desc = Psig_module (
-          with_module name
-            (fun () -> mapper.Ast_mapper.module_declaration mapper md)) }
-        :: mapper.Ast_mapper.signature mapper rest
-    | { psig_desc = Psig_recmodule mds } as item :: rest ->
-      { item with psig_desc = Psig_recmodule (
-          mds |> List.map (fun ({ pmd_name = { txt = name } } as md) ->
+      let derived =
+        { item with psig_desc = Psig_module (
             with_module name
-              (fun () -> mapper.Ast_mapper.module_declaration mapper md))) }
-        :: mapper.Ast_mapper.signature mapper rest
+              (fun () -> mapper.Ast_mapper.module_declaration mapper md)) }
+      in derived :: mapper.Ast_mapper.signature mapper rest
+    | { psig_desc = Psig_recmodule mds } as item :: rest ->
+      let derived =
+        { item with psig_desc = Psig_recmodule (
+            mds |> List.map (fun ({ pmd_name = { txt = name } } as md) ->
+              with_module name
+                (fun () -> mapper.Ast_mapper.module_declaration mapper md))) }
+      in derived :: mapper.Ast_mapper.signature mapper rest
     | { psig_loc } as item :: rest ->
-      mapper.Ast_mapper.signature_item mapper item
-      :: mapper.Ast_mapper.signature mapper rest
+      let derived =
+        mapper.Ast_mapper.signature_item mapper item
+      in derived :: mapper.Ast_mapper.signature mapper rest
     | [] -> []
   in
   Ast_mapper.{default_mapper with
