@@ -1,3 +1,7 @@
+#if OCAML_VERSION < (4, 03, 0)
+#define Pcstr_tuple(core_types) core_types
+#endif
+
 open Longident
 open Location
 open Asttypes
@@ -22,8 +26,17 @@ let attr_equal attrs =
 let argn kind =
   Printf.sprintf (match kind with `lhs -> "lhs%d" | `rhs -> "rhs%d")
 
+let argl kind =
+  Printf.sprintf (match kind with `lhs -> "lhs%s" | `rhs -> "rhs%s")
+
 let pattn side typs =
   List.mapi (fun i _ -> pvar (argn side i)) typs
+
+let pattl side labels =
+  List.map (fun { pld_name = { txt = n } } -> n, pvar (argl side n)) labels
+
+let pconstrrec name fields =
+  pconstr name [precord ~closed:Closed fields]
 
 let core_type_of_decl ~options ~path type_decl =
   parse_options options;
@@ -38,9 +51,13 @@ let sig_of_type ~options ~path type_decl =
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "equal") type_decl))
              (core_type_of_decl ~options ~path type_decl))]
 
-let rec exprsn quoter typs =
+let rec exprn quoter typs =
   typs |> List.mapi (fun i typ ->
     app (expr_of_typ quoter typ) [evar (argn `lhs i); evar (argn `rhs i)])
+
+and exprl quoter typs =
+  typs |> List.map (fun { pld_name = { txt = n }; pld_type = typ } ->
+    app (expr_of_typ quoter typ) [evar (argl `lhs n); evar (argl `rhs n)])
 
 and expr_of_typ quoter typ =
   let expr_of_typ = expr_of_typ quoter in
@@ -91,7 +108,7 @@ and expr_of_typ quoter typ =
       end
     | { ptyp_desc = Ptyp_tuple typs } ->
       [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
-        [%e exprsn quoter typs |> Ppx_deriving.(fold_exprs (binop_reduce [%expr (&&)]))]]
+        [%e exprn quoter typs |> Ppx_deriving.(fold_exprs (binop_reduce [%expr (&&)]))]]
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
       let cases =
         (fields |> List.map (fun field ->
@@ -125,11 +142,21 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
     | Ptype_abstract, Some manifest -> expr_of_typ quoter manifest
     | Ptype_variant constrs, _ ->
       let cases =
-        (constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args = typs } ->
-          exprsn quoter typs |>
-          Ppx_deriving.(fold_exprs ~unit:[%expr true] (binop_reduce [%expr (&&)])) |>
-          Exp.case (ptuple [pconstr name (pattn `lhs typs);
-                            pconstr name (pattn `rhs typs)]))) @
+        (constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args } ->
+          match pcd_args with
+          | Pcstr_tuple(typs) ->
+            exprn quoter typs |>
+            Ppx_deriving.(fold_exprs ~unit:[%expr true] (binop_reduce [%expr (&&)])) |>
+            Exp.case (ptuple [pconstr name (pattn `lhs typs);
+                              pconstr name (pattn `rhs typs)])
+#if OCAML_VERSION >= (4, 03, 0)
+          | Pcstr_record(labels) ->
+            exprl quoter labels |>
+            Ppx_deriving.(fold_exprs ~unit:[%expr true] (binop_reduce [%expr (&&)])) |>
+            Exp.case (ptuple [pconstrrec name (pattl `lhs labels);
+                              pconstrrec name (pattl `rhs labels)])
+#endif
+          )) @
         [Exp.case (pvar "_") [%expr false]]
       in
       [%expr fun lhs rhs -> [%e Exp.match_ [%expr lhs, rhs] cases]]

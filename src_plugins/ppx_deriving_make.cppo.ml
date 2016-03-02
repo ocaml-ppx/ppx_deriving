@@ -56,34 +56,34 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       let fn =
         match main with
         | Some { pld_name = { txt = name }} ->
-          Exp.fun_ "" None (pvar name) (record fields)
+          Exp.fun_ Label.nolabel None (pvar name) (record fields)
         | None when has_option ->
-          Exp.fun_ "" None (punit ()) (record fields)
+          Exp.fun_ Label.nolabel None (punit ()) (record fields)
         | None ->
           record fields
       in
       List.fold_left (fun accum { pld_name = { txt = name }; pld_type; pld_attributes } ->
         let attrs = pld_attributes @ pld_type.ptyp_attributes in
         match attr_default attrs with
-        | Some default -> Exp.fun_ ("?"^name) (Some (Ppx_deriving.quote ~quoter default))
+        | Some default -> Exp.fun_ (Label.optional name) (Some (Ppx_deriving.quote ~quoter default))
                                    (pvar name) accum
         | None ->
         if attr_split attrs then
           match pld_type with
           | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
             let name' = String.sub name 0 (String.length name - 1) in
-            Exp.fun_ name' None (pvar name')
-              (Exp.fun_ ("?"^name) (Some [%expr []]) (pvar name)
+            Exp.fun_ (Label.labelled name') None (pvar name')
+              (Exp.fun_ (Label.optional name) (Some [%expr []]) (pvar name)
                 [%expr let [%p pvar name] = [%e evar name'], [%e evar name] in [%e accum]])
           | _ -> raise_errorf ~loc "[@deriving.%s.split] annotation requires a type of form \
                                     'a * 'b list and label name ending with `s'" deriver
         else
           match pld_type with
           | [%type: [%t? _] list] ->
-            Exp.fun_ ("?"^name) (Some [%expr []]) (pvar name) accum
+            Exp.fun_ (Label.optional name) (Some [%expr []]) (pvar name) accum
           | [%type: [%t? _] option] ->
-            Exp.fun_ ("?"^name) None (pvar name) accum
-          | _ -> Exp.fun_ name None (pvar name) accum)
+            Exp.fun_ (Label.optional name) None (pvar name) accum
+          | _ -> Exp.fun_ (Label.labelled name) None (pvar name) accum)
           fn labels
     | _ -> raise_errorf ~loc "%s can be derived only for record types" deriver
   in
@@ -91,8 +91,12 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (Ppx_deriving.sanitize ~quoter creator)]
 
 let wrap_predef_option typ =
+#if OCAML_VERSION < (4, 03, 0)
   let predef_option = mknoloc (Ldot (Lident "*predef*", "option")) in
   Typ.constr predef_option [typ]
+#else
+  typ
+#endif
 
 let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   parse_options options;
@@ -105,30 +109,30 @@ let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       let typ =
         match main with
         | Some { pld_name = { txt = name }; pld_type } ->
-          Typ.arrow "" pld_type typ
-        | None when has_option -> Typ.arrow "" (tconstr "unit" []) typ
+          Typ.arrow Label.nolabel pld_type typ
+        | None when has_option -> Typ.arrow Label.nolabel (tconstr "unit" []) typ
         | None -> typ
       in
       List.fold_left (fun accum { pld_name = { txt = name; loc }; pld_type; pld_attributes } ->
         let attrs = pld_type.ptyp_attributes @ pld_attributes in
         match attr_default attrs with
-        | Some _ -> Typ.arrow ("?"^name) (wrap_predef_option pld_type) accum
+        | Some _ -> Typ.arrow (Label.optional name) (wrap_predef_option pld_type) accum
         | None ->
         if attr_split attrs then
           match pld_type with
           | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
             let name' = String.sub name 0 (String.length name - 1) in
-            Typ.arrow name' lhs
-              (Typ.arrow ("?"^name) (wrap_predef_option [%type: [%t rhs] list]) accum)
+            Typ.arrow (Label.labelled name') lhs
+              (Typ.arrow (Label.optional name) (wrap_predef_option [%type: [%t rhs] list]) accum)
           | _ -> raise_errorf ~loc "[@deriving.%s.split] annotation requires a type of form \
                                     'a * 'b list and label name ending with `s'" deriver
         else
           match pld_type with
           | [%type: [%t? _] list] ->
-            Typ.arrow ("?"^name) (wrap_predef_option pld_type) accum
+            Typ.arrow (Label.optional name) (wrap_predef_option pld_type) accum
           | [%type: [%t? opt] option] ->
-            Typ.arrow ("?"^name) (wrap_predef_option opt) accum
-          | _ -> Typ.arrow name pld_type accum)
+            Typ.arrow (Label.optional name) (wrap_predef_option opt) accum
+          | _ -> Typ.arrow (Label.labelled name) pld_type accum)
         typ labels
     | _ -> raise_errorf ~loc "%s can only be derived for record types" deriver
   in

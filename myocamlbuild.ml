@@ -16,8 +16,9 @@ let plugin_cmas names =
   List.map (fun name -> "src_plugins/ppx_deriving_" ^ name ^ ".cma") |>
   String.concat " "
 
-let () = dispatch (
-  function
+let () = dispatch (fun phase ->
+  Ocamlbuild_cppo.dispatcher phase;
+  match phase with
   | After_rules ->
     pflag ["ocaml"; "compile"; "ppx_byte"] "deriving" (fun names ->
       S[A"-ppx"; A("src/ppx_deriving_main.byte " ^ (plugin_cmas names))]);

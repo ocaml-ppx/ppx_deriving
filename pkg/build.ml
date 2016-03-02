@@ -7,8 +7,11 @@ let () =
   output_string oc (if Env.native then "<*.ml>: ppx_native" else "<*.ml>: ppx_byte");
   close_out oc
 
+let ocamlbuild =
+  "ocamlbuild -use-ocamlfind -classic-display -plugin-tag 'package(cppo_ocamlbuild)'"
+
 let () =
-  Pkg.describe "ppx_deriving" ~builder:`OCamlbuild [
+  Pkg.describe "ppx_deriving" ~builder:(`Other (ocamlbuild, "_build")) [
     Pkg.lib "pkg/META";
     Pkg.bin ~auto:true "src/ppx_deriving_main" ~dst:"../lib/ppx_deriving/ppx_deriving";
     Pkg.lib ~exts:Exts.module_library "src/ppx_deriving";

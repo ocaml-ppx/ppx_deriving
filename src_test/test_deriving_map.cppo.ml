@@ -10,6 +10,11 @@ let test_btree ctxt =
                (Node (Node (Leaf, 1, Leaf), 2, Node (Leaf, 3, Leaf)))
                btree'
 
+#if OCAML_VERSION >= (4, 03, 0)
+type 'a btreer = Node of { lft: 'a btree; elt: 'a; rgt: 'a btree } | Leaf
+[@@deriving map]
+#endif
+
 type 'a ty = 'a * int list
 [@@deriving map]
 

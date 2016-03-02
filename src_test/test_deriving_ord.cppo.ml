@@ -31,6 +31,10 @@ let test_variant ctxt =
   assert_equal ~printer (1) (compare_v (Baz "") (Bar (1, "")));
   assert_equal ~printer (-1) (compare_v Foo (Baz ""))
 
+#if OCAML_VERSION >= (4, 03, 0)
+type rv = RFoo | RBar of { x: int; y: string; } [@@deriving ord]
+#endif
+
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving ord]
 type pv2 = [ `Baz | pv1 ] [@@deriving ord]
 

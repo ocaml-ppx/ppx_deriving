@@ -24,7 +24,8 @@ build-doc: [
 depends: [
   "ocamlbuild" {build}
   "ocamlfind"  {build & >= "1.5.4"}
-  "ppx_tools"  {>= "0.99.2"}
+  "cppo"       {build}
+  "ppx_tools"  {>= "0.99.3"}
   "ounit"      {test}
 ]
 available: [ ocaml-version >= "4.02.1" & opam-version >= "1.2" ]

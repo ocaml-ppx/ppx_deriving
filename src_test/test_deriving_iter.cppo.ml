@@ -9,6 +9,11 @@ let test_btree ctxt =
              (Node (Node (Leaf, 0, Leaf), 1, Node (Leaf, 2, Leaf)));
   assert_equal [2;1;0] !lst
 
+#if OCAML_VERSION >= (4, 03, 0)
+type 'a btreer = Node of { lft: 'a btree; elt: 'a; rgt: 'a btree } | Leaf
+[@@deriving iter]
+#endif
+
 type 'a ty = 'a * int list
 [@@deriving iter]
 

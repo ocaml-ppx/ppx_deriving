@@ -1,3 +1,7 @@
+#if OCAML_VERSION < (4, 03, 0)
+#define Pcstr_tuple(core_types) core_types
+#endif
+
 open Longident
 open Location
 open Asttypes
@@ -22,6 +26,9 @@ let attr_compare attrs =
 let argn kind =
   Printf.sprintf (match kind with `lhs -> "lhs%d" | `rhs -> "rhs%d")
 
+let argl kind =
+  Printf.sprintf (match kind with `lhs -> "lhs%s" | `rhs -> "rhs%s")
+
 let compare_reduce acc expr =
   [%expr match [%e expr] with 0 -> [%e acc] | x -> x]
 
@@ -37,9 +44,19 @@ let wildcard_case int_cases =
 let pattn side typs =
   List.mapi (fun i _ -> pvar (argn side i)) typs
 
-let rec exprsn quoter typs =
+let pattl side labels =
+  List.map (fun { pld_name = { txt = n } } -> n, pvar (argl side n)) labels
+
+let pconstrrec name fields =
+  pconstr name [precord ~closed:Closed fields]
+
+let rec exprn quoter typs =
   typs |> List.mapi (fun i typ ->
     app (expr_of_typ quoter typ) [evar (argn `lhs i); evar (argn `rhs i)])
+
+and exprl quoter typs =
+  typs |> List.map (fun { pld_name = { txt = n }; pld_type = typ } ->
+    app (expr_of_typ quoter typ) [evar (argl `lhs n); evar (argl `rhs n)])
 
 and expr_of_typ quoter typ =
   let expr_of_typ = expr_of_typ quoter in
@@ -97,7 +114,7 @@ and expr_of_typ quoter typ =
       end
     | { ptyp_desc = Ptyp_tuple typs } ->
       [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
-        [%e exprsn quoter typs |> List.rev |> reduce_compare]]
+        [%e exprn quoter typs |> List.rev |> reduce_compare]]
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
       let cases =
         fields |> List.map (fun field ->
@@ -155,13 +172,22 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       let int_cases =
           constrs |> List.mapi (fun i { pcd_name = { txt = name }; pcd_args } ->
             match pcd_args with
-            | [] -> Exp.case (pconstr name []) (int i)
-            | _  -> Exp.case (pconstr name (List.map (fun _ -> [%pat? _]) pcd_args)) (int i))
+            | Pcstr_tuple([]) -> Exp.case (pconstr name []) (int i)
+            | _               -> Exp.case (pconstr name [[%pat? _]]) (int i))
       and cases =
-        constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args = typs } ->
-          exprsn quoter typs |> List.rev |> reduce_compare |>
-          Exp.case (ptuple [pconstr name (pattn `lhs typs);
-                            pconstr name (pattn `rhs typs)]))
+        constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args } ->
+          match pcd_args with
+          | Pcstr_tuple(typs) ->
+            exprn quoter typs |> List.rev |> reduce_compare |>
+            Exp.case (ptuple [pconstr name (pattn `lhs typs);
+                              pconstr name (pattn `rhs typs)])
+#if OCAML_VERSION >= (4, 03, 0)
+          | Pcstr_record(labels) ->
+            exprl quoter labels |> List.rev |> reduce_compare |>
+            Exp.case (ptuple [pconstrrec name (pattl `lhs labels);
+                              pconstrrec name (pattl `rhs labels)])
+#endif
+          )
       in
       [%expr fun lhs rhs ->
         [%e Exp.match_ [%expr lhs, rhs] (cases @ [wildcard_case int_cases])]]

@@ -43,6 +43,17 @@ let test_variant ctxt =
   assert_equal ~printer "Test_deriving_show.Bar (1, \"foo\")" (show_v (Bar (1, "foo")));
   assert_equal ~printer "(Test_deriving_show.Baz \"foo\")"    (show_v (Baz "foo"))
 
+#if OCAML_VERSION >= (4, 03, 0)
+type rv = RFoo | RBar of { x: int; y: string } | RBaz of { z: string } [@@deriving show]
+let test_variant_record ctxt =
+  assert_equal ~printer "Test_deriving_show.RFoo"
+                        (show_rv RFoo);
+  assert_equal ~printer "Test_deriving_show.RBar {x = 1; y = \"foo\"}"
+                        (show_rv (RBar {x=1; y="foo"}));
+  assert_equal ~printer "(Test_deriving_show.RBaz {z = \"foo\"}"
+                        (show_rv (RBaz {z="foo"}))
+#endif
+
 type vn = Foo of int option [@@deriving show]
 let test_variant_nest ctxt =
   assert_equal ~printer "(Test_deriving_show.Foo (Some 1))" (show_vn (Foo (Some 1)))

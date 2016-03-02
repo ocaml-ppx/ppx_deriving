@@ -6,6 +6,7 @@ script:
   - export OPAMYES=1
   - opam init
   - eval `opam config env`
+  - opam pin add -n ppx_tools git://github.com/alainfrisch/ppx_tools#4.02
   - opam pin add -n -k path ppx_deriving .
   - opam install --deps-only -d -t ppx_deriving
   - opam install -d -t -v ppx_deriving

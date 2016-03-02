@@ -31,6 +31,10 @@ let test_arr ctxt =
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving eq]
 
+#if OCAML_VERSION >= (4, 03, 0)
+type rv = RFoo | RBar of { x: int; y: string; } [@@deriving eq]
+#endif
+
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving eq]
 type pv2 = [ `Baz | pv1 ] [@@deriving eq]
 

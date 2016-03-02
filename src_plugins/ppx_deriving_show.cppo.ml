@@ -1,3 +1,7 @@
+#if OCAML_VERSION < (4, 03, 0)
+#define Pcstr_tuple(core_types) core_types
+#endif
+
 open Longident
 open Location
 open Asttypes
@@ -26,6 +30,16 @@ let attr_opaque attrs =
   Ppx_deriving.(attrs |> attr ~deriver "opaque" |> Arg.get_flag ~deriver)
 
 let argn = Printf.sprintf "a%d"
+let argl = Printf.sprintf "a%s"
+
+let pattn typs   = List.mapi (fun i _ -> pvar (argn i)) typs
+let pattl labels = List.map (fun { pld_name = { txt = n } } -> n, pvar (argl n)) labels
+
+let pconstrrec name fields = pconstr name [precord ~closed:Closed fields]
+
+let wrap_printer quoter printer =
+  Ppx_deriving.quote quoter
+    [%expr (let fprintf = Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
 
 let pp_type_of_decl ~options ~path type_decl =
   parse_options options;
@@ -53,11 +67,7 @@ let sig_of_type ~options ~path type_decl =
 let rec expr_of_typ quoter typ =
   let expr_of_typ = expr_of_typ quoter in
   match attr_printer typ.ptyp_attributes with
-  | Some printer ->
-    let printer =
-      [%expr (let fprintf = Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
-    in
-    [%expr [%e Ppx_deriving.quote quoter printer] fmt]
+  | Some printer -> [%expr [%e wrap_printer quoter printer] fmt]
   | None ->
   if attr_opaque typ.ptyp_attributes then
     [%expr fun _ -> Format.pp_print_string fmt "<opaque>"]
@@ -117,13 +127,12 @@ let rec expr_of_typ quoter typ =
         let args_pp = List.map (fun typ -> [%expr fun fmt -> [%e expr_of_typ typ]]) args in
         let printer =
           match attr_polyprinter typ.ptyp_attributes with
-          | Some printer ->
-            [%expr (let fprintf = Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
+          | Some printer -> wrap_printer quoter printer
           | None ->
-            Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid))
+            let printer = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid)) in
+            Ppx_deriving.quote quoter printer
         in
-        app (Ppx_deriving.quote quoter printer)
-            (args_pp @ [[%expr fmt]])
+        app printer (args_pp @ [[%expr fmt]])
       | _ -> assert false
       end
     | { ptyp_desc = Ptyp_tuple typs } ->
@@ -171,38 +180,57 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
     | Ptype_variant constrs, _ ->
       let cases =
         constrs |> List.map (fun { pcd_name = { txt = name' }; pcd_args; pcd_attributes } ->
-          match attr_printer pcd_attributes with
-            | Some printer ->
-              let printer =
-                [%expr (let fprintf = Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
-              in
-              let expr = match pcd_args with
-                | [] ->
-                  Exp.case (pconstr name' []) [%expr [%e Ppx_deriving.quote quoter printer] fmt ()]
-                | _ ->
-                  Exp.case (pconstr name' [pvar "a"]) [%expr [%e Ppx_deriving.quote quoter printer] fmt a]
-              in
-              expr
-            | None -> 
-              let constr_name = Ppx_deriving.expand_path ~path name' in
-              let args =
-                List.mapi (fun i typ -> app (expr_of_typ quoter typ) [evar (argn i)]) pcd_args
-              in
-              let result =
-                match args with
-                | []   -> [%expr Format.pp_print_string fmt [%e str constr_name]]
-                | [arg] ->
-                  [%expr
-                    Format.fprintf fmt [%e str ("(@[<hov2>" ^  constr_name ^ "@ ")];
-                    [%e arg];
-                    Format.fprintf fmt "@])"]
-                | args ->
-                  [%expr Format.fprintf fmt [%e str ("@[<hov2>" ^  constr_name ^ " (@,")];
+          let constr_name = Ppx_deriving.expand_path ~path name' in
+          match attr_printer pcd_attributes, pcd_args with
+          | Some printer, Pcstr_tuple([]) ->
+            Exp.case (pconstr name' [])
+                     [%expr [%e wrap_printer quoter printer] fmt ()]
+          | Some printer, Pcstr_tuple(_) ->
+            Exp.case (pconstr name' [pvar "a"])
+                     [%expr [%e wrap_printer quoter printer] fmt a]
+#if OCAML_VERSION >= (4, 03, 0)
+          | Some printer, Pcstr_record(labels) ->
+            let args = labels |> List.map (fun { pld_name = { txt = n } } -> evar (argl n)) in
+            Exp.case (pconstrrec name' (pattl labels))
+                     (app (wrap_printer quoter printer) ([%expr fmt] :: args))
+#endif
+          | None, Pcstr_tuple(typs) ->
+            let args =
+              List.mapi (fun i typ -> app (expr_of_typ quoter typ) [evar (argn i)]) typs in
+            let printer =
+              match args with
+              | []   -> [%expr Format.pp_print_string fmt [%e str constr_name]]
+              | [arg] ->
+                [%expr
+                  Format.fprintf fmt [%e str ("(@[<hov2>" ^  constr_name ^ "@ ")];
+                  [%e arg];
+                  Format.fprintf fmt "@])"]
+              | args ->
+                [%expr
+                  Format.fprintf fmt [%e str ("@[<hov2>" ^  constr_name ^ " (@,")];
                   [%e args |> Ppx_deriving.(fold_exprs
                         (seq_reduce ~sep:[%expr Format.fprintf fmt ",@ "]))];
                   Format.fprintf fmt "@])"]
-              in
-              Exp.case (pconstr name' (List.mapi (fun i _ -> pvar (argn i)) pcd_args)) result)
+            in
+            Exp.case (pconstr name' (pattn typs)) printer
+#if OCAML_VERSION >= (4, 03, 0)
+          | None, Pcstr_record(labels) ->
+            let args =
+              labels |> List.map (fun { pld_name = { txt = n }; pld_type = typ } ->
+                [%expr
+                  Format.fprintf fmt [%e str (n ^ " =@ " )];
+                  [%e expr_of_typ quoter typ] [%e evar (argl n)]])
+            in
+            let printer =
+              [%expr
+                Format.fprintf fmt [%e str ("@[<hov2>" ^  constr_name ^ " {@,")];
+                [%e args |> Ppx_deriving.(fold_exprs
+                      (seq_reduce ~sep:[%expr Format.fprintf fmt ";@ "]))];
+                Format.fprintf fmt "@]}"]
+            in
+            Exp.case (pconstrrec name' (pattl labels)) printer
+#endif
+          )
       in
       [%expr fun fmt -> [%e Exp.function_ cases]]
     | Ptype_record labels, _ ->

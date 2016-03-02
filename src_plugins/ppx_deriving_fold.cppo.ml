@@ -1,3 +1,7 @@
+#if OCAML_VERSION < (4, 03, 0)
+#define Pcstr_tuple(core_types) core_types
+#endif
+
 open Longident
 open Location
 open Asttypes
@@ -17,6 +21,12 @@ let attr_nobuiltin attrs =
   Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
 
 let argn = Printf.sprintf "a%d"
+let argl = Printf.sprintf "a%s"
+
+let pattn typs   = List.mapi (fun i _ -> pvar (argn i)) typs
+let pattl labels = List.map (fun { pld_name = { txt = n } } -> n, pvar (argl n)) labels
+
+let pconstrrec name fields = pconstr name [precord ~closed:Closed fields]
 
 let reduce_acc a b = [%expr let acc = [%e a] in [%e b]]
 
@@ -74,10 +84,20 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
     | Ptype_abstract, Some manifest -> expr_of_typ manifest
     | Ptype_variant constrs, _ ->
       let cases = constrs |> List.map (fun { pcd_name = { txt = name' }; pcd_args } ->
-        let args = pcd_args |> List.mapi (fun i typ ->
-                      [%expr [%e expr_of_typ typ] acc [%e evar (argn i)]]) in
-        Exp.case (pconstr name' (List.mapi (fun i _ -> pvar (argn i)) pcd_args))
-                 Ppx_deriving.(fold_exprs ~unit:[%expr acc] reduce_acc args))
+        match pcd_args with
+        | Pcstr_tuple(typs) ->
+          let args = typs |> List.mapi (fun i typ ->
+                        [%expr [%e expr_of_typ typ] acc [%e evar (argn i)]]) in
+          Exp.case (pconstr name' (pattn typs))
+                   Ppx_deriving.(fold_exprs ~unit:[%expr acc] reduce_acc args)
+#if OCAML_VERSION >= (4, 03, 0)
+        | Pcstr_record(labels) ->
+          let args = labels |> List.map (fun { pld_name = { txt = n }; pld_type = typ } ->
+                        [%expr [%e expr_of_typ typ] acc [%e evar (argl n)]]) in
+          Exp.case (pconstrrec name' (pattl labels))
+                   Ppx_deriving.(fold_exprs ~unit:[%expr acc] reduce_acc args)
+#endif
+        )
       in
       [%expr fun acc -> [%e Exp.function_ cases]]
     | Ptype_record labels, _ ->

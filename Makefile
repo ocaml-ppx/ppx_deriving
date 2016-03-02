@@ -1,21 +1,22 @@
 include $(shell ocamlc -where)/Makefile.config
 
+OCAMLBUILD=ocamlbuild -j 0 -use-ocamlfind -classic-display \
+	-plugin-tag 'package(cppo_ocamlbuild)'
+
 build:
 	cp pkg/META.in pkg/META
 	ocaml pkg/build.ml native=true native-dynlink=true
 
 test: build
 	rm -rf _build/src_test/
-	ocamlbuild -j 0 -use-ocamlfind -classic-display \
-		src_test/test_ppx_deriving.byte --
+	$(OCAMLBUILD) src_test/test_ppx_deriving.byte --
 
 examples: build
 	rm -rf _build/src_examples/
-	ocamlbuild -j 0 -use-ocamlfind -classic-display \
-	    src_examples/print_test.byte
+	$(OCAMLBUILD) src_examples/print_test.byte
 
 doc:
-	ocamlbuild -use-ocamlfind doc/api.docdir/index.html \
+	$(OCAMLBUILD) doc/api.docdir/index.html \
 						 -docflags -t -docflag "API reference for ppx_deriving" \
 						 -docflags '-colorize-code -short-functors -charset utf-8' \
 						 -docflags '-css-style style.css'
