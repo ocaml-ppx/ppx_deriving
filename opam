@@ -5,9 +5,9 @@ maintainer: "whitequark <whitequark@whitequark.org>"
 authors: [ "whitequark <whitequark@whitequark.org>" ]
 license: "MIT"
 homepage: "https://github.com/whitequark/ppx_deriving"
-doc: "http://whitequark.github.io/ppx_deriving"
+doc: "https://whitequark.github.io/ppx_deriving"
 bug-reports: "https://github.com/whitequark/ppx_deriving/issues"
-dev-repo: "git://github.com/whitequark/ppx_deriving.git"
+dev-repo: "https://github.com/whitequark/ppx_deriving.git"
 tags: [ "syntax" ]
 substs: [ "pkg/META" ]
 build: [
