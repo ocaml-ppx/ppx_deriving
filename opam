@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "ppx_deriving"
-version: "3.1"
+version: "3.2"
 maintainer: "whitequark <whitequark@whitequark.org>"
 authors: [ "whitequark <whitequark@whitequark.org>" ]
 license: "MIT"
