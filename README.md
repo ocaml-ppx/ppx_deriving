@@ -355,7 +355,7 @@ With _deriving_, both of these problems are solved in three easy steps:
     let expr_of_typ typ =
       let quoter = ...
       and expr = ... in
-      sanitize ~quoter expr
+      Ppx_deriving.sanitize ~quoter expr
     ```
 
     If the plugin does not accept user-provided expressions, `sanitize expr` could be used
