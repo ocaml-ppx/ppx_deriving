@@ -31,7 +31,7 @@ let  constrrec name fields =  constr name [ record                fields]
 
 let rec expr_of_typ typ =
   match typ with
-  | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun _ -> ()]
+  | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun x -> x]
   | { ptyp_desc = Ptyp_constr _ } ->
     let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
     begin match builtin, typ with
