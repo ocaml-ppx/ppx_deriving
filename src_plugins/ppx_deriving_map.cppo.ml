@@ -113,11 +113,19 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
 
 let sig_of_type ~options ~path type_decl =
   parse_options options;
-  let typ = Ppx_deriving.core_type_of_type_decl type_decl in
-  let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
-                        (fun var -> [%type: [%t var] -> [%t var]]) type_decl in
-  [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
-              (polymorphize [%type: [%t typ] -> [%t typ]]))]
+  (* generate types for the argument and result with distinct fresh vars *)
+  let typ_arg, var_arg, bound = Ppx_deriving.core_type_with_fresh_vars []    type_decl in
+  let typ_ret, var_ret, _     = Ppx_deriving.core_type_with_fresh_vars bound type_decl in
+
+  (* build the polymorphic conversion functions *)
+  let poly_fns = List.map2 (fun a r -> [%type: [%t a] -> [%t r]]) var_arg var_ret in
+
+  (* overall type *)
+  let typ = List.fold_right 
+    (fun f t -> [%type: [%t f] -> [%t t]]) poly_fns [%type: [%t typ_arg] -> [%t typ_ret]] 
+  in
+
+  [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl)) typ)]
 
 let () =
   Ppx_deriving.(register (create deriver
