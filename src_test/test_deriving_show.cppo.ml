@@ -149,6 +149,16 @@ let test_mrec ctxt =
   let e1 =  B { x = 12; r = F 16 } in
   assert_equal ~printer "(Test_deriving_show.B\n   { Test_deriving_show.x = 12; r = (Test_deriving_show.F 16) })" (show_foo e1)
 
+type i_has_result = I_has of (bool, string) Result.result [@@deriving show]
+
+let test_result ctxt =
+  assert_equal ~printer "(Ok 100)"
+    ([%show: (int, bool) Result.result] (Result.Ok 100));
+  assert_equal ~printer "(Test_deriving_show.I_has (Ok true))"
+    (show_i_has_result (I_has (Result.Ok true)));
+  assert_equal ~printer "(Test_deriving_show.I_has (Error \"err\"))"
+    (show_i_has_result (I_has (Result.Error "err")))
+
 type es =
   | ESBool of (bool [@nobuiltin])
   | ESString of (string [@nobuiltin])
@@ -214,5 +224,6 @@ let suite = "Test deriving(show)" >::: [
     "test_std_shadowing"   >:: test_std_shadowing;
     "test_poly_app"        >:: test_poly_app;
     "test_variant_printer" >:: test_variant_printer;
+    "test_result"          >:: test_result
   ]
 

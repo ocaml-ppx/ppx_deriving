@@ -91,8 +91,11 @@ module Weak : (module type of Weak with
   type 'a t := 'a Weak.t)
 module Buffer : (module type of Buffer with
   type t := Buffer.t)
-module Result : (module type of Result with
-  type ('a, 'b) result := ('a, 'b) Result.result)
+module Result : sig
+  type ('a, 'b) result = ('a, 'b) Result.result =
+    | Ok of 'a
+    | Error of 'b
+end
 
 (** {3 Formatting} *)
 
