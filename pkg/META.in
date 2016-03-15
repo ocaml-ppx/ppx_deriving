@@ -5,6 +5,7 @@ requires = "ppx_deriving.runtime"
 
 package "runtime" (
   version = "%{version}%"
+  requires = "result"
   description = "Runtime component of built-in derivers"
   archive(byte) = "ppx_deriving_runtime.cma"
   archive(native) = "ppx_deriving_runtime.cmxa"
