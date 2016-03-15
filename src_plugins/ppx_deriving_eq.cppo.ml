@@ -97,6 +97,12 @@ and expr_of_typ quoter typ =
           | None, None -> true
           | Some a, Some b -> [%e expr_of_typ typ] a b
           | _ -> false]
+      | true, [%type: ([%t? ok_t], [%t? err_t]) Result.result] ->
+        [%expr fun x y ->
+          match x, y with
+          | Result.Ok a, Result.Ok b -> [%e expr_of_typ ok_t] a b
+          | Result.Error a, Result.Error b -> [%e expr_of_typ err_t] a b
+          | _ -> false]
       | true, ([%type: [%t? typ] lazy_t] | [%type: [%t? typ] Lazy.t]) ->
         [%expr fun (lazy x) (lazy y) -> [%e expr_of_typ typ] x y]
       | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
