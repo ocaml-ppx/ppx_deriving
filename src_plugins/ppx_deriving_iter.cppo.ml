@@ -68,7 +68,7 @@ let rec expr_of_typ typ =
                        deriver (Ppx_deriving.string_of_core_type typ))
     in
     Exp.function_ cases
-  | { ptyp_desc = Ptyp_var name } -> [%expr ([%e evar ("poly_"^name)] : 'a -> unit)]
+  | { ptyp_desc = Ptyp_var name } -> [%expr ([%e evar ("poly_"^name)] : [%t Typ.var name] -> unit)]
   | { ptyp_desc = Ptyp_alias (typ, name) } ->
     [%expr fun x -> [%e evar ("poly_"^name)] x; [%e expr_of_typ typ] x]
   | { ptyp_loc } ->
