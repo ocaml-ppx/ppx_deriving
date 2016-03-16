@@ -259,13 +259,11 @@ val core_type_of_type_decl : type_declaration -> core_type
 (** Same as {!core_type_of_type_decl} but for type extension. *)
 val core_type_of_type_ext : type_extension -> core_type
 
-(** [core_type_with_fresh_vars bound type_decl] will generate a new
-    core_type with unique polymorphic vars from the given type
-    declaration.  Already bound vars are passed in [bound].  It returns
-    a new core type, a list of the vars instantiated
-    and a new set of bound vars. *)
-val core_type_with_fresh_vars : string list -> type_declaration -> 
-                                core_type * core_type list * string list
+(** [instantiate bound type_] returns [typ, vars, bound'] where [typ] is a type
+    instantiated from type declaration [type_], [vars] ≡ [free_vars_in_core_type typ]
+    and [bound'] ≡ [bound @ vars]. *)
+val instantiate : string list -> type_declaration ->
+                  core_type * string list * string list
 
 (** [fold_exprs ~unit fn exprs] folds [exprs] using head of [exprs] as initial
     accumulator value, or [unit] if [exprs = []].

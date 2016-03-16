@@ -313,22 +313,21 @@ let core_type_of_type_decl { ptype_name = { txt = name }; ptype_params } =
 let core_type_of_type_ext { ptyext_path ; ptyext_params } =
   Typ.constr ptyext_path (List.map fst ptyext_params)
 
-let core_type_with_fresh_vars bound type_decl = 
-  let vars,bound = 
+let instantiate bound type_decl =
+  let vars, bound =
     List.fold_right
-      (fun _ (vars,bound) -> 
-        let v = fresh_var bound in
-        (Typ.var v::vars,v::bound)) 
+      (fun _ (vars, bound) ->
+        let v = fresh_var bound in (v :: vars, v :: bound))
       (free_vars_in_core_type (core_type_of_type_decl type_decl))
-      ([],bound) 
+      ([], bound)
   in
   let vars = List.rev vars in
-  let core_type = core_type_of_type_decl 
-    { type_decl with 
-        ptype_params = List.map2 (fun var (_,vari) -> var,vari) 
+  let core_type = core_type_of_type_decl
+    { type_decl with
+        ptype_params = List.map2 (fun v (_, variance) -> Typ.var v, variance)
                                  vars type_decl.ptype_params }
   in
-  core_type, vars, bound 
+  core_type, vars, bound
 
 let fold_exprs ?unit fn exprs =
   match exprs with
