@@ -102,6 +102,13 @@ let test_mrec2 ctxt =
   assert_equal ~printer (-1) (compare_e ce1 ce2);
   assert_equal ~printer (1) (compare_e ce2 ce1)
 
+let test_ord_result ctx =
+  let compare_res0 = [%ord: (unit, unit) Result.result] in
+  let open Result in
+  assert_equal ~printer 0 (compare_res0 (Ok ()) (Ok ()));
+  assert_equal ~printer (-1) (compare_res0 (Ok ()) (Error ()));
+  assert_equal ~printer 1 (compare_res0 (Error ()) (Ok ()))
+
 type es =
   | ESBool of bool
   | ESString of string
@@ -155,4 +162,5 @@ let suite = "Test deriving(ord)" >::: [
     "test_mrec2"         >:: test_mrec2;
     "test_std_shadowing" >:: test_std_shadowing;
     "test_poly_app"      >:: test_poly_app;
+    "test_ord_result"    >:: test_ord_result
   ]
