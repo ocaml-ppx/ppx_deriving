@@ -43,6 +43,11 @@ let rec expr_of_typ typ =
       [%expr Ppx_deriving_runtime.Array.fold_left [%e expr_of_typ typ]]
     | true, [%type: [%t? typ] option] ->
       [%expr fun acc -> function None -> acc | Some x -> [%e expr_of_typ typ] acc x]
+    | true, [%type: ([%t? ok_t], [%t? err_t]) Result.result] ->
+      [%expr
+        fun acc -> function
+        | Result.Ok ok -> [%e expr_of_typ ok_t] acc ok
+        | Result.Error err -> [%e expr_of_typ err_t] acc err]
     | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
       app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix deriver) lid)))
           (List.map expr_of_typ args)

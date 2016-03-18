@@ -15,6 +15,14 @@ type 'a btreer = Node of { lft: 'a btree; elt: 'a; rgt: 'a btree } | Leaf
 type 'a ty = 'a * int list
 [@@deriving fold]
 
+type ('a, 'b) res = ('a, 'b) Result.result [@@deriving fold]
+
+let test_result ctxt =
+  let f = fold_res (+) (-) in
+  assert_equal ~printer:string_of_int 1 (f 0 (Result.Ok 1));
+  assert_equal ~printer:string_of_int (-1) (f 0 (Result.Error 1))
+
 let suite = "Test deriving(fold)" >::: [
-    "test_btree" >:: test_btree;
-  ]
+  "test_btree" >:: test_btree;
+  "test_result" >:: test_result
+]
