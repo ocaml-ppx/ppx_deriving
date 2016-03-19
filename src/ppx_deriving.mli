@@ -72,35 +72,42 @@ val string_of_core_type : Parsetree.core_type -> string
     The [~name] argument is used in error messages and should receive
     the name of the deriving plugin, e.g. ["show"]. *)
 module Arg : sig
+  (** A type of conversion functions.
+
+      A conversion function of type ['a conv] converts a raw expression into an
+      argument of type ['a]. Or returns [Result.Error "error"] if conversion
+      fails. *)
+  type 'a conv = expression -> ('a, string) Result.result
+
   (** [expr] returns the input expression as-is. *)
-  val expr : expression -> [> `Ok of expression ]
+  val expr : expression conv
 
   (** [bool expr] extracts a boolean constant from [expr], or returns
-      [`Error "boolean"] if [expr] does not contain a boolean literal. *)
-  val bool : expression -> [ `Ok of bool | `Error of string ]
+      [Result.Error "boolean"] if [expr] does not contain a boolean literal. *)
+  val bool : bool conv
 
   (** [int expr] extracts an integer constant from [expr], or returns
-      [`Error "integer"] if [expr] does not contain an integer literal. *)
-  val int : expression -> [ `Ok of int | `Error of string ]
+      [Result.Error "integer"] if [expr] does not contain an integer literal. *)
+  val int : int conv
 
   (** [string expr] extracts a string constant from [expr], or returns
-      [`Error "string"] if [expr] does not contain a string literal. *)
-  val string : expression -> [ `Ok of string | `Error of string ]
+      [Result.Error "string"] if [expr] does not contain a string literal. *)
+  val string : string conv
 
   (** [char expr] extracts a char constant from [expr], or returns
-      [`Error "char"] if [expr] does not contain a char literal. *)
-  val char : expression -> [ `Ok of char | `Error of string ]
+      [Result.Error "char"] if [expr] does not contain a char literal. *)
+  val char : char conv
 
   (** [enum values expr] extracts a polymorphic variant constant from [expr],
-      or returns [`Error "one of: `a, `b, ..."] if [expr] does not contain
-      a polymorphic variant constructor included in [values]. *)
-  val enum : string list -> expression -> [ `Ok of string | `Error of string ]
+      or returns [Result.Error "one of: `a, `b, ..."] if [expr] does not
+      contain a polymorphic variant constructor included in [values]. *)
+  val enum : string list -> string conv
 
   (** [list f expr] extracts a list constant from [expr] and maps every element
-      through [f], or returns [`Error "list:..."] where [...] is the error returned
-      by [f], or returns [`Error "list"] if [expr] does not contain a list. *)
-  val list : (expression -> [`Ok of 'a | `Error of string]) ->
-             expression -> [`Ok of 'a list | `Error of string]
+      through [f], or returns [Result.Error "list:..."] where [...] is the
+      error returned by [f], or returns [Result.Error "list"] if [expr] does
+      not contain a list. *)
+  val list : 'a conv -> 'a list conv
 
   (** [get_attr ~deriver conv attr] extracts the expression from [attr] and converts
       it with [conv], raising [Location.Error] if [attr] is not a structure with
@@ -118,8 +125,7 @@ let deriver = "index"
     | Some "flat" -> `flat | Some "nested" -> `nested | None -> `default
   in ..
       ]} *)
-  val get_attr : deriver:string -> (expression -> [ `Ok of 'a | `Error of string ]) ->
-                 attribute option -> 'a option
+  val get_attr : deriver:string -> 'a conv -> attribute option -> 'a option
 
   (** [get_flag ~deriver attr] returns [true] if [attr] is an empty attribute
       or [false] if it is absent, raising [Location.Error] if [attr] is not
@@ -132,8 +138,7 @@ let deriver = "index"
       [Location.Error] if [conv] fails.
       The name of the deriving plugin should be passed as [deriver]; it is used
       in error messages. *)
-  val get_expr : deriver:string -> (expression -> [ `Ok of 'a | `Error of string ]) ->
-                 expression -> 'a
+  val get_expr : deriver:string -> 'a conv -> expression -> 'a
 end
 
 (** {2 Hygiene} *)

@@ -67,49 +67,51 @@ let string_of_core_type typ =
   Format.asprintf "%a" Pprintast.core_type { typ with ptyp_attributes = [] }
 
 module Arg = struct
-  let expr expr =
-    `Ok expr
+  type 'a conv = expression -> ('a, string) Result.result
+
+  open Result
+  let expr expr = Ok expr
 
   let int expr =
     match expr with
 #if OCAML_VERSION < (4, 03, 0)
-    | { pexp_desc = Pexp_constant (Const_int n) } -> `Ok n
+    | { pexp_desc = Pexp_constant (Const_int n) } -> Ok n
 #else
-    | { pexp_desc = Pexp_constant (Pconst_integer (sn, _)) } -> `Ok (int_of_string sn)
+    | { pexp_desc = Pexp_constant (Pconst_integer (sn, _)) } -> Ok (int_of_string sn)
 #endif
-    | _ -> `Error "integer"
+    | _ -> Error "integer"
 
   let bool expr =
     match expr with
-    | [%expr true] -> `Ok true
-    | [%expr false] -> `Ok false
-    | _ -> `Error "boolean"
+    | [%expr true] -> Ok true
+    | [%expr false] -> Ok false
+    | _ -> Error "boolean"
 
   let string expr =
     match expr with
-    | { pexp_desc = Pexp_constant (Pconst_string (n, None)) } -> `Ok n
-    | _ -> `Error "string"
+    | { pexp_desc = Pexp_constant (Pconst_string (n, None)) } -> Ok n
+    | _ -> Error "string"
 
   let char = function
-    | { pexp_desc = Pexp_constant (Pconst_char c) } -> `Ok c
-    | _ -> `Error "char"
+    | { pexp_desc = Pexp_constant (Pconst_char c) } -> Ok c
+    | _ -> Error "char"
 
   let enum values expr =
     match expr with
     | { pexp_desc = Pexp_variant (name, None) }
-      when List.mem name values -> `Ok name
-    | _ -> `Error (Printf.sprintf "one of: %s"
+      when List.mem name values -> Ok name
+    | _ -> Error (Printf.sprintf "one of: %s"
                     (String.concat ", " (List.map (fun s -> "`"^s) values)))
 
   let list expr =
     let rec loop acc = function
-      | [%expr []] -> `Ok (List.rev acc)
+      | [%expr []] -> Ok (List.rev acc)
       | [%expr [%e? x]::[%e? xs]] ->
         begin match expr x with
-        | `Ok v -> loop (v::acc) xs
-        | `Error e -> `Error ("list:" ^ e)
+        | Ok v -> loop (v::acc) xs
+        | Error e -> Error ("list:" ^ e)
         end
-      | _ -> `Error "list"
+      | _ -> Error "list"
     in loop []
 
   let get_attr ~deriver conv attr =
@@ -117,8 +119,8 @@ module Arg = struct
     | None -> None
     | Some ({ txt = name }, PStr [{ pstr_desc = Pstr_eval (expr, []) }]) ->
       begin match conv expr with
-      | `Ok v -> Some v
-      | `Error desc ->
+      | Ok v -> Some v
+      | Error desc ->
         raise_errorf ~loc:expr.pexp_loc "%s: invalid [@%s]: %s expected" deriver name desc
       end
     | Some ({ txt = name; loc }, _) ->
@@ -133,8 +135,8 @@ module Arg = struct
 
   let get_expr ~deriver conv expr =
     match conv expr with
-    | `Error desc -> raise_errorf ~loc:expr.pexp_loc "%s: %s expected" deriver desc
-    | `Ok v -> v
+    | Error desc -> raise_errorf ~loc:expr.pexp_loc "%s: %s expected" deriver desc
+    | Ok v -> v
 end
 
 type quoter = {
