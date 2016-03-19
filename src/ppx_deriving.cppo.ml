@@ -152,8 +152,11 @@ let quote ~quoter expr =
   quoter.next_id <- quoter.next_id + 1;
   [%expr [%e evar name] ()]
 
-let sanitize ?(quoter=create_quoter ()) expr =
-  let body = [%expr (let open! Ppx_deriving_runtime in [%e expr]) [@ocaml.warning "-A"]] in
+let sanitize ?(module_=Lident "Ppx_deriving_runtime") ?(quoter=create_quoter ()) expr =
+  let body =
+    Exp.open_
+      ~attrs:[mkloc "ocaml.warning" !Ast_helper.default_loc, PStr [%str "-A"]]
+      Override { txt=module_; loc=(!Ast_helper.default_loc) } expr in
   match quoter.bindings with
   | [] -> body
   | bindings -> Exp.let_ Nonrecursive bindings body
