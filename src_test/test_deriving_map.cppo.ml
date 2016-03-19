@@ -118,6 +118,14 @@ let test_record3 ctxt =
   assert_equal ~printer:(show_record3 fmt_int fmt_flt)
     {a3=97;b3=false;c3=4.} (map_record3 Char.code float_of_int {a3='a';b3=false;c3=4})
 
+type 'a result0 = ('a, bool) Result.result [@@deriving show, map]
+
+let test_map_result ctxt =
+  let f = map_result0 succ in
+  let printer = show_result0 fmt_int in
+  assert_equal ~printer (Result.Ok 10) (f (Result.Ok 9));
+  assert_equal ~printer (Result.Error true) (f (Result.Error true))
+
 let suite = "Test deriving(map)" >::: [
     "test_btree" >:: test_btree;
     "test_var0" >:: test_var0;
@@ -128,6 +136,7 @@ let suite = "Test deriving(map)" >::: [
     "test_record1" >:: test_record1;
     "test_record2" >:: test_record2;
     "test_record3" >:: test_record3;
+    "test_map_result" >:: test_map_result
   ]
 
 

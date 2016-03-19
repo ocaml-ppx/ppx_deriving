@@ -46,9 +46,17 @@ type 'a btreer = Node of { lft: 'a btree; elt: 'a; rgt: 'a btree } | Leaf
 type 'a ty = 'a * int list
 [@@deriving iter]
 
+type 'a res0 = ('a, char) Result.result [@@deriving iter]
+
+let test_iter_res ctxt =
+  let has_ok = ref false in
+  iter_res0 (fun _ -> has_ok := true) (Result.Ok "xxx");
+  assert_bool "set ok" !has_ok;
+  iter_res0 (fun _ -> has_ok := false) (Result.Error 'c');
+  assert_bool "set ok" !has_ok
+
 let suite = "Test deriving(iter)" >::: [
-    "test_btree" >:: test_btree;
-    "test_record" >:: test_record;
-  ]
-
-
+  "test_btree" >:: test_btree;
+  "test_record" >:: test_record;
+  "test_iter_res" >:: test_iter_res
+]

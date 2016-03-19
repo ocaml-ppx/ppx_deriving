@@ -126,6 +126,13 @@ end
 type 'a std_clash = 'a List.t option
 [@@deriving eq]
 
+let test_result ctxt =
+  let eq = [%eq: (string, int) Result.result] in
+  let open Result in
+  assert_equal ~printer true (eq (Ok "ttt") (Ok "ttt"));
+  assert_equal ~printer false (eq (Ok "123") (Error 123));
+  assert_equal ~printer false (eq (Error 123) (Error 0))
+
 let suite = "Test deriving(eq)" >::: [
     "test_simple"        >:: test_simple;
     "test_array"         >:: test_arr;
@@ -134,6 +141,7 @@ let suite = "Test deriving(eq)" >::: [
     "test_mrec"          >:: test_mrec;
     "test_mut_rec"       >:: test_mut_rec;
     "test_std_shadowing" >:: test_std_shadowing;
-    "test_poly_app"      >:: test_poly_app
+    "test_poly_app"      >:: test_poly_app;
+    "test_result"        >:: test_result
   ]
 

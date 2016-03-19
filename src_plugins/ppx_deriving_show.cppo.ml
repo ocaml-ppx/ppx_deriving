@@ -119,6 +119,17 @@ let rec expr_of_typ quoter typ =
             Format.pp_print_string fmt "(Some ";
             [%e expr_of_typ typ] x;
             Format.pp_print_string fmt ")"]
+      | true, [%type: ([%t? ok_t],[%t? err_t]) Result.result] ->
+        [%expr
+          function
+          | Result.Ok ok ->
+            Format.pp_print_string fmt "(Ok ";
+            [%e expr_of_typ ok_t] ok;
+            Format.pp_print_string fmt ")"
+          | Result.Error e ->
+            Format.pp_print_string fmt "(Error ";
+            [%e expr_of_typ err_t] e;
+            Format.pp_print_string fmt ")"]
       | true, ([%type: [%t? typ] lazy_t] | [%type: [%t? typ] Lazy.t]) ->
         [%expr fun x ->
           if Lazy.is_val x then [%e expr_of_typ typ] (Lazy.force x)
