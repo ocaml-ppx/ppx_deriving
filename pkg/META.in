@@ -15,7 +15,7 @@ package "runtime" (
 package "api" (
   version = "%{version}%"
   description = "Plugin API for ppx_deriving"
-  requires = "dynlink compiler-libs.common ppx_tools"
+  requires = "dynlink compiler-libs.common ppx_tools result"
   archive(byte) = "ppx_deriving.cma"
   archive(native) = "ppx_deriving.cmxa"
   exists_if = "ppx_deriving.cma"
