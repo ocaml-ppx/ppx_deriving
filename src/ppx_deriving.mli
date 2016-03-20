@@ -154,10 +154,12 @@ val create_quoter : unit -> quoter
     that [sanitize] provides. *)
 val quote : quoter:quoter -> expression -> expression
 
-(** [sanitize quoter expr] wraps [expr] in a way that ensures that the contents of
-    {!Ppx_deriving_runtime} and {!Pervasives}, as well as the identifiers in
-    expressions returned by [quote] are in scope, and returns the wrapped expression. *)
-val sanitize : ?quoter:quoter -> expression -> expression
+(** [sanitize module_ quoter expr] wraps [expr] in a way that ensures that the
+    contents of [module_] and {!Pervasives}, as well as the identifiers in
+    expressions returned by [quote] are in scope, and returns the wrapped
+    expression. [module_] defaults to !{Ppx_deriving_runtime} if it's not
+    provided*)
+val sanitize : ?module_:Longident.t -> ?quoter:quoter -> expression -> expression
 
 (** [with_quoter fn] ≡
     [fun fn a -> let quoter = create_quoter () in sanitize ~quoter (fn quoter a)] *)
