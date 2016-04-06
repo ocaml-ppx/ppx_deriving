@@ -148,7 +148,8 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
     | Ptype_abstract, Some manifest -> expr_of_typ quoter manifest
     | Ptype_variant constrs, _ ->
       let cases =
-        (constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args } ->
+        (constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args; pcd_loc } ->
+          with_default_loc pcd_loc @@ fun () ->
           match pcd_args with
           | Pcstr_tuple(typs) ->
             exprn quoter typs |>
@@ -168,7 +169,8 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       [%expr fun lhs rhs -> [%e Exp.match_ [%expr lhs, rhs] cases]]
     | Ptype_record labels, _ ->
       let exprs =
-        labels |> List.map (fun { pld_name = { txt = name }; pld_type; pld_attributes } ->
+        labels |> List.map (fun { pld_name = { txt = name }; pld_type; pld_attributes; pld_loc } ->
+          with_default_loc pld_loc @@ fun () ->
           (* combine attributes of type and label *)
           let attrs =  pld_type.ptyp_attributes @ pld_attributes in
           let pld_type = {pld_type with ptyp_attributes=attrs} in
