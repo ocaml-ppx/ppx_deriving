@@ -266,13 +266,10 @@ let free_vars_in_core_type typ =
         ) rows |> List.concat |> List.concat
     | _ -> assert false
   in
-  let rec uniq acc lst =
-    match lst with
-    | a :: b :: lst when a = b -> uniq acc (b :: lst)
-    | x :: lst -> uniq (x :: acc) lst
-    | [] -> acc
-  in
-  List.rev (uniq [] (free_in typ))
+  let uniq lst =
+    let module StringSet = Set.Make(String) in
+    lst |> StringSet.of_list |> StringSet.elements in
+  free_in typ |> uniq
 
 let var_name_of_int i =
   let letter = "abcdefghijklmnopqrstuvwxyz" in
