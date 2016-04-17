@@ -19,10 +19,16 @@ type deriver = {
                    type_declaration list -> structure;
   type_ext_str : options:(string * expression) list -> path:string list ->
                   type_extension -> structure;
+  module_type_decl_str : options:(string * expression) list ->
+                          path:string list ->
+                          module_type_declaration -> structure;
   type_decl_sig : options:(string * expression) list -> path:string list ->
                    type_declaration list -> signature;
   type_ext_sig : options:(string * expression) list -> path:string list ->
                   type_extension -> signature;
+  module_type_decl_sig : options:(string * expression) list ->
+                          path:string list ->
+                          module_type_declaration -> signature;
 }
 
 let registry : (string, deriver) Hashtbl.t
@@ -52,15 +58,25 @@ let create =
   let def_decl_sig name ~options ~path typ_decl =
     raise_errorf "Type declaratons in signatures not supported by deriver %s" name
   in
+  let def_module_type_decl_str name ~options ~path module_type_decl =
+    raise_errorf "Module type declarations in structures not supported by \
+                  deriver %s" name
+  in
+  let def_module_type_decl_sig name ~options ~path module_type_decl =
+    raise_errorf "Module type declarations in signatures not supported by \
+                  deriver %s" name
+  in
   fun name ?core_type
     ?(type_ext_str=def_ext_str name)
     ?(type_ext_sig=def_ext_sig name)
     ?(type_decl_str=def_decl_str name)
     ?(type_decl_sig=def_decl_sig name)
+    ?(module_type_decl_str=def_module_type_decl_str name)
+    ?(module_type_decl_sig=def_module_type_decl_sig name)
     () ->
       { name ; core_type ;
-        type_decl_str ; type_ext_str ;
-        type_decl_sig ; type_ext_sig ;
+        type_decl_str ; type_ext_str ; module_type_decl_str ;
+        type_decl_sig ; type_ext_sig ; module_type_decl_sig ;
       }
 
 let string_of_core_type typ =
@@ -401,6 +417,10 @@ let derive_type_ext path typ_ext pstr_loc item fn =
   let attributes = typ_ext.ptyext_attributes in
   derive path pstr_loc item attributes fn typ_ext
 
+let derive_module_type_decl path module_type_decl pstr_loc item fn =
+  let attributes = module_type_decl.pmtd_attributes in
+  derive path pstr_loc item attributes fn module_type_decl
+
 let module_from_input_name () =
   match !Location.input_name with
   | "//toplevel//" -> []
@@ -454,6 +474,13 @@ let mapper =
           derive_type_ext module_nesting typ_ext pstr_loc item
             (fun deriver -> deriver.type_ext_str))
       in derived @ mapper.Ast_mapper.structure mapper rest
+    | { pstr_desc = Pstr_modtype modtype; pstr_loc } as item :: rest when
+          has_attr "deriving" modtype.pmtd_attributes ->
+      let derived =
+        Ast_helper.with_default_loc pstr_loc (fun () ->
+          derive_module_type_decl module_nesting modtype pstr_loc item
+            (fun deriver -> deriver.module_type_decl_str))
+      in derived @ mapper.Ast_mapper.structure mapper rest
     | { pstr_desc = Pstr_module ({ pmb_name = { txt = name } } as mb) } as item :: rest ->
       let derived =
         { item with pstr_desc = Pstr_module (
@@ -487,6 +514,13 @@ let mapper =
         Ast_helper.with_default_loc psig_loc (fun () ->
           derive_type_ext module_nesting typ_ext psig_loc item
             (fun deriver -> deriver.type_ext_sig))
+      in derived @ mapper.Ast_mapper.signature mapper rest
+    | { psig_desc = Psig_modtype modtype; psig_loc } as item :: rest when
+        has_attr "deriving" modtype.pmtd_attributes ->
+      let derived =
+        Ast_helper.with_default_loc psig_loc (fun () ->
+          derive_module_type_decl module_nesting modtype psig_loc item
+            (fun deriver -> deriver.module_type_decl_sig))
       in derived @ mapper.Ast_mapper.signature mapper rest
     | { psig_desc = Psig_module ({ pmd_name = { txt = name } } as md) } as item :: rest ->
       let derived =

@@ -27,10 +27,16 @@ type deriver = {
                    type_declaration list -> structure;
   type_ext_str : options:(string * expression) list -> path:string list ->
                    type_extension -> structure;
+  module_type_decl_str : options:(string * expression) list ->
+                          path:string list ->
+                          module_type_declaration -> structure;
   type_decl_sig : options:(string * expression) list -> path:string list ->
                    type_declaration list -> signature;
   type_ext_sig : options:(string * expression) list -> path:string list ->
                   type_extension -> signature;
+  module_type_decl_sig : options:(string * expression) list ->
+                          path:string list ->
+                          module_type_declaration -> signature;
 }
 
 (** [register deriver] registers [deriver] according to its [name] field. *)
@@ -48,6 +54,12 @@ val create :
                     type_declaration list -> structure) ->
   ?type_decl_sig: (options:(string * expression) list -> path:string list ->
                     type_declaration list -> signature) ->
+  ?module_type_decl_str: (options:(string * expression) list ->
+                           path:string list ->
+                           module_type_declaration -> structure) ->
+  ?module_type_decl_sig: (options:(string * expression) list ->
+                           path:string list ->
+                           module_type_declaration -> signature) ->
   unit -> deriver
 
 (** [lookup name] looks up a deriver called [name]. *)
