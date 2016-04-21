@@ -23,7 +23,7 @@ build-doc: [
 ]
 depends: [
   "ocamlbuild" {build}
-  "ocamlfind"  {build & >= "1.5.4"}
+  "ocamlfind"  {build & >= "1.6.0"}
   "cppo"       {build}
   "ppx_tools"  {>= "4.02.3"}
   "result"

@@ -15,6 +15,26 @@ let dynlink ?(loc=Location.none) filename =
   with Dynlink.Error error ->
     raise_errorf ~loc "Cannot load %s: %s" filename (Dynlink.error_message error)
 
+let init_findlib = lazy (
+  Findlib.init ();
+  Findlib.record_package Findlib.Record_core "ppx_deriving.api";
+)
+
+let load_ocamlfind_package ?loc pkg =
+  Lazy.force init_findlib;
+  Fl_dynload.load_packages [pkg]
+
+let load_plugin ?loc plugin =
+  let len = String.length plugin in
+  let pkg_prefix = "package:" in
+  let pkg_prefix_len = String.length pkg_prefix in
+  if len >= pkg_prefix_len &&
+     String.sub plugin 0 pkg_prefix_len = pkg_prefix then
+    let pkg = String.sub plugin pkg_prefix_len (len - pkg_prefix_len) in
+    load_ocamlfind_package ?loc pkg
+  else
+    dynlink ?loc plugin
+
 let get_plugins () =
   match Ast_mapper.get_cookie "ppx_deriving" with
   | Some { pexp_desc = Pexp_tuple exprs } ->
@@ -28,13 +48,13 @@ let get_plugins () =
 let add_plugins plugins =
   let loaded  = get_plugins () in
   let plugins = List.filter (fun file -> not (List.mem file loaded)) plugins in
-  List.iter dynlink plugins;
+  List.iter load_plugin plugins;
   let loaded  = loaded @ plugins in
   Ast_mapper.set_cookie "ppx_deriving"
     (Exp.tuple (List.map (fun file -> Exp.constant (Pconst_string (file, None))) loaded))
 
 let mapper argv =
-  get_plugins () |> List.iter dynlink;
+  get_plugins () |> List.iter load_plugin;
   add_plugins argv;
   let structure mapper = function
     | [%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
