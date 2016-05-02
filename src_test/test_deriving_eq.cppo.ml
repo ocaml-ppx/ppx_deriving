@@ -13,7 +13,8 @@ type a6 = bool       [@@deriving eq]
 type a7 = char       [@@deriving eq]
 type a8 = string     [@@deriving eq]
 type a9 = bytes      [@@deriving eq]
-type r  = int ref    [@@deriving eq]
+type r1 = int ref    [@@deriving eq]
+type r2 = int Pervasives.ref [@@deriving eq]
 type l  = int list   [@@deriving eq]
 type a  = int array  [@@deriving eq]
 type o  = int option [@@deriving eq]
@@ -27,7 +28,13 @@ let test_arr ctxt =
   assert_equal ~printer true (equal_a [||] [||]);
   assert_equal ~printer true (equal_a [|1|] [|1|]);
   assert_equal ~printer false (equal_a [||] [|1|]);
-  assert_equal ~printer false (equal_a [|2|] [|1|]);
+  assert_equal ~printer false (equal_a [|2|] [|1|])
+
+let test_ref1 ctxt =
+  assert_equal ~printer true (equal_r1 (ref 0) (ref 0))
+
+let test_ref2 ctxt =
+  assert_equal ~printer true (equal_r2 (ref 0) (ref 0))
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving eq]
 
@@ -136,6 +143,8 @@ let test_result ctxt =
 let suite = "Test deriving(eq)" >::: [
     "test_simple"        >:: test_simple;
     "test_array"         >:: test_arr;
+    "test_ref1"          >:: test_ref1;
+    "test_ref2"          >:: test_ref2;
     "test_custom"        >:: test_custom;
     "test_placeholder"   >:: test_placeholder;
     "test_mrec"          >:: test_mrec;
