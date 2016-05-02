@@ -9,12 +9,18 @@ module T : sig
   type ('a,'b) record = { a : 'a; b : 'b }
   [@@deriving iter]
 
+  type 'a reflist = 'a Pervasives.ref list
+  [@@deriving iter]
+
 end = struct
 
   type 'a btree = Node of 'a btree * 'a * 'a btree | Leaf
   [@@deriving iter]
 
   type ('a,'b) record = { a : 'a; b : 'b }
+  [@@deriving iter]
+
+  type 'a reflist = 'a Pervasives.ref list
   [@@deriving iter]
 
 end
@@ -27,16 +33,22 @@ let test_btree ctxt =
              (Node (Node (Leaf, 0, Leaf), 1, Node (Leaf, 2, Leaf)));
   assert_equal [2;1;0] !lst
 
-let test_record ctxt = 
+let test_record ctxt =
   let lst : string list ref = ref [] in
   lst := [];
-  iter_record (fun a -> lst := string_of_int a :: !lst) 
+  iter_record (fun a -> lst := string_of_int a :: !lst)
               (fun b -> lst := string_of_float b :: ! lst) {a=1; b=1.2};
   assert_equal ["1.2"; "1"] !lst;
   lst := [];
-  iter_record (fun a -> lst := string_of_int (a+1) :: !lst) 
+  iter_record (fun a -> lst := string_of_int (a+1) :: !lst)
               (fun b -> lst := Int64.to_string b :: ! lst) {a=3; b=4L};
   assert_equal ["4"; "4"] !lst
+
+let test_reflist ctxt =
+  let lst = ref [] in
+  iter_reflist (fun x -> lst := x :: !lst)
+               [ ref 0 ; ref 1 ; ref 2 ] ;
+  assert_equal [2;1;0] !lst
 
 #if OCAML_VERSION >= (4, 03, 0)
 type 'a btreer = Node of { lft: 'a btree; elt: 'a; rgt: 'a btree } | Leaf
@@ -58,5 +70,6 @@ let test_iter_res ctxt =
 let suite = "Test deriving(iter)" >::: [
   "test_btree" >:: test_btree;
   "test_record" >:: test_record;
+  "test_reflist" >:: test_reflist;
   "test_iter_res" >:: test_iter_res
 ]
