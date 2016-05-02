@@ -110,8 +110,8 @@ let rec expr_of_typ quoter typ =
           Format.pp_print_string fmt "ref (";
           [%e expr_of_typ typ] !x;
           Format.pp_print_string fmt ")"]
-      | true, [%type: [%t? typ] list]  -> seq "[@[<hov>"   "@]]" [%expr List.fold_left]  typ
-      | true, [%type: [%t? typ] array] -> seq "[|@[<hov>" "@]|]" [%expr Array.fold_left] typ
+      | true, [%type: [%t? typ] list]  -> seq "@[<2>["   "@,]@]" [%expr List.fold_left]  typ
+      | true, [%type: [%t? typ] array] -> seq "@[<2>[|" "@,|]@]" [%expr Array.fold_left] typ
       | true, [%type: [%t? typ] option] ->
         [%expr
           function
@@ -151,7 +151,7 @@ let rec expr_of_typ quoter typ =
       let args = List.mapi (fun i typ -> app (expr_of_typ typ) [evar (argn i)]) typs in
       [%expr
         fun [%p ptuple (List.mapi (fun i _ -> pvar (argn i)) typs)] ->
-        Format.fprintf fmt "(@[<hov>";
+        Format.fprintf fmt "(@[";
         [%e args |> Ppx_deriving.(fold_exprs
                 (seq_reduce ~sep:[%expr Format.fprintf fmt ",@ "]))];
         Format.fprintf fmt "@])"]
@@ -214,15 +214,15 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
               | []   -> [%expr Format.pp_print_string fmt [%e str constr_name]]
               | [arg] ->
                 [%expr
-                  Format.fprintf fmt [%e str ("(@[<hov2>" ^  constr_name ^ "@ ")];
+                  Format.fprintf fmt [%e str ("(@[<2>" ^  constr_name ^ "@ ")];
                   [%e arg];
                   Format.fprintf fmt "@])"]
               | args ->
                 [%expr
-                  Format.fprintf fmt [%e str ("@[<hov2>" ^  constr_name ^ " (@,")];
+                  Format.fprintf fmt [%e str ("@[<2>" ^  constr_name ^ " (@,")];
                   [%e args |> Ppx_deriving.(fold_exprs
                         (seq_reduce ~sep:[%expr Format.fprintf fmt ",@ "]))];
-                  Format.fprintf fmt "@])"]
+                  Format.fprintf fmt "@,)@]"]
             in
             Exp.case (pconstr name' (pattn typs)) printer
 #if OCAML_VERSION >= (4, 03, 0)
@@ -230,12 +230,14 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
             let args =
               labels |> List.map (fun { pld_name = { txt = n }; pld_type = typ } ->
                 [%expr
-                  Format.fprintf fmt [%e str (n ^ " =@ " )];
-                  [%e expr_of_typ quoter typ] [%e evar (argl n)]])
+                  Format.fprintf fmt "@[%s =@ " [%e str n];
+                  [%e expr_of_typ quoter typ] [%e evar (argl n)];
+                  Format.fprintf fmt "@]"
+                ])
             in
             let printer =
               [%expr
-                Format.fprintf fmt [%e str ("@[<hov2>" ^  constr_name ^ " {@,")];
+                Format.fprintf fmt [%e str ("@[<2>" ^  constr_name ^ " {@,")];
                 [%e args |> Ppx_deriving.(fold_exprs
                       (seq_reduce ~sep:[%expr Format.fprintf fmt ";@ "]))];
                 Format.fprintf fmt "@]}"]
@@ -250,14 +252,17 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
         labels |> List.mapi (fun i { pld_name = { txt = name }; pld_type; pld_attributes } ->
           let field_name = if i = 0 then Ppx_deriving.expand_path ~path name else name in
           let pld_type = {pld_type with ptyp_attributes=pld_attributes@pld_type.ptyp_attributes} in
-          [%expr Format.pp_print_string fmt [%e str (field_name ^ " = ")];
-            [%e expr_of_typ quoter pld_type] [%e Exp.field (evar "x") (mknoloc (Lident name))]])
+          [%expr
+            Format.fprintf fmt "@[%s =@ " [%e str field_name];
+            [%e expr_of_typ quoter pld_type] [%e Exp.field (evar "x") (mknoloc (Lident name))];
+            Format.fprintf fmt "@]"
+          ])
       in
       [%expr fun fmt x ->
-        Format.fprintf fmt "{ @[<hov>";
+        Format.fprintf fmt "@[<2>{ ";
         [%e fields |> Ppx_deriving.(fold_exprs
               (seq_reduce ~sep:[%expr Format.fprintf fmt ";@ "]))];
-        Format.fprintf fmt "@] }"]
+        Format.fprintf fmt "@ }@]"]
     | Ptype_abstract, None ->
       raise_errorf ~loc "%s cannot be derived for fully abstract types" deriver
     | Ptype_open, _        ->
