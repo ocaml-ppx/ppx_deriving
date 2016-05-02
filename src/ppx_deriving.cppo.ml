@@ -234,6 +234,33 @@ let attr_warning expr =
   let structure = {pstr_desc = Pstr_eval (expr, []); pstr_loc = loc} in
   {txt = "ocaml.warning"; loc}, PStr [structure]
 
+let attr_nobuiltin ~deriver attrs =
+  attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver
+let rec remove_pervasive_lid = function
+  | Lident _ as lid -> lid
+  | Ldot (Lident "Pervasives", s) -> Lident s
+  | Ldot (lid, s) -> Ldot (remove_pervasive_lid lid, s)
+  | Lapply (lid, lid2) ->
+    Lapply (remove_pervasive_lid lid, remove_pervasive_lid lid2)
+
+let remove_pervasives ~deriver typ =
+  if attr_nobuiltin ~deriver typ.ptyp_attributes then typ
+  else
+    let open Ast_mapper in
+    let map_typ mapper typ = match typ.ptyp_desc with
+      | Ptyp_constr (lid, l) ->
+        let lid = {lid with txt = remove_pervasive_lid lid.txt} in
+        {typ with
+         ptyp_desc = Ptyp_constr (lid, List.map (mapper.typ mapper) l)}
+      | Ptyp_class (lid, l) ->
+        let lid = {lid with txt = remove_pervasive_lid lid.txt} in
+        {typ with
+         ptyp_desc = Ptyp_class (lid, List.map (mapper.typ mapper) l)}
+      | _ -> default_mapper.typ mapper typ
+    in
+    let m = { default_mapper with typ = map_typ} in
+    m.typ m typ
+
 let fold_left_type_params fn accum params =
   List.fold_left (fun accum (param, _) ->
       match param with
