@@ -31,12 +31,13 @@ let pconstrrec name fields = pconstr name [precord ~closed:Closed fields]
 let reduce_acc a b = [%expr let acc = [%e a] in [%e b]]
 
 let rec expr_of_typ typ =
+  let typ = Ppx_deriving.remove_pervasives ~deriver typ in
   match typ with
   | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun acc _ -> acc]
   | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
     let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
     begin match builtin, typ with
-    | true, [%type: [%t? typ] ref] -> [%expr fun x -> [%e expr_of_typ typ] !x]
+    | true, [%type: [%t? typ] ref] -> [%expr fun acc x -> [%e expr_of_typ typ] acc !x]
     | true, [%type: [%t? typ] list] ->
       [%expr Ppx_deriving_runtime.List.fold_left [%e expr_of_typ typ]]
     | true, [%type: [%t? typ] array] ->

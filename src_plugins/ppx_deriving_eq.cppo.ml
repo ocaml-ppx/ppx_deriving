@@ -60,6 +60,7 @@ and exprl quoter typs =
     app (expr_of_typ quoter typ) [evar (argl `lhs n); evar (argl `rhs n)])
 
 and expr_of_typ quoter typ =
+  let typ = Ppx_deriving.remove_pervasives ~deriver typ in
   let expr_of_typ = expr_of_typ quoter in
   match attr_equal typ.ptyp_attributes with
   | Some fn -> Ppx_deriving.quote quoter fn

@@ -63,6 +63,7 @@ and expr_of_typ quoter typ =
   match attr_compare typ.ptyp_attributes with
   | Some fn -> Ppx_deriving.quote quoter fn
   | None ->
+    let typ = Ppx_deriving.remove_pervasives ~deriver typ in
     match typ with
     | [%type: _] -> [%expr fun _ _ -> 0]
     | { ptyp_desc = Ptyp_constr _ } ->

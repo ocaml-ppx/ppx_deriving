@@ -81,6 +81,7 @@ let rec expr_of_typ quoter typ =
           [%e expr_of_typ typ] x; true) false x);
         Format.fprintf fmt [%e str finish];]
     in
+    let typ = Ppx_deriving.remove_pervasives ~deriver typ in
     match typ with
     | [%type: _] -> [%expr fun _ -> Format.pp_print_string fmt "_"]
     | { ptyp_desc = Ptyp_arrow _ } ->

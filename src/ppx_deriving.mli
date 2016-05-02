@@ -218,6 +218,14 @@ val attr_warning: expression -> attribute
     lexical order. *)
 val free_vars_in_core_type : core_type -> string list
 
+(** [remove_pervasives ~deriver typ] removes the leading "Pervasives."
+    module name in longidents.
+    Type expressions marked with [\[\@nobuiltin\]] are ignored.
+
+    The name of the deriving plugin should be passed as [deriver]; it is used
+    in error messages. *)
+val remove_pervasives : deriver:string -> core_type -> core_type
+
 (** [fresh_var bound] returns a fresh variable name not present in [bound].
     The name is selected in alphabetical succession. *)
 val fresh_var : string list -> string
