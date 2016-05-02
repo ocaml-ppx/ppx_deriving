@@ -29,6 +29,7 @@ let pattl labels = List.map (fun { pld_name = { txt = n } } -> n, pvar (argl n))
 let pconstrrec name fields = pconstr name [precord ~closed:Closed fields]
 
 let rec expr_of_typ typ =
+  let typ = Ppx_deriving.remove_pervasives ~deriver typ in
   match typ with
   | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun _ -> ()]
   | { ptyp_desc = Ptyp_constr _ } ->

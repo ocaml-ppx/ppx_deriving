@@ -49,6 +49,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       in
       List.fold_left (fun accum { pld_name = { txt = name }; pld_type; pld_attributes } ->
         let attrs = pld_attributes @ pld_type.ptyp_attributes in
+        let pld_type = Ppx_deriving.remove_pervasives ~deriver pld_type in
         match attr_default attrs with
         | Some default -> Exp.fun_ (Label.optional name) (Some (Ppx_deriving.quote ~quoter default))
                                    (pvar name) accum
@@ -99,6 +100,7 @@ let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       in
       List.fold_left (fun accum { pld_name = { txt = name; loc }; pld_type; pld_attributes } ->
         let attrs = pld_type.ptyp_attributes @ pld_attributes in
+        let pld_type = Ppx_deriving.remove_pervasives ~deriver pld_type in
         match attr_default attrs with
         | Some _ -> Typ.arrow (Label.optional name) (wrap_predef_option pld_type) accum
         | None ->
