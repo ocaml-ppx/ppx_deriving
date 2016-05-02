@@ -12,6 +12,8 @@ type a7 = char       [@@deriving show]
 type a8 = string     [@@deriving show]
 type a9 = bytes      [@@deriving show]
 type r  = int ref    [@@deriving show]
+type r2 = int Pervasives.ref [@@deriving show]
+type r3 = int Pervasives.ref ref [@@deriving show]
 type l  = int list   [@@deriving show]
 type a  = int array  [@@deriving show]
 type o  = int option [@@deriving show]
@@ -28,6 +30,8 @@ let test_alias ctxt =
   assert_equal ~printer "\"foo\"" (show_a8 "foo");
   assert_equal ~printer "\"foo\"" (show_a9 (Bytes.of_string "foo"));
   assert_equal ~printer "ref (1)" (show_r (ref 1));
+  assert_equal ~printer "ref (1)" (show_r2 (ref 1));
+  assert_equal ~printer "ref (ref (1))" (show_r3 (ref (ref 1)));
   assert_equal ~printer "[1; 2; 3]" (show_l [1;2;3]);
   assert_equal ~printer "[|1; 2; 3|]" (show_a [|1;2;3|]);
   assert_equal ~printer "(Some 1)" (show_o (Some 1));
