@@ -37,7 +37,7 @@ let rec expr_of_typ typ =
   | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
     let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
     begin match builtin, typ with
-    | true, [%type: [%t? typ] ref] -> [%expr fun x -> [%e expr_of_typ typ] !x]
+    | true, [%type: [%t? typ] ref] -> [%expr fun acc x -> [%e expr_of_typ typ] acc !x]
     | true, [%type: [%t? typ] list] ->
       [%expr Ppx_deriving_runtime.List.fold_left [%e expr_of_typ typ]]
     | true, [%type: [%t? typ] array] ->
