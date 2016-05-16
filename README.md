@@ -54,14 +54,14 @@ It's possible to pass options to a plugin by appending a record to plugin's name
 
 ``` ocaml
 type t = string
-[@@deriving ord { affix = true }]
+[@@deriving yojson { strict = true }]
 ```
 
 It's possible to make _deriving_ ignore a missing plugin rather than raising an error by passing an `optional = true` option, for example, to enable conditional compilation:
 
 ``` ocaml
 type addr = string * int
-[@@deriving json { optional = true }]
+[@@deriving yojson { optional = true }]
 ```
 
 It's also possible for many plugins to derive a function directly from a type, without declaring it first.
