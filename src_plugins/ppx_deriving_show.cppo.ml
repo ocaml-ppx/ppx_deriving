@@ -194,12 +194,22 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
         constrs |> List.map (fun { pcd_name = { txt = name' }; pcd_args; pcd_attributes } ->
           let constr_name = Ppx_deriving.expand_path ~path name' in
           match attr_printer pcd_attributes, pcd_args with
-          | Some printer, Pcstr_tuple([]) ->
-            Exp.case (pconstr name' [])
-                     [%expr [%e wrap_printer quoter printer] fmt ()]
-          | Some printer, Pcstr_tuple(_) ->
-            Exp.case (pconstr name' [pvar "a"])
-                     [%expr [%e wrap_printer quoter printer] fmt a]
+          | Some printer, Pcstr_tuple(args) ->
+            let rec range from_idx to_idx =
+              if from_idx = to_idx
+              then []
+              else from_idx::(range (from_idx+1) to_idx)
+            in
+            let indices = range 0 (List.length args) in
+            let pattern_vars =
+              List.map (fun i -> pvar ("a" ^ string_of_int i)) indices
+            in
+            let expr_vars =
+              List.map (fun i -> evar ("a" ^ string_of_int i)) indices
+            in
+            Exp.case (pconstr name' pattern_vars)
+              [%expr [%e wrap_printer quoter printer] fmt
+                        [%e tuple expr_vars]]
 #if OCAML_VERSION >= (4, 03, 0)
           | Some printer, Pcstr_record(labels) ->
             let args = labels |> List.map (fun { pld_name = { txt = n } } -> evar (argl n)) in
