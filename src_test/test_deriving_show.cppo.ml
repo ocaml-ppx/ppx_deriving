@@ -200,6 +200,8 @@ type variant_printer =
   | First [@printer fun fmt _ -> Format.pp_print_string fmt "first"]
   | Second of int [@printer fun fmt i -> fprintf fmt "second: %d" i]
   | Third
+  | Fourth of int * int
+                [@printer fun fmt (a,b) -> fprintf fmt "fourth: %d %d" a b]
 [@@deriving show]
 
 let test_variant_printer ctxt =
@@ -208,7 +210,9 @@ let test_variant_printer ctxt =
   assert_equal ~printer
     "second: 42" (show_variant_printer (Second 42));
   assert_equal ~printer
-    "Test_deriving_show.Third" (show_variant_printer Third)
+    "Test_deriving_show.Third" (show_variant_printer Third);
+  assert_equal ~printer
+    "fourth: 8 4" (show_variant_printer (Fourth(8,4)))
 
 let suite = "Test deriving(show)" >::: [
     "test_alias"           >:: test_alias;
@@ -230,4 +234,3 @@ let suite = "Test deriving(show)" >::: [
     "test_variant_printer" >:: test_variant_printer;
     "test_result"          >:: test_result
   ]
-
