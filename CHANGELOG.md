@@ -1,6 +1,17 @@
 Changelog
 =========
 
+4.0
+---
+
+  * Show, eq, ord, map, iter, fold: add support for `Result.result`.
+  * Ppx_deriving.Arg: use Result.result instead of polymorphic variants.
+  * Ppx_deriving.sanitize: parameterize over an opened module.
+  * Add support for `[@@deriving]` in module type declarations.
+  * Add support for loading findlib packages instead of just files in
+    ppx_deriving_main.
+  * Treat types explicitly qualified with Pervasives also as builtin.
+
 3.1
 ---
 
