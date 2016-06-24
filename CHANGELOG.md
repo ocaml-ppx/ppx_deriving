@@ -11,6 +11,7 @@ Changelog
   * Add support for loading findlib packages instead of just files in
     ppx_deriving_main.
   * Treat types explicitly qualified with Pervasives also as builtin.
+  * Compatibility with statically linked ppx drivers.
 
 3.1
 ---
