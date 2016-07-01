@@ -26,6 +26,11 @@ module T : sig
 
   type ('a,'b) record3 = { a3 : 'a; b3 : bool; c3 : 'b } [@@deriving map,show]
 
+  type ('a,'b) pvar0 = [ `A of 'a | `B of ('a,'b) pvar0 | `C of 'b ] [@@deriving map,show]
+  type ('a,'b,'c) pvar1 = [ ('a,'b) pvar0 | `D of 'c | `E of ('b,'c) pvar0 ] [@@deriving map,show]
+  type pvar2 = [ `F | `G ] [@@deriving map,show]
+  type ('a,'b,'c) pvar3 = [ pvar2 | ('a,'b,'c) pvar1 ] [@@deriving map,show]
+
 end = struct
 
   type 'a btree = Node of 'a btree * 'a * 'a btree | Leaf
@@ -56,6 +61,11 @@ end = struct
   type 'a record2 = { a2 : 'a; b2 : int } [@@deriving map,show]
 
   type ('a,'b) record3 = { a3 : 'a; b3 : bool; c3 : 'b } [@@deriving map,show]
+
+  type ('a,'b) pvar0 = [ `A of 'a | `B of ('a,'b) pvar0 | `C of 'b ] [@@deriving map,show]
+  type ('a,'b,'c) pvar1 = [ ('a,'b) pvar0 | `D of 'c | `E of ('b,'c) pvar0 ] [@@deriving map,show]
+  type pvar2 = [ `F | `G ] [@@deriving map,show]
+  type ('a,'b,'c) pvar3 = [ pvar2 | ('a,'b,'c) pvar1 ] [@@deriving map,show]
 
 end
 
@@ -118,6 +128,19 @@ let test_record3 ctxt =
   assert_equal ~printer:(show_record3 fmt_int fmt_flt)
     {a3=97;b3=false;c3=4.} (map_record3 Char.code float_of_int {a3='a';b3=false;c3=4})
 
+let test_pvar3 ctxt = 
+  let show,map = show_pvar3 fmt_str fmt_int fmt_int, 
+                 map_pvar3 string_of_int Char.code int_of_string
+  in
+  assert_equal ~printer:show (`A "1") (map (`A 1));
+  assert_equal ~printer:show (`B (`A "1")) (map (`B (`A 1)));
+  assert_equal ~printer:show (`B (`C 97)) (map (`B (`C 'a')));
+  assert_equal ~printer:show (`D 1) (map (`D "1"));
+  assert_equal ~printer:show (`E (`A 97)) (map (`E (`A 'a')));
+  assert_equal ~printer:show (`E (`C 9)) (map (`E (`C "9")));
+  assert_equal ~printer:show `F (map `F);
+  assert_equal ~printer:show `G (map `G)
+
 type 'a result0 = ('a, bool) Result.result [@@deriving show, map]
 
 let test_map_result ctxt =
@@ -136,6 +159,7 @@ let suite = "Test deriving(map)" >::: [
     "test_record1" >:: test_record1;
     "test_record2" >:: test_record2;
     "test_record3" >:: test_record3;
+    "test_pvar3" >:: test_pvar3;
     "test_map_result" >:: test_map_result
   ]
 
