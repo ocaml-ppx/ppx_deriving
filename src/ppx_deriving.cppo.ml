@@ -34,7 +34,16 @@ type deriver = {
 let registry : (string, deriver) Hashtbl.t
              = Hashtbl.create 16
 
-let register d = Hashtbl.add registry d.name d
+let hooks = Queue.create ()
+
+let add_register_hook f = Queue.add f hooks
+
+let register d =
+  Hashtbl.add registry d.name d;
+  Queue.iter (fun f -> f d) hooks
+
+let derivers () =
+  Hashtbl.fold (fun _ v acc -> v::acc) registry []
 
 let lookup name =
   try  Some (Hashtbl.find registry name)

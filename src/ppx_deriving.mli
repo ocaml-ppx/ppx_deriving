@@ -42,6 +42,13 @@ type deriver = {
 (** [register deriver] registers [deriver] according to its [name] field. *)
 val register : deriver -> unit
 
+(** [add_register_hook hook] adds [hook] to be executed whenever a new deriver
+    is registered. *)
+val add_register_hook : (deriver -> unit) -> unit
+
+(** [derivers ()] returns all currently registered derivers. *)
+val derivers : unit -> deriver list
+
 (** Creating {!deriver} structure. *)
 val create :
   string ->
