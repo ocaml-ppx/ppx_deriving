@@ -7,8 +7,14 @@ let () =
   output_string oc (if Env.native then "<*.ml>: ppx_native" else "<*.ml>: ppx_byte");
   close_out oc
 
+let quote_parens s =
+  if Sys.win32 then
+    s
+  else
+    "'" ^ s ^ "'"
+
 let ocamlbuild =
-  "ocamlbuild -use-ocamlfind -classic-display -plugin-tag 'package(cppo_ocamlbuild)'"
+  "ocamlbuild -use-ocamlfind -classic-display -plugin-tag " ^ quote_parens "package(cppo_ocamlbuild)"
 
 let () =
   Pkg.describe "ppx_deriving" ~builder:(`Other (ocamlbuild, "_build")) [
