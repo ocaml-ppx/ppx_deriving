@@ -117,7 +117,7 @@ let rec expr_of_typ quoter typ =
           function
           | None -> Format.pp_print_string fmt "None"
           | Some x ->
-            Format.pp_print_string fmt "Some (";
+            Format.pp_print_string fmt "(Some ";
             [%e expr_of_typ typ] x;
             Format.pp_print_string fmt ")"]
       | true, [%type: ([%t? ok_t],[%t? err_t]) Result.result] ->
