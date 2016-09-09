@@ -43,9 +43,9 @@ let test_alias ctxt =
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving show]
 let test_variant ctxt =
-  assert_equal ~printer "Test_deriving_show.Foo"              (show_v Foo);
-  assert_equal ~printer "Test_deriving_show.Bar (1, \"foo\")" (show_v (Bar (1, "foo")));
-  assert_equal ~printer "(Test_deriving_show.Baz \"foo\")"    (show_v (Baz "foo"))
+  assert_equal ~printer "Test_deriving_show.Foo"                (show_v Foo);
+  assert_equal ~printer "(Test_deriving_show.Bar (1, \"foo\"))" (show_v (Bar (1, "foo")));
+  assert_equal ~printer "(Test_deriving_show.Baz \"foo\")"      (show_v (Baz "foo"))
 
 #if OCAML_VERSION >= (4, 03, 0)
 type rv = RFoo | RBar of { x: int; y: string } | RBaz of { z: string } [@@deriving show]
@@ -126,8 +126,8 @@ let print_hi = fun fmt _ -> Format.fprintf fmt "hi!"
 type polypr = (string [@printer print_hi]) btree [@polyprinter pp_btree]
 [@@deriving show]
 let test_polypr ctxt =
-  assert_equal ~printer "Test_deriving_show.Node (Test_deriving_show.Leaf, hi!,\n\
-                        \  Test_deriving_show.Leaf)"
+  assert_equal ~printer "(Test_deriving_show.Node (Test_deriving_show.Leaf, hi!,\n\
+                        \   Test_deriving_show.Leaf))"
                         (show_polypr (Node (Leaf, "x", Leaf)))
 
 let test_placeholder ctxt =
@@ -176,10 +176,10 @@ let test_std_shadowing ctxt =
   let e1 = ESBool (Bfoo (1, (+) 1)) in
   let e2 = ESString (Sfoo ("lalala", (+) 3)) in
   assert_equal ~printer
-    "(Test_deriving_show.ESBool Test_deriving_show.Bfoo (1, <fun>))"
+    "(Test_deriving_show.ESBool (Test_deriving_show.Bfoo (1, <fun>)))"
     (show_es e1);
   assert_equal ~printer
-    "(Test_deriving_show.ESString Test_deriving_show.Sfoo (\"lalala\", <fun>))"
+    "(Test_deriving_show.ESString (Test_deriving_show.Sfoo (\"lalala\", <fun>)))"
     (show_es e2)
 
 type poly_app = float poly_abs
