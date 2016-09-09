@@ -117,7 +117,7 @@ let rec expr_of_typ quoter typ =
           function
           | None -> Format.pp_print_string fmt "None"
           | Some x ->
-            Format.pp_print_string fmt "(Some ";
+            Format.pp_print_string fmt "Some (";
             [%e expr_of_typ typ] x;
             Format.pp_print_string fmt ")"]
       | true, [%type: ([%t? ok_t],[%t? err_t]) Result.result] ->
@@ -229,10 +229,10 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                   Format.fprintf fmt "@])"]
               | args ->
                 [%expr
-                  Format.fprintf fmt [%e str ("@[<2>" ^  constr_name ^ " (@,")];
+                  Format.fprintf fmt [%e str ("(@[<2>" ^  constr_name ^ " (@,")];
                   [%e args |> Ppx_deriving.(fold_exprs
                         (seq_reduce ~sep:[%expr Format.fprintf fmt ",@ "]))];
-                  Format.fprintf fmt "@,)@]"]
+                  Format.fprintf fmt "@,))@]"]
             in
             Exp.case (pconstr name' (pattn typs)) printer
 #if OCAML_VERSION >= (4, 03, 0)
