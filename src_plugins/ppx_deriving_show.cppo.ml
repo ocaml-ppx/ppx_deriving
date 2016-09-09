@@ -229,10 +229,10 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                   Format.fprintf fmt "@])"]
               | args ->
                 [%expr
-                  Format.fprintf fmt [%e str ("@[<2>" ^  constr_name ^ " (@,")];
+                  Format.fprintf fmt [%e str ("(@[<2>" ^  constr_name ^ " (@,")];
                   [%e args |> Ppx_deriving.(fold_exprs
                         (seq_reduce ~sep:[%expr Format.fprintf fmt ",@ "]))];
-                  Format.fprintf fmt "@,)@]"]
+                  Format.fprintf fmt "@,))@]"]
             in
             Exp.case (pconstr name' (pattn typs)) printer
 #if OCAML_VERSION >= (4, 03, 0)
