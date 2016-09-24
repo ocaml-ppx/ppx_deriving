@@ -1,6 +1,15 @@
 Changelog
 =========
 
+4.1
+---
+
+  * Fix type error with inheritied polymorphic variant type in
+    [@@deriving map].
+  * Fix incorrect handling of multi-argument constructors in
+    [@@deriving show].
+  * Add API hooks for ppx_type_conv.
+
 4.0
 ---
 
