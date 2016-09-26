@@ -75,7 +75,8 @@ and expr_of_typ quoter typ =
               | [%type: int64] | [%type: Int64.t] | [%type: nativeint]
               | [%type: Nativeint.t] | [%type: float] | [%type: bool]
               | [%type: char] | [%type: string] | [%type: bytes]) ->
-        [%expr Pervasives.compare]
+        let compare_fn = [%expr fun (a:[%t typ]) b -> Pervasives.compare a b] in
+        Ppx_deriving.quote quoter compare_fn
       | true, [%type: [%t? typ] ref] ->
         [%expr fun a b -> [%e expr_of_typ typ] !a !b]
       | true, [%type: [%t? typ] list]  ->
