@@ -462,6 +462,21 @@ let module_from_input_name () =
   | "//toplevel//" -> []
   | filename -> [String.capitalize (Filename.(basename (chop_suffix filename ".ml")))]
 
+let pstr_desc_rec_flag pstr =
+  match pstr with
+  | Pstr_type(rec_flag, typ_decls) ->
+#if OCAML_VERSION < (4, 03, 0)
+    begin
+      if List.exists (fun ty -> has_attr "nonrec" ty.ptype_attributes) typ_decls then
+        Nonrecursive
+      else
+        Recursive
+    end
+#else
+    rec_flag
+#endif
+  | _ -> assert false
+
 let mapper =
   let module_nesting = ref [] in
   let with_module name f =
@@ -496,6 +511,10 @@ let mapper =
   in
   let structure mapper items =
     match items with
+    | { pstr_desc = Pstr_type(_, typ_decls) as pstr_desc ; pstr_loc } :: rest when
+        List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls
+        && pstr_desc_rec_flag pstr_desc = Nonrecursive ->
+      raise_errorf ~loc:pstr_loc "The nonrec flag is not supported by ppx_deriving"
     | { pstr_desc = Pstr_type(_, typ_decls); pstr_loc } as item :: rest when
         List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
       let derived =
