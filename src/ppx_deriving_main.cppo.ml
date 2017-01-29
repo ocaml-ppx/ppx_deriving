@@ -22,7 +22,10 @@ let init_findlib = lazy (
 
 let load_ocamlfind_package ?loc pkg =
   Lazy.force init_findlib;
-  Fl_dynload.load_packages [pkg]
+  try
+    Fl_dynload.load_packages [pkg]
+  with Dynlink.Error error ->
+    raise_errorf ?loc "Cannot load %s: %s" pkg (Dynlink.error_message error)
 
 let load_plugin ?loc plugin =
   let len = String.length plugin in
