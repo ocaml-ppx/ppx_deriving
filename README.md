@@ -103,9 +103,7 @@ module M :
 
 The module is used to demonstrate that `show_myfpclass` really accepts `Pervasives.fpclass`, and not just `M.myfpclass`.
 
-The need to repeat the type definition may look tedious, but consider this: if the definition was automatically imported from the declaration point, how would you attach attributes to refine the behavior of the deriving plugin?
-
-Nevertheless, for the case where no attributes need to be attached, it is possible to use [ppx_import](https://github.com/whitequark/ppx_import#usage) to automatically pull in the type definition.
+To avoid the need to repeat the type definition, it is possible to use [ppx_import](https://github.com/whitequark/ppx_import#usage) to automatically pull in the type definition. Attributes can be attached using its `[@with]` replacement feature.
 
 Plugin conventions
 ------------------
