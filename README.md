@@ -153,6 +153,24 @@ It is also possible to use `[@polyprinter]`. The difference is that for a type `
 
 The function `fprintf` is locally defined in the printer.
 
+By default all constructors are printed with prefix which is dot-separated filename and module path. For example
+``` ocaml
+# module X = struct type t = C [@@deriving show] end;;
+...
+# X.(show C);;
+- : Ppx_deriving_runtime.string = "X.C"
+```
+
+This code will create printers which return the string `X.C`, `X` is a module path and `C` is a constructor name. File's name is omitted in the toplevel. To skip all module paths the one needs to derive show with option `with_path` (which defaults to `true`)
+
+``` ocaml
+# module X = struct type t = C [@@deriving show { with_path = false }] end;;
+...
+# X.(show C);;
+- : Ppx_deriving_runtime.string = "C"
+```
+
+
 Plugins: eq and ord
 -------------------
 
