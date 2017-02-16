@@ -214,6 +214,17 @@ let test_variant_printer ctxt =
   assert_equal ~printer
     "fourth: 8 4" (show_variant_printer (Fourth(8,4)))
 
+type no_full    = NoFull   of int [@@deriving show { with_path = false }]
+type with_full  = WithFull of int [@@deriving show { with_path = true  }]
+module WithFull = struct
+  type t = A of int [@@deriving show ]
+end
+let test_paths_printer ctxt =
+  assert_equal ~printer "(NoFull 1)"   (show_no_full   (NoFull 1));
+  assert_equal ~printer "(Test_deriving_show.WithFull 1)" (show_with_full (WithFull 1));
+  assert_equal ~printer "(Test_deriving_show.WithFull.A 1)" (WithFull.show (WithFull.A 1));
+  ()
+
 let suite = "Test deriving(show)" >::: [
     "test_alias"           >:: test_alias;
     "test_variant"         >:: test_variant;
@@ -232,5 +243,6 @@ let suite = "Test deriving(show)" >::: [
     "test_std_shadowing"   >:: test_std_shadowing;
     "test_poly_app"        >:: test_poly_app;
     "test_variant_printer" >:: test_variant_printer;
+    "test_paths"           >:: test_paths_printer;
     "test_result"          >:: test_result
   ]

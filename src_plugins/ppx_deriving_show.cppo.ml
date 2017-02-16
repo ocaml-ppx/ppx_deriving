@@ -12,10 +12,15 @@ open Ast_convenience
 let deriver = "show"
 let raise_errorf = Ppx_deriving.raise_errorf
 
+type options = { with_path : bool }
+
 let parse_options options =
+  let with_path = ref true in
   options |> List.iter (fun (name, expr) ->
     match name with
-    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
+    | "with_path" -> with_path := Ppx_deriving.Arg.(get_expr ~deriver bool) expr
+    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name);
+  { with_path = !with_path }
 
 let attr_nobuiltin attrs =
   Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
@@ -42,7 +47,7 @@ let wrap_printer quoter printer =
     [%expr (let fprintf = Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
 
 let pp_type_of_decl ~options ~path type_decl =
-  parse_options options;
+  let _ = parse_options options in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
     (fun var -> [%type: Format.formatter -> [%t var] -> Ppx_deriving_runtime.unit])
@@ -50,7 +55,7 @@ let pp_type_of_decl ~options ~path type_decl =
     [%type: Format.formatter -> [%t typ] -> Ppx_deriving_runtime.unit]
 
 let show_type_of_decl ~options ~path type_decl =
-  parse_options options;
+  let _ = parse_options options in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
     (fun var -> [%type: Format.formatter -> [%t var] -> Ppx_deriving_runtime.unit])
@@ -58,7 +63,7 @@ let show_type_of_decl ~options ~path type_decl =
     [%type: [%t typ] -> Ppx_deriving_runtime.string]
 
 let sig_of_type ~options ~path type_decl =
-  parse_options options;
+  let _ = parse_options options in
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl))
               (pp_type_of_decl ~options ~path type_decl));
    Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl))
@@ -182,7 +187,7 @@ let rec expr_of_typ quoter typ =
                    deriver (Ppx_deriving.string_of_core_type typ)
 
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
-  parse_options options;
+  let show_opts = parse_options options in
   let quoter = Ppx_deriving.create_quoter () in
   let path = Ppx_deriving.path_of_type_decl ~path type_decl in
   let prettyprinter =
@@ -192,7 +197,11 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
     | Ptype_variant constrs, _ ->
       let cases =
         constrs |> List.map (fun { pcd_name = { txt = name' }; pcd_args; pcd_attributes } ->
-          let constr_name = Ppx_deriving.expand_path ~path name' in
+          let constr_name =
+            let path = if show_opts.with_path then path else [] in
+            Ppx_deriving.expand_path ~path name'
+          in
+
           match attr_printer pcd_attributes, pcd_args with
           | Some printer, Pcstr_tuple(args) ->
             let rec range from_idx to_idx =
