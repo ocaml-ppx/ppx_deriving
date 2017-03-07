@@ -1,10 +1,3 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pconst_char Const_char
-#define Pconst_string Const_string
-#define Pstr_type(rec_flag, type_decls) Pstr_type(type_decls)
-#define Psig_type(rec_flag, type_decls) Psig_type(type_decls)
-#endif
-
 open Longident
 open Location
 open Asttypes
@@ -105,8 +98,13 @@ let create =
         type_decl_sig ; type_ext_sig ; module_type_decl_sig ;
       }
 
+open Migrate_parsetree
+
+let migrate = Versions.migrate (module OCaml_404) (module OCaml_current)
+
 let string_of_core_type typ =
-  Format.asprintf "%a" Pprintast.core_type { typ with ptyp_attributes = [] }
+  Format.asprintf "%a" Pprintast.core_type
+    (migrate.Versions.copy_core_type { typ with ptyp_attributes = [] })
 
 module Arg = struct
   type 'a conv = expression -> ('a, string) Result.result
@@ -116,11 +114,7 @@ module Arg = struct
 
   let int expr =
     match expr with
-#if OCAML_VERSION < (4, 03, 0)
-    | { pexp_desc = Pexp_constant (Const_int n) } -> Ok n
-#else
     | { pexp_desc = Pexp_constant (Pconst_integer (sn, _)) } -> Ok (int_of_string sn)
-#endif
     | _ -> Error "integer"
 
   let bool expr =
@@ -496,16 +490,7 @@ let module_from_input_name () =
 let pstr_desc_rec_flag pstr =
   match pstr with
   | Pstr_type(rec_flag, typ_decls) ->
-#if OCAML_VERSION < (4, 03, 0)
-    begin
-      if List.exists (fun ty -> has_attr "nonrec" ty.ptype_attributes) typ_decls then
-        Nonrecursive
-      else
-        Recursive
-    end
-#else
     rec_flag
-#endif
   | _ -> assert false
 
 let mapper =

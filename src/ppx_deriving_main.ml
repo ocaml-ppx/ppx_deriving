@@ -1,6 +1,4 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pconst_string Const_string
-#endif
+open Migrate_parsetree
 
 open Asttypes
 open Parsetree
@@ -38,8 +36,8 @@ let load_plugin ?loc plugin =
   else
     dynlink ?loc plugin
 
-let get_plugins () =
-  match Ast_mapper.get_cookie "ppx_deriving" with
+let get_plugins cookies =
+  match Migrate_driver.get_cookie cookies "ppx_deriving" Versions.ocaml_404 with
   | Some { pexp_desc = Pexp_tuple exprs } ->
     exprs |> List.map (fun expr ->
       match expr with
@@ -48,17 +46,27 @@ let get_plugins () =
   | Some _ -> assert false
   | None -> []
 
-let add_plugins plugins =
-  let loaded  = get_plugins () in
+let add_plugins cookies plugins =
+  let loaded  = get_plugins cookies in
   let plugins = List.filter (fun file -> not (List.mem file loaded)) plugins in
   List.iter load_plugin plugins;
   let loaded  = loaded @ plugins in
-  Ast_mapper.set_cookie "ppx_deriving"
+  Migrate_driver.set_cookie cookies "ppx_deriving" Versions.ocaml_404
     (Exp.tuple (List.map (fun file -> Exp.constant (Pconst_string (file, None))) loaded))
 
-let mapper argv =
-  get_plugins () |> List.iter load_plugin;
-  add_plugins argv;
+let plugins_to_load = ref []
+let arg_spec = [
+  ("-deriving-plugin",
+   Arg.String (fun str -> plugins_to_load := str :: !plugins_to_load),
+   " Deriving plugin to load"
+  )
+]
+
+let rewriter config cookies =
+  get_plugins cookies |> List.iter load_plugin;
+  let plugins = List.rev !plugins_to_load in
+  plugins_to_load := [];
+  add_plugins cookies plugins;
   let structure mapper = function
     | [%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
           [%expr "ppx_deriving"] :: elems) }]]] :: rest ->
@@ -67,11 +75,13 @@ let mapper argv =
           match elem with
           | { pexp_desc = Pexp_constant (Pconst_string (file, None))} -> file
           | _ -> assert false) |>
-        add_plugins;
+        (add_plugins cookies);
         mapper.Ast_mapper.structure mapper rest
     | items -> Ppx_deriving.mapper.Ast_mapper.structure mapper items in
   { Ppx_deriving.mapper with Ast_mapper.structure }
 
 let () =
-  Ast_mapper.register "ppx_deriving" mapper
+  Migrate_driver.register
+    ~name:"ppx_deriving" ~args:arg_spec Versions.ocaml_404 rewriter;
+  Migrate_driver.run_as_ppx_rewriter ()
 

@@ -13,7 +13,7 @@ let split delim str =
 
 let plugin_cmas names =
   split ',' names |>
-  List.map (fun name -> "src_plugins/ppx_deriving_" ^ name ^ ".cma") |>
+  List.map (fun name -> "-deriving-plugin src_plugins/ppx_deriving_" ^ name ^ ".cma") |>
   String.concat " "
 
 let () = dispatch (fun phase ->
