@@ -100,7 +100,7 @@ let create =
 
 open Migrate_parsetree
 
-let migrate = Versions.migrate (module OCaml_404) (module OCaml_current)
+let migrate = Versions.migrate (module OCaml_405) (module OCaml_current)
 
 let string_of_core_type typ =
   Format.asprintf "%a" Pprintast.core_type
@@ -321,6 +321,7 @@ let free_vars_in_core_type typ =
       List.map free_in xs |> List.concat
     | { ptyp_desc = Ptyp_alias (x, name) } -> [name] @ free_in x
     | { ptyp_desc = Ptyp_poly (bound, x) } ->
+      let bound = List.map (fun x -> x.Location.txt) bound in
       List.filter (fun y -> not (List.mem y bound)) (free_in x)
     | { ptyp_desc = Ptyp_variant (rows, _, _) } ->
       List.map (
@@ -412,7 +413,7 @@ let binop_reduce x a b =
   [%expr [%e x] [%e a] [%e b]]
 
 let strong_type_of_type ty =
-  let free_vars = free_vars_in_core_type ty in
+  let free_vars = List.map Location.mknoloc (free_vars_in_core_type ty) in
   Typ.force_poly @@ Typ.poly free_vars ty
 
 type deriver_options =

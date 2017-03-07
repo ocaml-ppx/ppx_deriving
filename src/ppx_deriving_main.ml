@@ -37,7 +37,7 @@ let load_plugin ?loc plugin =
     dynlink ?loc plugin
 
 let get_plugins cookies =
-  match Migrate_driver.get_cookie cookies "ppx_deriving" Versions.ocaml_404 with
+  match Migrate_driver.get_cookie cookies "ppx_deriving" Versions.ocaml_405 with
   | Some { pexp_desc = Pexp_tuple exprs } ->
     exprs |> List.map (fun expr ->
       match expr with
@@ -51,7 +51,7 @@ let add_plugins cookies plugins =
   let plugins = List.filter (fun file -> not (List.mem file loaded)) plugins in
   List.iter load_plugin plugins;
   let loaded  = loaded @ plugins in
-  Migrate_driver.set_cookie cookies "ppx_deriving" Versions.ocaml_404
+  Migrate_driver.set_cookie cookies "ppx_deriving" Versions.ocaml_405
     (Exp.tuple (List.map (fun file -> Exp.constant (Pconst_string (file, None))) loaded))
 
 let plugins_to_load = ref []
@@ -82,6 +82,6 @@ let rewriter config cookies =
 
 let () =
   Migrate_driver.register
-    ~name:"ppx_deriving" ~args:arg_spec Versions.ocaml_404 rewriter;
+    ~name:"ppx_deriving" ~args:arg_spec Versions.ocaml_405 rewriter;
   Migrate_driver.run_as_ppx_rewriter ()
 
