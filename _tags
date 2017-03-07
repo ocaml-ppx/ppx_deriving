@@ -2,12 +2,12 @@ true: warn(@5@8@10@11@12@14@23@24@26@29@40), bin_annot, safe_string, debug, cppo
 "data": -traverse
 
 "src": include
-<src/*.{ml,mli,byte,native}>: package(dynlink ocaml-migrate-parsetree.driver ppx_tools_versioned.metaquot-404 result)
+<src/*.{ml,mli,byte,native}>: package(dynlink ocaml-migrate-parsetree.driver ppx_tools_versioned.metaquot_404 result)
 <src/ppx_deriving_main.{ml,mli,byte,native}>: package(findlib.dynload), predicate(ppx_driver)
 <src/ppx_deriving_main.{byte,native}>: linkall
-<src_plugins/*.{ml,mli}>: package(ocaml-migrate-parsetree ocaml-migrate-parsetree.driver ppx_tools_versioned.metaquot-404)
+<src_plugins/*.{ml,mli}>: package(ocaml-migrate-parsetree ocaml-migrate-parsetree.driver ppx_tools_versioned.metaquot_404)
 
-<src_test/*.{ml,byte,native}>: debug, package(oUnit ocaml-migrate-parsetree.driver ppx_tools_versioned.metaquot-404 result), use_deriving
+<src_test/*.{ml,byte,native}>: debug, package(oUnit ocaml-migrate-parsetree.driver ppx_tools_versioned.metaquot_404 result), use_deriving
 "src_test/test_deriving_show.ml": deriving(show)
 "src_test/test_deriving_eq.ml": deriving(eq)
 "src_test/test_deriving_ord.ml": deriving(ord)
