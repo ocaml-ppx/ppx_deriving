@@ -25,7 +25,8 @@ depends: [
   "ocamlbuild" {build}
   "ocamlfind"  {build & >= "1.6.0"}
   "cppo"       {build}
-  "ppx_tools"  {>= "4.02.3"}
+  "ocaml-migrate-parsetree"
+  "ppx_tools_versioned"  {>= "4.02.3"}
   "result"
   "ounit"      {test}
 ]
