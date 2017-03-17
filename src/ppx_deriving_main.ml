@@ -64,13 +64,13 @@ let rewriter config cookies =
   let structure mapper = function
     | [%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
           [%expr "ppx_deriving"] :: elems) }]]] :: rest ->
-      elems |>
-        List.map (fun elem ->
-          match elem with
-          | { pexp_desc = Pexp_constant (Pconst_string (file, None))} -> file
-          | _ -> assert false) |>
-        (add_plugins cookies);
-        mapper.Ast_mapper.structure mapper rest
+      let extract = function
+        | { pexp_desc = Pexp_constant (Pconst_string (file, None))} -> file
+        | _ -> assert false
+      in
+      let keep x = x <> "-deriving-plugin" in
+      add_plugins cookies (List.filter keep (List.map extract elems));
+      mapper.Ast_mapper.structure mapper rest
     | items -> Ppx_deriving.mapper.Ast_mapper.structure mapper items in
   { Ppx_deriving.mapper with Ast_mapper.structure }
 
