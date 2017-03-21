@@ -31,7 +31,11 @@ type deriver = {
                           module_type_declaration -> signature;
 }
 
-let registry : (string, deriver) Hashtbl.t
+type internal_or_external =
+  | Internal of deriver
+  | External of string
+
+let registry : (string, internal_or_external) Hashtbl.t
              = Hashtbl.create 16
 
 let hooks = Queue.create ()
@@ -39,15 +43,28 @@ let hooks = Queue.create ()
 let add_register_hook f = Queue.add f hooks
 
 let register d =
-  Hashtbl.add registry d.name d;
+  Hashtbl.add registry d.name (Internal d);
   Queue.iter (fun f -> f d) hooks
 
-let derivers () =
-  Hashtbl.fold (fun _ v acc -> v::acc) registry []
+let register_external name =
+  Hashtbl.add registry name (External name)
 
-let lookup name =
+let derivers () =
+  Hashtbl.fold
+    (fun _ v acc ->
+       match v with
+       | Internal d -> d::acc
+       | External _ -> acc)
+    registry []
+
+let lookup_internal_or_external name =
   try  Some (Hashtbl.find registry name)
   with Not_found -> None
+
+let lookup name =
+  match lookup_internal_or_external name with
+  | Some (Internal d) -> Some d
+  | Some (External _) | None -> None
 
 let raise_errorf ?sub ?if_highlight ?loc message =
   message |> Printf.kprintf (fun str ->
@@ -404,6 +421,10 @@ let strong_type_of_type ty =
   let free_vars = free_vars_in_core_type ty in
   Typ.force_poly @@ Typ.poly free_vars ty
 
+type deriver_options =
+  | Options of (string * expression) list
+  | Unknown_syntax
+
 let derive path pstr_loc item attributes fn arg =
   let deriving = find_attr "deriving" attributes in
   let deriver_exprs, loc =
@@ -420,27 +441,37 @@ let derive path pstr_loc item attributes fn arg =
       let name, options =
         match deriver_expr with
         | { pexp_desc = Pexp_ident name } ->
-          name, []
+          name, Options []
         | { pexp_desc = Pexp_apply ({ pexp_desc = Pexp_ident name }, [label,
             { pexp_desc = Pexp_record (options, None) }]) }
               when label = Label.nolabel ->
-          name, options |> List.map (fun ({ txt }, expr) ->
-            String.concat "." (Longident.flatten txt), expr)
+          name,
+          Options
+            (options |> List.map (fun ({ txt }, expr) ->
+               String.concat "." (Longident.flatten txt), expr))
+        | { pexp_desc = Pexp_apply ({ pexp_desc = Pexp_ident name }, _) } ->
+          name, Unknown_syntax
         | { pexp_loc } ->
-          raise_errorf ~loc:pexp_loc "Unrecognized [@@deriving] option syntax"
+          raise_errorf ~loc:pexp_loc "Unrecognized [@@deriving] syntax"
       in
       let name, loc = String.concat "_" (Longident.flatten name.txt), name.loc in
       let is_optional, options =
-        match List.assoc "optional" options with
-        | exception Not_found -> false, options
-        | expr ->
-          Arg.(get_expr ~deriver:name bool) expr,
-          List.remove_assoc "optional" options
+        match options with
+        | Unknown_syntax -> false, options
+        | Options options' ->
+          match List.assoc "optional" options' with
+          | exception Not_found -> false, options
+          | expr ->
+            Arg.(get_expr ~deriver:name bool) expr,
+            Options (List.remove_assoc "optional" options')
       in
-      match lookup name with
-      | Some deriver ->
+      match lookup_internal_or_external name, options with
+      | Some (Internal deriver), Options options ->
         items @ ((fn deriver) ~options ~path:(!path) arg)
-      | None ->
+      | Some (Internal _), Unknown_syntax ->
+        raise_errorf ~loc:deriver_expr.pexp_loc "Unrecognized [@@deriving] option syntax"
+      | Some (External _), _ -> items
+      | None, _ ->
         if is_optional then items
         else raise_errorf ~loc "Cannot locate deriver %s" name)
     [item] deriver_exprs
@@ -492,8 +523,8 @@ let mapper =
         when String.(length name >= 7 && sub name 0 7 = "derive.") ->
       let name = String.sub name 7 ((String.length name) - 7) in
       let deriver =
-        match lookup name with
-        | Some { core_type = Some deriver } -> deriver
+        match lookup_internal_or_external name with
+        | Some (Internal { core_type = Some deriver }) -> deriver
         | Some _ -> raise_errorf ~loc "Deriver %s does not support inline notation" name
         | None -> raise_errorf ~loc "Cannot locate deriver %s" name
       in
@@ -502,8 +533,8 @@ let mapper =
       | _ -> raise_errorf ~loc "Unrecognized [%%derive.*] syntax"
       end
     | { pexp_desc = Pexp_extension ({ txt = name; loc }, PTyp typ) } ->
-      begin match lookup name with
-      | Some { core_type = Some deriver } ->
+      begin match lookup_internal_or_external name with
+      | Some (Internal { core_type = Some deriver }) ->
         Ast_helper.with_default_loc typ.ptyp_loc (fun () -> deriver typ)
       | _ -> Ast_mapper.(default_mapper.expr) mapper expr
       end
