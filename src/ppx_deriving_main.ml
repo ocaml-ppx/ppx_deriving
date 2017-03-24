@@ -88,5 +88,5 @@ let rewriter config cookies =
 let () =
   Driver.register ~name:"ppx_deriving" ~args:args_spec
     Versions.ocaml_405 rewriter;
-  Driver.run_as_ppx_rewriter ()
+  Driver.run_main ()
 

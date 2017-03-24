@@ -1,6 +1,6 @@
 version = "%{version}%"
 description = "Type-driven code generation"
-ppx(-custom_ppx) = "./ppx_deriving"
+ppx(-custom_ppx) = "./ppx_deriving --as-ppx"
 requires = "ppx_deriving.runtime"
 
 package "runtime" (
