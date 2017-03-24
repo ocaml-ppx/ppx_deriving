@@ -333,3 +333,10 @@ val mapper : Ast_mapper.mapper
 
 (** [hash_variant x] ≡ [Btype.hash_variant x]. *)
 val hash_variant : string -> int
+
+(** [ocaml_version] is the version of the OCaml AST that is natively processed
+    by ppx_deriving.  External derivers can make use of this information
+    to integrate nicely with ocaml-migrate-parsetree & ppx_deriving. *)
+module OCaml_version = Migrate_parsetree.OCaml_405
+val ocaml_version :
+  OCaml_version.types Migrate_parsetree.Versions.ocaml_version

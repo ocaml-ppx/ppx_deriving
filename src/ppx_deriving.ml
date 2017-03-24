@@ -632,3 +632,6 @@ let hash_variant s =
   accu := !accu land (1 lsl 31 - 1);
   (* make it signed for 64 bits architectures *)
   if !accu > 0x3FFFFFFF then !accu - (1 lsl 31) else !accu
+
+module OCaml_version = OCaml_405
+let ocaml_version = Migrate_parsetree.Versions.ocaml_405
