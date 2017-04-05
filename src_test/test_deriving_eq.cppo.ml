@@ -133,9 +133,17 @@ end
 type 'a std_clash = 'a List.t option
 [@@deriving eq]
 
+#if OCAML_VERSION >= (4, 03, 0)
 let test_result ctxt =
-  let eq = [%eq: (string, int) Result.result] in
+  let eq = [%eq: (string, int) result] in
+  assert_equal ~printer true (eq (Ok "ttt") (Ok "ttt"));
+  assert_equal ~printer false (eq (Ok "123") (Error 123));
+  assert_equal ~printer false (eq (Error 123) (Error 0))
+#endif
+
+let test_result_result ctxt =
   let open Result in
+  let eq = [%eq: (string, int) result] in
   assert_equal ~printer true (eq (Ok "ttt") (Ok "ttt"));
   assert_equal ~printer false (eq (Ok "123") (Error 123));
   assert_equal ~printer false (eq (Error 123) (Error 0))
@@ -151,6 +159,9 @@ let suite = "Test deriving(eq)" >::: [
     "test_mut_rec"       >:: test_mut_rec;
     "test_std_shadowing" >:: test_std_shadowing;
     "test_poly_app"      >:: test_poly_app;
-    "test_result"        >:: test_result
+#if OCAML_VERSION >= (4, 03, 0)
+    "test_result"        >:: test_result;
+#endif
+    "test_result_result" >:: test_result_result;
   ]
 
