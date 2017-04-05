@@ -141,13 +141,24 @@ let test_pvar3 ctxt =
   assert_equal ~printer:show `F (map `F);
   assert_equal ~printer:show `G (map `G)
 
-type 'a result0 = ('a, bool) Result.result [@@deriving show, map]
+#if OCAML_VERSION >= (4, 03, 0)
+type 'a result0 = ('a, bool) result [@@deriving show,map]
 
 let test_map_result ctxt =
   let f = map_result0 succ in
   let printer = show_result0 fmt_int in
-  assert_equal ~printer (Result.Ok 10) (f (Result.Ok 9));
-  assert_equal ~printer (Result.Error true) (f (Result.Error true))
+  assert_equal ~printer (Ok 10) (f (Ok 9));
+  assert_equal ~printer (Error true) (f (Error true))
+#endif
+
+type 'a result_result0 = ('a, bool) Result.result [@@deriving show,map]
+
+let test_map_result_result ctxt =
+  let open Result in
+  let f = map_result_result0 succ in
+  let printer = show_result_result0 fmt_int in
+  assert_equal ~printer (Ok 10) (f (Ok 9));
+  assert_equal ~printer (Error true) (f (Error true))
 
 let suite = "Test deriving(map)" >::: [
     "test_btree" >:: test_btree;
@@ -160,7 +171,10 @@ let suite = "Test deriving(map)" >::: [
     "test_record2" >:: test_record2;
     "test_record3" >:: test_record3;
     "test_pvar3" >:: test_pvar3;
-    "test_map_result" >:: test_map_result
+#if OCAML_VERSION >= (4, 03, 0)
+    "test_map_result" >:: test_map_result;
+#endif
+    "test_map_result_result" >:: test_map_result_result;
   ]
 
 

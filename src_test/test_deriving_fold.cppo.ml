@@ -22,15 +22,27 @@ type 'a btreer = Node of { lft: 'a btree; elt: 'a; rgt: 'a btree } | Leaf
 type 'a ty = 'a * int list
 [@@deriving fold]
 
-type ('a, 'b) res = ('a, 'b) Result.result [@@deriving fold]
+#if OCAML_VERSION >= (4, 03, 0)
+type ('a, 'b) res = ('a, 'b) result [@@deriving fold]
 
 let test_result ctxt =
   let f = fold_res (+) (-) in
+  assert_equal ~printer:string_of_int 1 (f 0 (Ok 1));
+  assert_equal ~printer:string_of_int (-1) (f 0 (Error 1))
+#endif
+
+type ('a, 'b) result_res = ('a, 'b) Result.result [@@deriving fold]
+
+let test_result_result ctxt =
+  let f = fold_result_res (+) (-) in
   assert_equal ~printer:string_of_int 1 (f 0 (Result.Ok 1));
   assert_equal ~printer:string_of_int (-1) (f 0 (Result.Error 1))
 
 let suite = "Test deriving(fold)" >::: [
   "test_btree" >:: test_btree;
+#if OCAML_VERSION >= (4, 03, 0)
   "test_result" >:: test_result;
+#endif
+  "test_result_result" >:: test_result_result;
   "test_reflist" >:: test_reflist;
 ]
