@@ -1,7 +1,3 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pcstr_tuple(core_types) core_types
-#endif
-
 open Longident
 open Location
 open Asttypes

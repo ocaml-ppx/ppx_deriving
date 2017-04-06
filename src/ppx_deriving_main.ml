@@ -1,6 +1,4 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pconst_string Const_string
-#endif
+open Migrate_parsetree
 
 open Asttypes
 open Parsetree
@@ -38,8 +36,8 @@ let load_plugin ?loc plugin =
   else
     dynlink ?loc plugin
 
-let get_plugins () =
-  match Ast_mapper.get_cookie "ppx_deriving" with
+let get_plugins cookies =
+  match Driver.get_cookie cookies "ppx_deriving" Versions.ocaml_405 with
   | Some { pexp_desc = Pexp_tuple exprs } ->
     exprs |> List.map (fun expr ->
       match expr with
@@ -48,30 +46,47 @@ let get_plugins () =
   | Some _ -> assert false
   | None -> []
 
-let add_plugins plugins =
-  let loaded  = get_plugins () in
+let add_plugins cookies plugins =
+  let loaded  = get_plugins cookies in
   let plugins = List.filter (fun file -> not (List.mem file loaded)) plugins in
   List.iter load_plugin plugins;
   let loaded  = loaded @ plugins in
-  Ast_mapper.set_cookie "ppx_deriving"
+  Driver.set_cookie cookies "ppx_deriving" Versions.ocaml_405
     (Exp.tuple (List.map (fun file -> Exp.constant (Pconst_string (file, None))) loaded))
 
-let mapper argv =
-  get_plugins () |> List.iter load_plugin;
-  add_plugins argv;
+let plugins_to_load = ref []
+
+let args_spec = [
+  ("-deriving-plugin",
+   Arg.String (fun str -> plugins_to_load := str :: !plugins_to_load),
+   " Deriving plugin to load"
+  )
+]
+
+let rewriter config cookies =
+  get_plugins cookies |> List.iter load_plugin;
+  let plugins = List.rev !plugins_to_load in
+  plugins_to_load := [];
+  add_plugins cookies plugins;
   let structure mapper = function
     | [%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
-          [%expr "ppx_deriving"] :: elems) }]]] :: rest ->
-      elems |>
-        List.map (fun elem ->
-          match elem with
-          | { pexp_desc = Pexp_constant (Pconst_string (file, None))} -> file
-          | _ -> assert false) |>
-        add_plugins;
-        mapper.Ast_mapper.structure mapper rest
+        [%expr "ppx_deriving"] :: elems) }]]] :: rest ->
+      let extract = function
+        | { pexp_desc = Pexp_constant (Pconst_string (file, None))} -> file
+        | _ -> assert false
+      in
+      let args = Array.of_list (Sys.argv.(0) :: List.map extract elems) in
+      let anon_fun arg =
+        raise (Arg.Bad ("Unexpected argument in cookie: " ^ arg)) in
+      Arg.parse_argv ~current:(ref 0) args args_spec anon_fun "";
+      add_plugins cookies !plugins_to_load;
+      plugins_to_load := [];
+      mapper.Ast_mapper.structure mapper rest
     | items -> Ppx_deriving.mapper.Ast_mapper.structure mapper items in
   { Ppx_deriving.mapper with Ast_mapper.structure }
 
 let () =
-  Ast_mapper.register "ppx_deriving" mapper
+  Driver.register ~name:"ppx_deriving" ~args:args_spec
+    Versions.ocaml_405 rewriter;
+  Driver.run_main ()
 

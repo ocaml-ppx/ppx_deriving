@@ -1,7 +1,3 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pcstr_tuple(core_types) core_types
-#endif
-
 open Longident
 open Location
 open Asttypes
@@ -191,12 +187,10 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
             exprn quoter typs |> List.rev |> reduce_compare |>
             Exp.case (ptuple [pconstr name (pattn `lhs typs);
                               pconstr name (pattn `rhs typs)])
-#if OCAML_VERSION >= (4, 03, 0)
           | Pcstr_record(labels) ->
             exprl quoter labels |> List.rev |> reduce_compare |>
             Exp.case (ptuple [pconstrrec name (pattl `lhs labels);
                               pconstrrec name (pattl `rhs labels)])
-#endif
           )
       in
       [%expr fun lhs rhs ->

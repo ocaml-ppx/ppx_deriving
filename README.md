@@ -290,7 +290,7 @@ Currently, the resulting ppx driver still depends on Dynlink as well as retains 
 Developing plugins
 ------------------
 
-This section only explains the tooling and best practices. Anyone aiming to implement their own _deriving_ plugin is encouraged to explore the existing ones, e.g. [eq](src_plugins/ppx_deriving_eq.cppo.ml) or [show](src_plugins/ppx_deriving_show.cppo.ml).
+This section only explains the tooling and best practices. Anyone aiming to implement their own _deriving_ plugin is encouraged to explore the existing ones, e.g. [eq](src_plugins/ppx_deriving_eq.ml) or [show](src_plugins/ppx_deriving_show.ml).
 
 ### Tooling and environment
 

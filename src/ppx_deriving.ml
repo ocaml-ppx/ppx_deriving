@@ -1,10 +1,3 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pconst_char Const_char
-#define Pconst_string Const_string
-#define Pstr_type(rec_flag, type_decls) Pstr_type(type_decls)
-#define Psig_type(rec_flag, type_decls) Psig_type(type_decls)
-#endif
-
 open Longident
 open Location
 open Asttypes
@@ -105,8 +98,13 @@ let create =
         type_decl_sig ; type_ext_sig ; module_type_decl_sig ;
       }
 
+open Migrate_parsetree
+
+let migrate = Versions.migrate (module OCaml_405) (module OCaml_current)
+
 let string_of_core_type typ =
-  Format.asprintf "%a" Pprintast.core_type { typ with ptyp_attributes = [] }
+  Format.asprintf "%a" Pprintast.core_type
+    (migrate.Versions.copy_core_type { typ with ptyp_attributes = [] })
 
 module Arg = struct
   type 'a conv = expression -> ('a, string) Result.result
@@ -116,11 +114,7 @@ module Arg = struct
 
   let int expr =
     match expr with
-#if OCAML_VERSION < (4, 03, 0)
-    | { pexp_desc = Pexp_constant (Const_int n) } -> Ok n
-#else
     | { pexp_desc = Pexp_constant (Pconst_integer (sn, _)) } -> Ok (int_of_string sn)
-#endif
     | _ -> Error "integer"
 
   let bool expr =
@@ -327,6 +321,7 @@ let free_vars_in_core_type typ =
       List.map free_in xs |> List.concat
     | { ptyp_desc = Ptyp_alias (x, name) } -> [name] @ free_in x
     | { ptyp_desc = Ptyp_poly (bound, x) } ->
+      let bound = List.map (fun x -> x.Location.txt) bound in
       List.filter (fun y -> not (List.mem y bound)) (free_in x)
     | { ptyp_desc = Ptyp_variant (rows, _, _) } ->
       List.map (
@@ -418,7 +413,7 @@ let binop_reduce x a b =
   [%expr [%e x] [%e a] [%e b]]
 
 let strong_type_of_type ty =
-  let free_vars = free_vars_in_core_type ty in
+  let free_vars = List.map Location.mknoloc (free_vars_in_core_type ty) in
   Typ.force_poly @@ Typ.poly free_vars ty
 
 type deriver_options =
@@ -496,16 +491,7 @@ let module_from_input_name () =
 let pstr_desc_rec_flag pstr =
   match pstr with
   | Pstr_type(rec_flag, typ_decls) ->
-#if OCAML_VERSION < (4, 03, 0)
-    begin
-      if List.exists (fun ty -> has_attr "nonrec" ty.ptype_attributes) typ_decls then
-        Nonrecursive
-      else
-        Recursive
-    end
-#else
     rec_flag
-#endif
   | _ -> assert false
 
 let mapper =
@@ -646,3 +632,6 @@ let hash_variant s =
   accu := !accu land (1 lsl 31 - 1);
   (* make it signed for 64 bits architectures *)
   if !accu > 0x3FFFFFFF then !accu - (1 lsl 31) else !accu
+
+module OCaml_version = OCaml_405
+let ocaml_version = Migrate_parsetree.Versions.ocaml_405

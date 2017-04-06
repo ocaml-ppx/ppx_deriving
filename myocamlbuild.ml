@@ -13,7 +13,7 @@ let split delim str =
 
 let plugin_cmas names =
   split ',' names |>
-  List.map (fun name -> "src_plugins/ppx_deriving_" ^ name ^ ".cma") |>
+  List.map (fun name -> "-deriving-plugin src_plugins/ppx_deriving_" ^ name ^ ".cma") |>
   String.concat " "
 
 let () = dispatch (fun phase ->
@@ -21,9 +21,9 @@ let () = dispatch (fun phase ->
   match phase with
   | After_rules ->
     pflag ["ocaml"; "compile"; "ppx_byte"] "deriving" (fun names ->
-      S[A"-ppx"; A("src/ppx_deriving_main.byte " ^ (plugin_cmas names))]);
+      S[A"-ppx"; A("src/ppx_deriving_main.byte --as-ppx " ^ (plugin_cmas names))]);
     pflag ["ocaml"; "compile"; "ppx_native"] "deriving" (fun names ->
-      S[A"-ppx"; A("src/ppx_deriving_main.native " ^ (plugin_cmas names))]);
+      S[A"-ppx"; A("src/ppx_deriving_main.native --as-ppx " ^ (plugin_cmas names))]);
     flag ["ocaml"; "link"; "byte"; "use_deriving"] &
       A"src/ppx_deriving_runtime.cma";
     flag ["ocaml"; "link"; "native"; "use_deriving"] &
