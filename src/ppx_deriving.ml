@@ -24,35 +24,33 @@ type deriver = {
                           module_type_declaration -> signature;
 }
 
+type Ppx_derivers.deriver += T of deriver
+
 type internal_or_external =
   | Internal of deriver
   | External of string
-
-let registry : (string, internal_or_external) Hashtbl.t
-             = Hashtbl.create 16
 
 let hooks = Queue.create ()
 
 let add_register_hook f = Queue.add f hooks
 
 let register d =
-  Hashtbl.add registry d.name (Internal d);
+  Ppx_derivers.register d.name (T d);
   Queue.iter (fun f -> f d) hooks
 
-let register_external name =
-  Hashtbl.add registry name (External name)
-
 let derivers () =
-  Hashtbl.fold
-    (fun _ v acc ->
-       match v with
-       | Internal d -> d::acc
-       | External _ -> acc)
-    registry []
+  List.fold_left
+    (fun acc (_name, drv) ->
+       match drv with
+       | T d -> d :: acc
+       | _ -> acc)
+    [] (Ppx_derivers.derivers ())
 
 let lookup_internal_or_external name =
-  try  Some (Hashtbl.find registry name)
-  with Not_found -> None
+  match Ppx_derivers.lookup name with
+  | Some (T d) -> Some (Internal d)
+  | Some _ -> Some (External name)
+  | None -> None
 
 let lookup name =
   match lookup_internal_or_external name with

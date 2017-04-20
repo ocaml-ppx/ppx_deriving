@@ -2,7 +2,7 @@ true: warn(@5@8@10@11@12@14@23@24@26@29@40), bin_annot, safe_string, debug, cppo
 "data": -traverse
 
 "src": include
-<src/*.{ml,mli,byte,native}>: package(dynlink ocaml-migrate-parsetree ppx_tools_versioned.metaquot_405 result)
+<src/*.{ml,mli,byte,native}>: package(dynlink ocaml-migrate-parsetree ppx_tools_versioned.metaquot_405 result ppx_derivers)
 <src/ppx_deriving_main.{ml,mli,byte,native}>: package(findlib.dynload)
 <src/ppx_deriving_main.{byte,native}>: predicate(ppx_driver), linkall
 <src_plugins/*.{ml,mli}>: package(ocaml-migrate-parsetree ocaml-migrate-parsetree ppx_tools_versioned.metaquot_405)
