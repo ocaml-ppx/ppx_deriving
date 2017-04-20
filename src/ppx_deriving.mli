@@ -49,12 +49,6 @@ val add_register_hook : (deriver -> unit) -> unit
 (** [derivers ()] returns all currently registered derivers. *)
 val derivers : unit -> deriver list
 
-(** [register_external name] registers [name] as an external deriver that is
-    not interpreted by ppx_deriving. Ppx_deriving will simply ignore [name]
-    when interpreting [[\@\@deriving]] annotations and leave it to be
-    expanded by another rewriter. *)
-val register_external : string -> unit
-
 (** Creating {!deriver} structure. *)
 val create :
   string ->
