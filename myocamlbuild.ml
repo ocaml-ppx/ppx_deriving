@@ -17,16 +17,17 @@ let plugin_cmas names =
   String.concat " "
 
 let () = dispatch (fun phase ->
-  Ocamlbuild_cppo.dispatcher phase;
-  match phase with
-  | After_rules ->
-    pflag ["ocaml"; "compile"; "ppx_byte"] "deriving" (fun names ->
-      S[A"-ppx"; A("src/ppx_deriving_main.byte --as-ppx " ^ (plugin_cmas names))]);
-    pflag ["ocaml"; "compile"; "ppx_native"] "deriving" (fun names ->
-      S[A"-ppx"; A("src/ppx_deriving_main.native --as-ppx " ^ (plugin_cmas names))]);
-    flag ["ocaml"; "link"; "byte"; "use_deriving"] &
+    Ocamlbuild_cppo.dispatcher phase;
+    Migrate_parsetree_ocamlbuild.dispatch phase;
+    match phase with
+    | After_rules ->
+      pflag ["ocaml"; "compile"; "ppx_byte"] "deriving" (fun names ->
+          S[A"-ppx"; A("src/ppx_deriving_main.byte --as-ppx " ^ (plugin_cmas names))]);
+      pflag ["ocaml"; "compile"; "ppx_native"] "deriving" (fun names ->
+          S[A"-ppx"; A("src/ppx_deriving_main.native --as-ppx " ^ (plugin_cmas names))]);
+      flag ["ocaml"; "link"; "byte"; "use_deriving"] &
       A"src/ppx_deriving_runtime.cma";
-    flag ["ocaml"; "link"; "native"; "use_deriving"] &
+      flag ["ocaml"; "link"; "native"; "use_deriving"] &
       A"src/ppx_deriving_runtime.cmxa";
 
-  | _ -> ())
+    | _ -> ())
