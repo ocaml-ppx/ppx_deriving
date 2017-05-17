@@ -16,6 +16,7 @@ package "api" (
   version = "%{version}%"
   description = "Plugin API for ppx_deriving"
   requires = "dynlink compiler-libs.common ppx_tools result ppx_derivers ocaml-migrate-parsetree"
+  ppx_runtime_deps = "ppx_deriving.runtime"
   archive(byte) = "ppx_deriving.cma"
   archive(native) = "ppx_deriving.cmxa"
   exists_if = "ppx_deriving.cma"
