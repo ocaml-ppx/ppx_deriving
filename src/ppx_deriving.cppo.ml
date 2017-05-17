@@ -644,3 +644,10 @@ let hash_variant s =
   accu := !accu land (1 lsl 31 - 1);
   (* make it signed for 64 bits architectures *)
   if !accu > 0x3FFFFFFF then !accu - (1 lsl 31) else !accu
+
+(* This is only used when ppx_deriving is linked as part of an ocaml-migrate-parsetre
+   driver. *)
+let () =
+  Migrate_parsetree.Driver.register ~name:"ppx_deriving"
+    (module Migrate_parsetree.OCaml_current)
+    (fun _ _ -> mapper)
