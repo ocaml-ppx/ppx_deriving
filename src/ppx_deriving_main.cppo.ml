@@ -59,6 +59,7 @@ let add_plugins plugins =
 let mapper argv =
   get_plugins () |> List.iter load_plugin;
   add_plugins argv;
+  let omp_mapper = Migrate_parsetree.Driver.run_as_ast_mapper [] in
   let structure mapper = function
     | [%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
           [%expr "ppx_deriving"] :: elems) }]]] :: rest ->
@@ -69,8 +70,8 @@ let mapper argv =
           | _ -> assert false) |>
         add_plugins;
         mapper.Ast_mapper.structure mapper rest
-    | items -> Ppx_deriving.mapper.Ast_mapper.structure mapper items in
-  { Ppx_deriving.mapper with Ast_mapper.structure }
+    | items -> omp_mapper.Ast_mapper.structure mapper items in
+  { omp_mapper with Ast_mapper.structure }
 
 let () =
   Ast_mapper.register "ppx_deriving" mapper
