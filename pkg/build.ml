@@ -14,8 +14,7 @@ let quote_parens s =
     "'" ^ s ^ "'"
 
 let ocamlbuild =
-  "ocamlbuild -use-ocamlfind -classic-display -plugin-tag " ^ quote_parens "package(cppo_ocamlbuild)" 
-    ^ " -plugin-tag " ^ quote_parens "package(ocaml-migrate-parsetree-ocamlbuild)"
+  "ocamlbuild -use-ocamlfind -classic-display -plugin-tag " ^ quote_parens "package(cppo_ocamlbuild)"
 
 let () =
   Pkg.describe "ppx_deriving" ~builder:(`Other (ocamlbuild, "_build")) [
