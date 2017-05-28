@@ -171,6 +171,12 @@ module Warnings = struct
   end
 end
 
+type ab = { a : int; b : int } [@@deriving ord]
+let test_record_order ctxt =
+  assert_equal ~printer (-1) (compare_ab { a = 1; b = 2; } { a = 2; b = 1; });
+  assert_equal ~printer (0) (compare_ab { a = 1; b = 2; } { a = 1; b = 2; });
+  assert_equal ~printer (1) (compare_ab { a = 2; b = 2; } { a = 1; b = 2; })
+
 let suite = "Test deriving(ord)" >::: [
     "test_simple"        >:: test_simple;
     "test_variant"       >:: test_variant;
@@ -179,6 +185,7 @@ let suite = "Test deriving(ord)" >::: [
     "test_placeholder"   >:: test_placeholder;
     "test_mrec"          >:: test_mrec;
     "test_mrec2"         >:: test_mrec2;
+    "test_record_order"  >:: test_record_order;
     "test_ref1"          >:: test_ref1;
     "test_ref2"          >:: test_ref2;
     "test_std_shadowing" >:: test_std_shadowing;

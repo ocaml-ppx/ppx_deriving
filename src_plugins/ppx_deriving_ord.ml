@@ -28,7 +28,8 @@ let argl kind =
 let compare_reduce acc expr =
   [%expr match [%e expr] with 0 -> [%e acc] | x -> x]
 
-let reduce_compare = function
+let reduce_compare l =
+  match List.rev l with
   | [] -> [%expr 0]
   | x :: xs -> List.fold_left compare_reduce x xs
 
@@ -120,7 +121,7 @@ and expr_of_typ quoter typ =
       end
     | { ptyp_desc = Ptyp_tuple typs } ->
       [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
-        [%e exprn quoter typs |> List.rev |> reduce_compare]]
+        [%e exprn quoter typs |> reduce_compare]]
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
       let cases =
         fields |> List.map (fun field ->
@@ -184,11 +185,11 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
         constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args } ->
           match pcd_args with
           | Pcstr_tuple(typs) ->
-            exprn quoter typs |> List.rev |> reduce_compare |>
+            exprn quoter typs |> reduce_compare |>
             Exp.case (ptuple [pconstr name (pattn `lhs typs);
                               pconstr name (pattn `rhs typs)])
           | Pcstr_record(labels) ->
-            exprl quoter labels |> List.rev |> reduce_compare |>
+            exprl quoter labels |> reduce_compare |>
             Exp.case (ptuple [pconstrrec name (pattl `lhs labels);
                               pconstrrec name (pattl `rhs labels)])
           )
