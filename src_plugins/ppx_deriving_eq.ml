@@ -185,7 +185,8 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       core_type_of_decl  ~options ~path type_decl in
   let eq_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "equal") type_decl) in
-  [Vb.mk (Pat.constraint_ eq_var out_type)
+  [Vb.mk ~attrs:[Ppx_deriving.attr_warning [%expr "-39"]]
+         (Pat.constraint_ eq_var out_type)
          (Ppx_deriving.sanitize ~quoter (polymorphize comparator))]
 
 let () =

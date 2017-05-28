@@ -114,8 +114,9 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       raise_errorf ~loc "%s cannot be derived for open types" deriver
   in
   let polymorphize = Ppx_deriving.poly_fun_of_type_decl type_decl in
-  [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
-               (polymorphize mapper)]
+  [Vb.mk ~attrs:[Ppx_deriving.attr_warning [%expr "-39"]]
+         (pvar (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
+         (polymorphize mapper)]
 
 let sig_of_type ~options ~path type_decl =
   parse_options options;
