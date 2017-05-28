@@ -175,6 +175,11 @@ module Arg = struct
     | Ok v -> v
 end
 
+let attr_warning expr =
+  let loc = !default_loc in
+  let structure = {pstr_desc = Pstr_eval (expr, []); pstr_loc = loc} in
+  {txt = "ocaml.warning"; loc}, PStr [structure]
+
 type quoter = {
   mutable next_id : int;
   mutable bindings : value_binding list;
@@ -191,7 +196,7 @@ let quote ~quoter expr =
 let sanitize ?(module_=Lident "Ppx_deriving_runtime") ?(quoter=create_quoter ()) expr =
   let body =
     Exp.open_
-      ~attrs:[mkloc "ocaml.warning" !Ast_helper.default_loc, PStr [%str "-A"]]
+      ~attrs:[attr_warning [%expr "-A"]]
       Override { txt=module_; loc=(!Ast_helper.default_loc) } expr in
   match quoter.bindings with
   | [] -> body
@@ -248,11 +253,6 @@ let attr ~deriver name attrs =
   in
   try Some (List.find (fun ({ txt }, _) -> txt = name) attrs)
   with Not_found -> None
-
-let attr_warning expr =
-  let loc = !default_loc in
-  let structure = {pstr_desc = Pstr_eval (expr, []); pstr_loc = loc} in
-  {txt = "ocaml.warning"; loc}, PStr [structure]
 
 let attr_nobuiltin ~deriver attrs =
   attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver
