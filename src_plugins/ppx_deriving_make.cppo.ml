@@ -5,7 +5,7 @@ open Parsetree
 open Ast_helper
 open Ast_convenience
 
-let deriver = "create"
+let deriver = "make"
 let raise_errorf = Ppx_deriving.raise_errorf
 
 let parse_options options =
@@ -30,6 +30,18 @@ let find_main labels =
       main, label :: labels)
     (None, []) labels
 
+
+let is_optional { pld_name = { txt = name }; pld_type; pld_attributes } =
+  let attrs = pld_attributes @ pld_type.ptyp_attributes in
+  match attr_default attrs with
+  | Some _ -> true
+  | None ->
+    attr_split attrs ||
+    (match Ppx_deriving.remove_pervasives ~deriver pld_type with
+     | [%type: [%t? _] list]
+     | [%type: [%t? _] option] -> true
+     | _ -> false)
+
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   parse_options options;
   let quoter = Ppx_deriving.create_quoter () in
@@ -40,12 +52,15 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
         labels |> List.map (fun { pld_name = { txt = name; loc } } ->
           name, evar name) in
       let main, labels = find_main labels in
+      let has_option = List.exists is_optional labels in
       let fn =
         match main with
         | Some { pld_name = { txt = name }} ->
           Exp.fun_ Label.nolabel None (pvar name) (record fields)
-        | None ->
+        | None when has_option ->
           Exp.fun_ Label.nolabel None (punit ()) (record fields)
+        | None ->
+          record fields
       in
       List.fold_left (fun accum { pld_name = { txt = name }; pld_type; pld_attributes } ->
         let attrs = pld_attributes @ pld_type.ptyp_attributes in
@@ -77,7 +92,12 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (Ppx_deriving.sanitize ~quoter creator)]
 
 let wrap_predef_option typ =
+#if OCAML_VERSION < (4, 03, 0)
+  let predef_option = mknoloc (Ldot (Lident "*predef*", "option")) in
+  Typ.constr predef_option [typ]
+#else
   typ
+#endif
 
 let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   parse_options options;
@@ -86,12 +106,13 @@ let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
     match type_decl.ptype_kind with
     | Ptype_record labels ->
       let main, labels = find_main labels in
+      let has_option = List.exists is_optional labels in
       let typ =
         match main with
         | Some { pld_name = { txt = name }; pld_type } ->
           Typ.arrow Label.nolabel pld_type typ
-        | None ->
-          Typ.arrow Label.nolabel (tconstr "unit" []) typ
+        | None when has_option -> Typ.arrow Label.nolabel (tconstr "unit" []) typ
+        | None -> typ
       in
       List.fold_left (fun accum { pld_name = { txt = name; loc }; pld_type; pld_attributes } ->
         let attrs = pld_type.ptyp_attributes @ pld_attributes in

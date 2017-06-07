@@ -1,3 +1,7 @@
+#if OCAML_VERSION < (4, 03, 0)
+#define Pcstr_tuple(core_types) core_types
+#endif
+
 open Longident
 open Location
 open Asttypes
@@ -94,11 +98,13 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
             | args -> Ppx_deriving.(fold_exprs seq_reduce) args
           in
           Exp.case (pconstr name' (pattn typs)) result
+#if OCAML_VERSION >= (4, 03, 0)
         | Pcstr_record(labels) ->
           let args = labels |> List.map (fun { pld_name = { txt = n }; pld_type = typ } ->
                         [%expr [%e expr_of_typ typ] [%e evar (argl n)]]) in
           Exp.case (pconstrrec name' (pattl labels))
                    (Ppx_deriving.(fold_exprs seq_reduce) args)
+#endif
         ) |>
       Exp.function_
     | Ptype_record labels, _ ->

@@ -1,4 +1,3 @@
 B _build/**
 S src*/**
-FLG -open Ast_405 -open Ppx_tools_405
-PKG compiler-libs.common ocaml-migrate-parsetree ppx_tools_versioned ppx_tools_versioned.metaquot_405 oUnit cppo_ocamlbuild result
+PKG compiler-libs.common ppx_tools.metaquot oUnit cppo_ocamlbuild result
