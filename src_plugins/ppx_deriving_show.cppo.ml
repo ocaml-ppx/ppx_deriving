@@ -1,3 +1,7 @@
+#if OCAML_VERSION < (4, 03, 0)
+#define Pcstr_tuple(core_types) core_types
+#endif
+
 open Longident
 open Location
 open Asttypes
@@ -216,10 +220,12 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
             Exp.case (pconstr name' pattern_vars)
               [%expr [%e wrap_printer quoter printer] fmt
                         [%e tuple expr_vars]]
+#if OCAML_VERSION >= (4, 03, 0)
           | Some printer, Pcstr_record(labels) ->
             let args = labels |> List.map (fun { pld_name = { txt = n } } -> evar (argl n)) in
             Exp.case (pconstrrec name' (pattl labels))
                      (app (wrap_printer quoter printer) ([%expr fmt] :: args))
+#endif
           | None, Pcstr_tuple(typs) ->
             let args =
               List.mapi (fun i typ -> app (expr_of_typ quoter typ) [evar (argn i)]) typs in
@@ -239,6 +245,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                   Format.fprintf fmt "@,))@]"]
             in
             Exp.case (pconstr name' (pattn typs)) printer
+#if OCAML_VERSION >= (4, 03, 0)
           | None, Pcstr_record(labels) ->
             let args =
               labels |> List.map (fun { pld_name = { txt = n }; pld_type = typ } ->
@@ -256,6 +263,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                 Format.fprintf fmt "@]}"]
             in
             Exp.case (pconstrrec name' (pattl labels)) printer
+#endif
           )
       in
       [%expr fun fmt -> [%e Exp.function_ cases]]
