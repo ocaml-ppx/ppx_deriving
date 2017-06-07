@@ -12,6 +12,21 @@ open Parsetree
 open Ast_helper
 open Ast_convenience
 
+#if OCAML_VERSION >= (4, 05, 0)
+module Typ = struct
+  include Typ
+
+  let poly ?(loc= !Ast_helper.default_loc) ?attrs vars ty =
+    let vars = List.map (fun txt -> { Asttypes.loc; txt }) vars in
+    Typ.poly ~loc ?attrs vars ty
+end
+
+let rm_poly_locs =
+  List.map (fun x -> x.Asttypes.txt)
+#else
+let rm_poly_locs x = x
+#endif
+
 type deriver = {
   name : string ;
   core_type : (core_type -> expression) option;
@@ -325,6 +340,7 @@ let free_vars_in_core_type typ =
       List.map free_in xs |> List.concat
     | { ptyp_desc = Ptyp_alias (x, name) } -> [name] @ free_in x
     | { ptyp_desc = Ptyp_poly (bound, x) } ->
+      let bound = rm_poly_locs bound in
       List.filter (fun y -> not (List.mem y bound)) (free_in x)
     | { ptyp_desc = Ptyp_variant (rows, _, _) } ->
       List.map (
