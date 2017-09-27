@@ -56,23 +56,12 @@ let add_plugins plugins =
   Ast_mapper.set_cookie "ppx_deriving"
     (Exp.tuple (List.map (fun file -> Exp.constant (Pconst_string (file, None))) loaded))
 
-let mapper argv =
-  get_plugins () |> List.iter load_plugin;
-  add_plugins argv;
-  let omp_mapper = Migrate_parsetree.Driver.run_as_ast_mapper [] in
-  let structure mapper = function
-    | [%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
-          [%expr "ppx_deriving"] :: elems) }]]] :: rest ->
-      elems |>
-        List.map (fun elem ->
-          match elem with
-          | { pexp_desc = Pexp_constant (Pconst_string (file, None))} -> file
-          | _ -> assert false) |>
-        add_plugins;
-        mapper.Ast_mapper.structure mapper rest
-    | items -> omp_mapper.Ast_mapper.structure mapper items in
-  { omp_mapper with Ast_mapper.structure }
+let args = [
+  "-deriving-plugin",
+  Arg.String load_plugin,
+  " <file>  Dynamically load the plugin"
+]
 
 let () =
-  Ast_mapper.register "ppx_deriving" mapper
-
+  Ppx_deriving.register_driver ~reset_args:ignore ~args;
+  Migrate_parsetree_driver.run_main ()

@@ -663,7 +663,8 @@ let hash_variant s =
 
 (* This is only used when ppx_deriving is linked as part of an ocaml-migrate-parsetre
    driver. *)
-let () =
+let register_driver ~reset_args ~args =
   Migrate_parsetree.Driver.register ~name:"ppx_deriving"
+    ~reset_args ~args
     (module Migrate_parsetree.OCaml_current)
     (fun _ _ -> mapper)

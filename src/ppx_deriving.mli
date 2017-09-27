@@ -69,6 +69,10 @@ val create :
                            module_type_declaration -> signature) ->
   unit -> deriver
 
+val register_driver : reset_args:(unit -> unit) ->
+                      args:(Arg.key * Arg.spec * Arg.doc) list ->
+                      unit
+
 (** [lookup name] looks up a deriver called [name]. *)
 val lookup : string -> deriver option
 
