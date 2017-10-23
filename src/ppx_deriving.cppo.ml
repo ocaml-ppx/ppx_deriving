@@ -325,6 +325,9 @@ let free_vars_in_core_type typ =
       List.map free_in xs |> List.concat
     | { ptyp_desc = Ptyp_alias (x, name) } -> [name] @ free_in x
     | { ptyp_desc = Ptyp_poly (bound, x) } ->
+#if OCAML_VERSION >= (4, 05, 0)
+      let bound = List.map (fun y -> y.txt) bound in
+#endif
       List.filter (fun y -> not (List.mem y bound)) (free_in x)
     | { ptyp_desc = Ptyp_variant (rows, _, _) } ->
       List.map (
@@ -417,6 +420,11 @@ let binop_reduce x a b =
 
 let strong_type_of_type ty =
   let free_vars = free_vars_in_core_type ty in
+#if OCAML_VERSION >= (4, 05, 0)
+  (* give the location of the whole type to the introduced variables *)
+  let loc = { ty.ptyp_loc with loc_ghost = true } in
+  let free_vars = List.map (fun v -> mkloc v loc) free_vars in
+#endif
   Typ.force_poly @@ Typ.poly free_vars ty
 
 type deriver_options =
