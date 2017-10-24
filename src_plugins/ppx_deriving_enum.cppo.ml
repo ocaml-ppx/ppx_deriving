@@ -47,7 +47,10 @@ let mappings_of_type type_decl =
             raise_errorf ~loc:ptyp_loc
                          "%s cannot be derived for inherited variant cases" deriver
           | Rtag (name, attrs, true, []) ->
-            map acc mappings attrs { txt = name; loc = ptyp_loc }
+#if OCAML_VERSION < (4, 06, 0)
+            let name = mkloc name ptyp_loc in
+#endif
+            map acc mappings attrs name
           | Rtag _ ->
             raise_errorf ~loc:ptyp_loc
                          "%s can be derived only for argumentless constructors" deriver)
