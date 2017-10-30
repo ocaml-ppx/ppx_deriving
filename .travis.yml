@@ -1,12 +1,19 @@
 language: c
-script:
-  - echo "yes" | sudo add-apt-repository ppa:avsm/ocaml42+opam12
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq opam ocaml-native-compilers
-  - export OPAMYES=1
-  - opam init
-  - eval `opam config env`
-  - opam pin add -n ppx_tools git://github.com/alainfrisch/ppx_tools#4.02
-  - opam pin add -n -k path ppx_deriving .
-  - opam install --deps-only -d -t ppx_deriving
-  - opam install -d -t -v ppx_deriving
+sudo: false
+services:
+  - docker
+install: wget https://raw.githubusercontent.com/ocaml/ocaml-travisci-skeleton/master/.travis-docker.sh
+script: bash -ex ./.travis-docker.sh
+env:
+  global:
+  - PACKAGE="ppx_deriving"
+  - TESTS="true"
+  matrix:
+  - DISTRO="alpine" OCAML_VERSION="4.06.0"
+  - DISTRO="alpine" OCAML_VERSION="4.05.0"
+  - DISTRO="alpine" OCAML_VERSION="4.04.2"
+  - DISTRO="alpine" OCAML_VERSION="4.04.1"
+  - DISTRO="alpine" OCAML_VERSION="4.04.0"
+  - DISTRO="debian-stable" OCAML_VERSION="4.03.0"
+  - DISTRO="ubuntu-16.04" OCAML_VERSION="4.02.3"
+  - DISTRO="alpine" OCAML_VERSION="4.06.0"

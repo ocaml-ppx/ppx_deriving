@@ -1,6 +1,21 @@
 Changelog
 =========
 
+4.1.5
+---
+
+  * Add support for OCaml 4.05.0 and 4.06.0.
+  * Fix comparison order of fields in records (#136).
+  * Silence an `unused rec flag` warning in generated code (#137).
+  * Monomorphize comparison function for builtin types (#115)
+  * Raise an error when `type nonrec` is encountered (#116).
+  * Display an error message when dynamic package loading fails.
+  * Add a `with_path` option to `@@deriving` to skip the module path
+    in generated code (#120).
+
+The homepage for the project has now moved to:
+<https://github.com/ocaml-ppx/ppx_deriving>
+
 4.1
 ---
 
