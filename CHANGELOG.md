@@ -1,12 +1,10 @@
 Changelog
 =========
 
-4.2
+4.1.5
 ---
 
-  * Add support for OCaml 4.05.0.
-  * Use the `ocaml-migrate-parsetree` library to support multiple
-    versions of OCaml.
+  * Add support for OCaml 4.05.0 and 4.06.0.
   * Fix comparison order of fields in records (#136).
   * Silence an `unused rec flag` warning in generated code (#137).
   * Monomorphize comparison function for builtin types (#115)
