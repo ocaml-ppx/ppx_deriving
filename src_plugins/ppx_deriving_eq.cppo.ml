@@ -121,11 +121,18 @@ and expr_of_typ quoter typ =
       let cases =
         (fields |> List.map (fun field ->
           let pdup f = ptuple [f "lhs"; f "rhs"] in
+          let variant label popt =
+#if OCAML_VERSION < (4, 06, 0)
+            Pat.variant label popt
+#else
+            Pat.variant label.txt popt
+#endif
+          in
           match field with
           | Rtag (label, _, true (*empty*), []) ->
-            Exp.case (pdup (fun _ -> Pat.variant label None)) [%expr true]
+            Exp.case (pdup (fun _ -> variant label None)) [%expr true]
           | Rtag (label, _, false, [typ]) ->
-            Exp.case (pdup (fun var -> Pat.variant label (Some (pvar var))))
+            Exp.case (pdup (fun var -> variant label (Some (pvar var))))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
           | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case (pdup (fun var -> Pat.alias (Pat.type_ tname) (mknoloc var)))
