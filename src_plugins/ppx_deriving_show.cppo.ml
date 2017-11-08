@@ -14,6 +14,16 @@ let raise_errorf = Ppx_deriving.raise_errorf
 
 type options = { with_path : bool }
 
+(* The option [with_path] controls whether a full path should be displayed
+   as part of data constructor names and record field names. (In the case
+   of record fields, it is displayed only as part of the name of the first
+   field.) By default, this option is [true], which means that full paths
+   are shown. *)
+
+let expand_path show_opts ~path name =
+  let path = if show_opts.with_path then path else [] in
+  Ppx_deriving.expand_path ~path name
+
 let parse_options options =
   let with_path = ref true in
   options |> List.iter (fun (name, expr) ->
@@ -199,8 +209,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       let cases =
         constrs |> List.map (fun { pcd_name = { txt = name' }; pcd_args; pcd_attributes } ->
           let constr_name =
-            let path = if show_opts.with_path then path else [] in
-            Ppx_deriving.expand_path ~path name'
+            expand_path show_opts ~path name'
           in
 
           match attr_printer pcd_attributes, pcd_args with
@@ -270,7 +279,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
     | Ptype_record labels, _ ->
       let fields =
         labels |> List.mapi (fun i { pld_name = { txt = name }; pld_type; pld_attributes } ->
-          let field_name = if i = 0 then Ppx_deriving.expand_path ~path name else name in
+          let field_name = if i = 0 then expand_path show_opts ~path name else name in
           let pld_type = {pld_type with ptyp_attributes=pld_attributes@pld_type.ptyp_attributes} in
           [%expr
             Format.fprintf fmt "@[%s =@ " [%e str field_name];
