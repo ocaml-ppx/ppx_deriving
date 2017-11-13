@@ -12,6 +12,12 @@ open Parsetree
 open Ast_helper
 open Ast_convenience
 
+#if OCAML_VERSION >= (4, 05, 0)
+type tyvar = string Location.loc
+#else
+type tyvar = string
+#endif
+
 type deriver = {
   name : string ;
   core_type : (core_type -> expression) option;
@@ -290,6 +296,9 @@ let fold_left_type_params fn accum params =
       match param with
       | { ptyp_desc = Ptyp_any } -> accum
       | { ptyp_desc = Ptyp_var name } ->
+#if OCAML_VERSION >= (4, 05, 0)
+        let name = mkloc name param.ptyp_loc in
+#endif
         fn accum name
       | _ -> assert false)
     accum params
@@ -305,6 +314,9 @@ let fold_right_type_params fn params accum =
       match param with
       | { ptyp_desc = Ptyp_any } -> accum
       | { ptyp_desc = Ptyp_var name } ->
+#if OCAML_VERSION >= (4, 05, 0)
+        let name = mkloc name param.ptyp_loc in
+#endif
         fn name accum
       | _ -> assert false)
     params accum
@@ -319,15 +331,23 @@ let free_vars_in_core_type typ =
   let rec free_in typ =
     match typ with
     | { ptyp_desc = Ptyp_any } -> []
-    | { ptyp_desc = Ptyp_var name } -> [name]
+    | { ptyp_desc = Ptyp_var name } ->
+#if OCAML_VERSION >= (4, 05, 0)
+      [mkloc name typ.ptyp_loc]
+#else
+      [name]
+#endif
     | { ptyp_desc = Ptyp_arrow (_, x, y) } -> free_in x @ free_in y
     | { ptyp_desc = (Ptyp_tuple xs | Ptyp_constr (_, xs)) } ->
       List.map free_in xs |> List.concat
-    | { ptyp_desc = Ptyp_alias (x, name) } -> [name] @ free_in x
-    | { ptyp_desc = Ptyp_poly (bound, x) } ->
+    | { ptyp_desc = Ptyp_alias (x, name) } ->
 #if OCAML_VERSION >= (4, 05, 0)
-      let bound = List.map (fun y -> y.txt) bound in
+      [mkloc name typ.ptyp_loc]
+#else
+      [name]
 #endif
+      @ free_in x
+    | { ptyp_desc = Ptyp_poly (bound, x) } ->
       List.filter (fun y -> not (List.mem y bound)) (free_in x)
     | { ptyp_desc = Ptyp_variant (rows, _, _) } ->
       List.map (
@@ -338,8 +358,19 @@ let free_vars_in_core_type typ =
   in
   let uniq lst =
     let module StringSet = Set.Make(String) in
-    lst |> StringSet.of_list |> StringSet.elements in
-  free_in typ |> uniq
+    let add name (names, txts) =
+      let txt =
+#if OCAML_VERSION >= (4, 05, 0)
+        name.txt
+#else
+        name
+#endif
+      in
+      if StringSet.mem txt txts
+      then (names, txts)
+      else (name :: names, StringSet.add txt txts)
+    in fst (List.fold_right add lst ([], StringSet.empty))
+  in free_in typ |> uniq
 
 let var_name_of_int i =
   let letter = "abcdefghijklmnopqrstuvwxyz" in
@@ -357,30 +388,53 @@ let fresh_var bound =
 
 let poly_fun_of_type_decl type_decl expr =
   fold_right_type_decl (fun name expr ->
+#if OCAML_VERSION >= (4, 05, 0)
+    let name = name.txt in
+#endif
     Exp.fun_ Label.nolabel None (pvar ("poly_"^name)) expr) type_decl expr
 
 let poly_fun_of_type_ext type_ext expr =
   fold_right_type_ext (fun name expr ->
+#if OCAML_VERSION >= (4, 05, 0)
+    let name = name.txt in
+#endif
     Exp.fun_ Label.nolabel None (pvar ("poly_"^name)) expr) type_ext expr
 
 let poly_apply_of_type_decl type_decl expr =
   fold_left_type_decl (fun expr name ->
+#if OCAML_VERSION >= (4, 05, 0)
+    let name = name.txt in
+#endif
     Exp.apply expr [Label.nolabel, evar ("poly_"^name)]) expr type_decl
 
 let poly_apply_of_type_ext type_ext expr =
   fold_left_type_ext (fun expr name ->
+#if OCAML_VERSION >= (4, 05, 0)
+    let name = name.txt in
+#endif
     Exp.apply expr [Label.nolabel, evar ("poly_"^name)]) expr type_ext
 
 let poly_arrow_of_type_decl fn type_decl typ =
   fold_right_type_decl (fun name typ ->
+#if OCAML_VERSION >= (4, 05, 0)
+    let name = name.txt in
+#endif
     Typ.arrow Label.nolabel (fn (Typ.var name)) typ) type_decl typ
 
 let poly_arrow_of_type_ext fn type_ext typ =
   fold_right_type_ext (fun name typ ->
-    Typ.arrow Label.nolabel (fn (Typ.var name)) typ) type_ext typ
+    let var =
+#if OCAML_VERSION >= (4, 05, 0)
+      Typ.var ~loc:name.loc name.txt
+#else
+      Typ.var name
+#endif
+    in
+    Typ.arrow Label.nolabel (fn var) typ) type_ext typ
 
-let core_type_of_type_decl { ptype_name = { txt = name }; ptype_params } =
-  Typ.constr (mknoloc (Lident name)) (List.map fst ptype_params)
+let core_type_of_type_decl { ptype_name = name; ptype_params } =
+  let name = mkloc (Lident name.txt) name.loc in
+  Typ.constr name (List.map fst ptype_params)
 
 let core_type_of_type_ext { ptyext_path ; ptyext_params } =
   Typ.constr ptyext_path (List.map fst ptyext_params)
@@ -420,11 +474,6 @@ let binop_reduce x a b =
 
 let strong_type_of_type ty =
   let free_vars = free_vars_in_core_type ty in
-#if OCAML_VERSION >= (4, 05, 0)
-  (* give the location of the whole type to the introduced variables *)
-  let loc = { ty.ptyp_loc with loc_ghost = true } in
-  let free_vars = List.map (fun v -> mkloc v loc) free_vars in
-#endif
   Typ.force_poly @@ Typ.poly free_vars ty
 
 type deriver_options =
@@ -497,7 +546,14 @@ let derive_module_type_decl path module_type_decl pstr_loc item fn =
 let module_from_input_name () =
   match !Location.input_name with
   | "//toplevel//" -> []
-  | filename -> [String.capitalize (Filename.(basename (chop_suffix filename ".ml")))]
+  | filename ->
+    let capitalize =
+#if OCAML_VERSION >= (4, 03, 0)
+      String.capitalize_ascii
+#else
+      String.capitalize
+#endif
+    in [capitalize (Filename.(basename (chop_suffix filename ".ml")))]
 
 let pstr_desc_rec_flag pstr =
   match pstr with
