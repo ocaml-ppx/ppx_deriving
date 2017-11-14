@@ -60,11 +60,18 @@ let rec expr_of_typ typ =
   | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
     let cases =
       fields |> List.map (fun field ->
+        let variant label popt =
+#if OCAML_VERSION < (4, 06, 0)
+          Pat.variant label popt
+#else
+          Pat.variant label.txt popt
+#endif
+        in
         match field with
         | Rtag (label, _, true (*empty*), []) ->
-          Exp.case (Pat.variant label None) [%expr ()]
+          Exp.case (variant label None) [%expr ()]
         | Rtag (label, _, false, [typ]) ->
-          Exp.case (Pat.variant label (Some [%pat? x]))
+          Exp.case (variant label (Some [%pat? x]))
                    [%expr [%e expr_of_typ typ] x]
         | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
           Exp.case [%pat? [%p Pat.type_ tname] as x]

@@ -127,14 +127,21 @@ and expr_of_typ quoter typ =
       [%expr fun [%p ptuple (pattn `lhs typs)] [%p ptuple (pattn `rhs typs)] ->
         [%e exprn quoter typs |> reduce_compare]]
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
+      let variant label popt =
+#if OCAML_VERSION < (4, 06, 0)
+        Pat.variant label popt
+#else
+        Pat.variant label.txt popt
+#endif
+      in
       let cases =
         fields |> List.map (fun field ->
           let pdup f = ptuple [f "lhs"; f "rhs"] in
           match field with
           | Rtag (label, _, true (*empty*), []) ->
-            Exp.case (pdup (fun _ -> Pat.variant label None)) [%expr 0]
+            Exp.case (pdup (fun _ -> variant label None)) [%expr 0]
           | Rtag (label, _, false, [typ]) ->
-            Exp.case (pdup (fun var -> Pat.variant label (Some (pvar var))))
+            Exp.case (pdup (fun var -> variant label (Some (pvar var))))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
           | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case (pdup (fun var -> Pat.alias (Pat.type_ tname) (mknoloc var)))
@@ -147,9 +154,9 @@ and expr_of_typ quoter typ =
         fields |> List.mapi (fun i field ->
           match field with
           | Rtag (label, _, true (*empty*), []) ->
-            Exp.case (Pat.variant label None) (int i)
+            Exp.case (variant label None) (int i)
           | Rtag (label, _, false, [typ]) ->
-            Exp.case (Pat.variant label (Some [%pat? _])) (int i)
+            Exp.case (variant label (Some [%pat? _])) (int i)
           | Rinherit { ptyp_desc = Ptyp_constr (tname, []) } ->
             Exp.case (Pat.type_ tname) (int i)
           | _ -> assert false)

@@ -63,11 +63,18 @@ let rec expr_of_typ typ =
   | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
     let cases =
       fields |> List.map (fun field ->
+        let variant label popt =
+#if OCAML_VERSION < (4, 06, 0)
+          Pat.variant label popt
+#else
+          Pat.variant label.txt popt
+#endif
+        in
         match field with
         | Rtag (label, _, true (*empty*), []) ->
-          Exp.case (Pat.variant label None) [%expr acc]
+          Exp.case (variant label None) [%expr acc]
         | Rtag (label, _, false, [typ]) ->
-          Exp.case (Pat.variant label (Some [%pat? x]))
+          Exp.case (variant label (Some [%pat? x]))
                    [%expr [%e expr_of_typ typ] acc x]
         | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
           Exp.case [%pat? [%p Pat.type_ tname] as x]
@@ -126,11 +133,18 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
 
 let sig_of_type ~options ~path type_decl =
   parse_options options;
+  let loc = type_decl.ptype_loc in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
-  let acc = Typ.var Ppx_deriving.(fresh_var (free_vars_in_core_type typ)) in
+  let vars =
+#if OCAML_VERSION >= (4, 05, 0)
+    (List.map (fun tyvar -> tyvar.txt))
+#endif
+      (Ppx_deriving.free_vars_in_core_type typ)
+  in
+  let acc = Typ.var ~loc Ppx_deriving.(fresh_var vars) in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
                         (fun var -> [%type: [%t acc] -> [%t var] -> [%t acc]]) type_decl in
-  [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
+  [Sig.value ~loc (Val.mk (mkloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl) loc)
               (polymorphize [%type: [%t acc] -> [%t typ] -> [%t acc]]))]
 
 let () =

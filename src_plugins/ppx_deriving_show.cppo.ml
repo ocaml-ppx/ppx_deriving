@@ -166,9 +166,15 @@ let rec expr_of_typ quoter typ =
         fields |> List.map (fun field ->
           match field with
           | Rtag (label, _, true (*empty*), []) ->
+#if OCAML_VERSION >= (4, 06, 0)
+            let label = label.txt in
+#endif
             Exp.case (Pat.variant label None)
                      [%expr Format.pp_print_string fmt [%e str ("`" ^ label)]]
           | Rtag (label, _, false, [typ]) ->
+#if OCAML_VERSION >= (4, 06, 0)
+            let label = label.txt in
+#endif
             Exp.case (Pat.variant label (Some [%pat? x]))
                      [%expr Format.fprintf fmt [%e str ("`" ^ label ^ " (@[<hov>")];
                             [%e expr_of_typ typ] x;
