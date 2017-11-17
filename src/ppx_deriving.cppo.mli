@@ -2,6 +2,12 @@
 
 open Parsetree
 
+#if OCAML_VERSION >= (4, 05, 0)
+type tyvar = string Location.loc
+#else
+type tyvar = string
+#endif
+
 (** {2 Registration} *)
 
 (** A type of deriving plugins.
@@ -229,7 +235,7 @@ val attr_warning: expression -> attribute
 
 (** [free_vars_in_core_type typ] returns unique free variables in [typ] in
     lexical order. *)
-val free_vars_in_core_type : core_type -> string list
+val free_vars_in_core_type : core_type -> tyvar list
 
 (** [remove_pervasives ~deriver typ] removes the leading "Pervasives."
     module name in longidents.
@@ -245,19 +251,19 @@ val fresh_var : string list -> string
 
 (** [fold_left_type_decl fn accum type_] performs a left fold over all type variable
     (i.e. not wildcard) parameters in [type_]. *)
-val fold_left_type_decl : ('a -> string -> 'a) -> 'a -> type_declaration -> 'a
+val fold_left_type_decl : ('a -> tyvar -> 'a) -> 'a -> type_declaration -> 'a
 
 (** [fold_right_type_decl fn accum type_] performs a right fold over all type variable
     (i.e. not wildcard) parameters in [type_]. *)
-val fold_right_type_decl : (string -> 'a -> 'a) -> type_declaration -> 'a -> 'a
+val fold_right_type_decl : (tyvar -> 'a -> 'a) -> type_declaration -> 'a -> 'a
 
 (** [fold_left_type_ext fn accum type_] performs a left fold over all type variable (i.e. not
     wildcard) parameters in [type_]. *)
-val fold_left_type_ext : ('a -> string -> 'a) -> 'a -> type_extension -> 'a
+val fold_left_type_ext : ('a -> tyvar -> 'a) -> 'a -> type_extension -> 'a
 
 (** [fold_right_type_ext fn accum type_] performs a right fold over all type variable (i.e. not
     wildcard) parameters in [type_]. *)
-val fold_right_type_ext : (string -> 'a -> 'a) -> type_extension -> 'a -> 'a
+val fold_right_type_ext : (tyvar -> 'a -> 'a) -> type_extension -> 'a -> 'a
 
 (** [poly_fun_of_type_decl type_ expr] wraps [expr] into [fun poly_N -> ...] for every
     type parameter ['N] present in [type_]. For example, if [type_] refers to
