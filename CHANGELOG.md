@@ -1,6 +1,16 @@
 Changelog
 =========
 
+4.2.1
+-----
+
+  * Add support for OCaml 4.06.0
+    #154, #155, #156, #159
+    (Gabriel Scherer, Fabian, Leonid Rozenberg)
+  * Consider { with_path = false } when printing record fields
+    #157
+    (François Pottier)
+
 4.2
 ---
 
