@@ -70,8 +70,10 @@ and expr_of_typ quoter typ =
     | { ptyp_desc = Ptyp_constr _ } ->
       let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
       begin match builtin, typ with
-      | true, ([%type: _] | [%type: unit]) ->
+      | true, [%type: _] ->
         [%expr fun _ _ -> 0]
+      | true, [%type: unit] ->
+        [%expr fun (_:unit) (_:unit) -> 0]
       | true, ([%type: int] | [%type: int32] | [%type: Int32.t]
               | [%type: int64] | [%type: Int64.t] | [%type: nativeint]
               | [%type: Nativeint.t] | [%type: float] | [%type: bool]
