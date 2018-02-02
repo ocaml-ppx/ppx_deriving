@@ -127,7 +127,8 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           name, [%expr [%e expr_of_typ ~decl:type_decl pld_type]
                        [%e Exp.field (evar "x") (mknoloc (Lident name))]])
       in
-      [%expr fun x -> [%e record fields]]
+      let annot_typ = Ppx_deriving.core_type_of_type_decl type_decl in
+      [%expr fun (x:[%t annot_typ]) -> [%e record fields]]
     | Ptype_abstract, None ->
       raise_errorf ~loc "%s cannot be derived for fully abstract types" deriver
     | Ptype_open, _        ->
