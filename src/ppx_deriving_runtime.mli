@@ -65,9 +65,9 @@ include (module type of Pervasives with
 module Char : (module type of Char)
 module String : (module type of String)
 module Printexc : (module type of Printexc with
-  type raw_backtrace := Printexc.raw_backtrace and
-  type backtrace_slot := Printexc.backtrace_slot and
-  type location := Printexc.location)
+  type raw_backtrace = Printexc.raw_backtrace and
+  type backtrace_slot = Printexc.backtrace_slot and
+  type location = Printexc.location)
 module Array : (module type of Array)
 module List : (module type of List)
 module Nativeint : (module type of Nativeint)
@@ -79,18 +79,18 @@ module Bytes : (module type of Bytes)
 (** {3 Data structures} *)
 
 module Hashtbl : (module type of Hashtbl with
-  type ('a, 'b) t := ('a, 'b) Hashtbl.t and
-  type statistics := Hashtbl.statistics)
+  type ('a, 'b) t = ('a, 'b) Hashtbl.t and
+  type statistics = Hashtbl.statistics)
 module Queue : (module type of Queue with
-  type 'a t := 'a Queue.t)
+  type 'a t = 'a Queue.t)
 module Stack : (module type of Stack with
-  type 'a t := 'a Stack.t)
+  type 'a t = 'a Stack.t)
 module Set : (module type of Set)
 module Map : (module type of Map)
 module Weak : (module type of Weak with
-  type 'a t := 'a Weak.t)
+  type 'a t = 'a Weak.t)
 module Buffer : (module type of Buffer with
-  type t := Buffer.t)
+  type t = Buffer.t)
 module Result : sig
   type ('a, 'b) result = ('a, 'b) Result.result =
     | Ok of 'a
@@ -101,6 +101,6 @@ end
 
 module Printf : (module type of Printf)
 module Format : (module type of Format with
-  type formatter_out_functions := Format.formatter_out_functions and
-  type formatter_tag_functions := Format.formatter_tag_functions and
-  type formatter := Format.formatter)
+  type formatter_out_functions = Format.formatter_out_functions and
+  type formatter_tag_functions = Format.formatter_tag_functions and
+  type formatter = Format.formatter)
