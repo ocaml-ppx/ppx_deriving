@@ -1,6 +1,16 @@
 Changelog
 =========
 
+NEXT_RELEASE
+------------
+
+* use Format through Ppx_deriving_runtime to avoid deprecation warning
+  for users of JaneStreet Base
+  (Stephen Bastians and Gabriel Scherer, review by whitequark)
+* silence a ambiguous-field warning (41) in generated code
+  #163
+  (Étienne Millon, review by Gabriel Scherer)
+
 4.2.1
 -----
 
