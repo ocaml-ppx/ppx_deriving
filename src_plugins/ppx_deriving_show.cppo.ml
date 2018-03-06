@@ -54,21 +54,21 @@ let pconstrrec name fields = pconstr name [precord ~closed:Closed fields]
 
 let wrap_printer quoter printer =
   Ppx_deriving.quote quoter
-    [%expr (let fprintf = Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
+    [%expr (let fprintf = Ppx_deriving_runtime.Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
 
 let pp_type_of_decl ~options ~path type_decl =
   let _ = parse_options options in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
-    (fun var -> [%type: Format.formatter -> [%t var] -> Ppx_deriving_runtime.unit])
+    (fun var -> [%type: Ppx_deriving_runtime.Format.formatter -> [%t var] -> Ppx_deriving_runtime.unit])
     type_decl
-    [%type: Format.formatter -> [%t typ] -> Ppx_deriving_runtime.unit]
+    [%type: Ppx_deriving_runtime.Format.formatter -> [%t typ] -> Ppx_deriving_runtime.unit]
 
 let show_type_of_decl ~options ~path type_decl =
   let _ = parse_options options in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
-    (fun var -> [%type: Format.formatter -> [%t var] -> Ppx_deriving_runtime.unit])
+    (fun var -> [%type: Ppx_deriving_runtime.Format.formatter -> [%t var] -> Ppx_deriving_runtime.unit])
     type_decl
     [%type: [%t typ] -> Ppx_deriving_runtime.string]
 
@@ -85,26 +85,26 @@ let rec expr_of_typ quoter typ =
   | Some printer -> [%expr [%e wrap_printer quoter printer] fmt]
   | None ->
   if attr_opaque typ.ptyp_attributes then
-    [%expr fun _ -> Format.pp_print_string fmt "<opaque>"]
+    [%expr fun _ -> Ppx_deriving_runtime.Format.pp_print_string fmt "<opaque>"]
   else
-    let format x = [%expr Format.fprintf fmt [%e str x]] in
+    let format x = [%expr Ppx_deriving_runtime.Format.fprintf fmt [%e str x]] in
     let seq start finish fold typ =
       [%expr fun x ->
-        Format.fprintf fmt [%e str start];
+        Ppx_deriving_runtime.Format.fprintf fmt [%e str start];
         ignore ([%e fold] (fun sep x ->
-          if sep then Format.fprintf fmt ";@ ";
+          if sep then Ppx_deriving_runtime.Format.fprintf fmt ";@ ";
           [%e expr_of_typ typ] x; true) false x);
-        Format.fprintf fmt [%e str finish];]
+        Ppx_deriving_runtime.Format.fprintf fmt [%e str finish];]
     in
     let typ = Ppx_deriving.remove_pervasives ~deriver typ in
     match typ with
-    | [%type: _] -> [%expr fun _ -> Format.pp_print_string fmt "_"]
+    | [%type: _] -> [%expr fun _ -> Ppx_deriving_runtime.Format.pp_print_string fmt "_"]
     | { ptyp_desc = Ptyp_arrow _ } ->
-      [%expr fun _ -> Format.pp_print_string fmt "<fun>"]
+      [%expr fun _ -> Ppx_deriving_runtime.Format.pp_print_string fmt "<fun>"]
     | { ptyp_desc = Ptyp_constr _ } ->
       let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
       begin match builtin, typ with
-      | true, [%type: unit]        -> [%expr fun () -> Format.pp_print_string fmt "()"]
+      | true, [%type: unit]        -> [%expr fun () -> Ppx_deriving_runtime.Format.pp_print_string fmt "()"]
       | true, [%type: int]         -> format "%d"
       | true, [%type: int32]
       | true, [%type: Int32.t]     -> format "%ldl"
@@ -119,38 +119,38 @@ let rec expr_of_typ quoter typ =
       | true, [%type: String.t]    -> format "%S"
       | true, [%type: bytes]
       | true, [%type: Bytes.t] ->
-        [%expr fun x -> Format.fprintf fmt "%S" (Bytes.to_string x)]
+        [%expr fun x -> Ppx_deriving_runtime.Format.fprintf fmt "%S" (Bytes.to_string x)]
       | true, [%type: [%t? typ] ref] ->
         [%expr fun x ->
-          Format.pp_print_string fmt "ref (";
+          Ppx_deriving_runtime.Format.pp_print_string fmt "ref (";
           [%e expr_of_typ typ] !x;
-          Format.pp_print_string fmt ")"]
+          Ppx_deriving_runtime.Format.pp_print_string fmt ")"]
       | true, [%type: [%t? typ] list]  -> seq "@[<2>["   "@,]@]" [%expr List.fold_left]  typ
       | true, [%type: [%t? typ] array] -> seq "@[<2>[|" "@,|]@]" [%expr Array.fold_left] typ
       | true, [%type: [%t? typ] option] ->
         [%expr
           function
-          | None -> Format.pp_print_string fmt "None"
+          | None -> Ppx_deriving_runtime.Format.pp_print_string fmt "None"
           | Some x ->
-            Format.pp_print_string fmt "(Some ";
+            Ppx_deriving_runtime.Format.pp_print_string fmt "(Some ";
             [%e expr_of_typ typ] x;
-            Format.pp_print_string fmt ")"]
+            Ppx_deriving_runtime.Format.pp_print_string fmt ")"]
       | true, ([%type: ([%t? ok_t], [%t? err_t]) result] |
                [%type: ([%t? ok_t], [%t? err_t]) Result.result]) ->
         [%expr
           function
           | Result.Ok ok ->
-            Format.pp_print_string fmt "(Ok ";
+            Ppx_deriving_runtime.Format.pp_print_string fmt "(Ok ";
             [%e expr_of_typ ok_t] ok;
-            Format.pp_print_string fmt ")"
+            Ppx_deriving_runtime.Format.pp_print_string fmt ")"
           | Result.Error e ->
-            Format.pp_print_string fmt "(Error ";
+            Ppx_deriving_runtime.Format.pp_print_string fmt "(Error ";
             [%e expr_of_typ err_t] e;
-            Format.pp_print_string fmt ")"]
+            Ppx_deriving_runtime.Format.pp_print_string fmt ")"]
       | true, ([%type: [%t? typ] lazy_t] | [%type: [%t? typ] Lazy.t]) ->
         [%expr fun x ->
           if Lazy.is_val x then [%e expr_of_typ typ] (Lazy.force x)
-          else Format.pp_print_string fmt "<not evaluated>"]
+          else Ppx_deriving_runtime.Format.pp_print_string fmt "<not evaluated>"]
       | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
         let args_pp = List.map (fun typ -> [%expr fun fmt -> [%e expr_of_typ typ]]) args in
         let printer =
@@ -167,10 +167,10 @@ let rec expr_of_typ quoter typ =
       let args = List.mapi (fun i typ -> app (expr_of_typ typ) [evar (argn i)]) typs in
       [%expr
         fun [%p ptuple (List.mapi (fun i _ -> pvar (argn i)) typs)] ->
-        Format.fprintf fmt "(@[";
+        Ppx_deriving_runtime.Format.fprintf fmt "(@[";
         [%e args |> Ppx_deriving.(fold_exprs
-                (seq_reduce ~sep:[%expr Format.fprintf fmt ",@ "]))];
-        Format.fprintf fmt "@])"]
+                (seq_reduce ~sep:[%expr Ppx_deriving_runtime.Format.fprintf fmt ",@ "]))];
+        Ppx_deriving_runtime.Format.fprintf fmt "@])"]
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
       let cases =
         fields |> List.map (fun field ->
@@ -180,15 +180,15 @@ let rec expr_of_typ quoter typ =
             let label = label.txt in
 #endif
             Exp.case (Pat.variant label None)
-                     [%expr Format.pp_print_string fmt [%e str ("`" ^ label)]]
+                     [%expr Ppx_deriving_runtime.Format.pp_print_string fmt [%e str ("`" ^ label)]]
           | Rtag (label, _, false, [typ]) ->
 #if OCAML_VERSION >= (4, 06, 0)
             let label = label.txt in
 #endif
             Exp.case (Pat.variant label (Some [%pat? x]))
-                     [%expr Format.fprintf fmt [%e str ("`" ^ label ^ " (@[<hov>")];
+                     [%expr Ppx_deriving_runtime.Format.fprintf fmt [%e str ("`" ^ label ^ " (@[<hov>")];
                             [%e expr_of_typ typ] x;
-                            Format.fprintf fmt "@])"]
+                            Ppx_deriving_runtime.Format.fprintf fmt "@])"]
           | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case [%pat? [%p Pat.type_ tname] as x]
                      [%expr [%e expr_of_typ typ] x]
@@ -246,18 +246,18 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
               List.mapi (fun i typ -> app (expr_of_typ quoter typ) [evar (argn i)]) typs in
             let printer =
               match args with
-              | []   -> [%expr Format.pp_print_string fmt [%e str constr_name]]
+              | []   -> [%expr Ppx_deriving_runtime.Format.pp_print_string fmt [%e str constr_name]]
               | [arg] ->
                 [%expr
-                  Format.fprintf fmt [%e str ("(@[<2>" ^  constr_name ^ "@ ")];
+                  Ppx_deriving_runtime.Format.fprintf fmt [%e str ("(@[<2>" ^  constr_name ^ "@ ")];
                   [%e arg];
-                  Format.fprintf fmt "@])"]
+                  Ppx_deriving_runtime.Format.fprintf fmt "@])"]
               | args ->
                 [%expr
-                  Format.fprintf fmt [%e str ("(@[<2>" ^  constr_name ^ " (@,")];
+                  Ppx_deriving_runtime.Format.fprintf fmt [%e str ("(@[<2>" ^  constr_name ^ " (@,")];
                   [%e args |> Ppx_deriving.(fold_exprs
-                        (seq_reduce ~sep:[%expr Format.fprintf fmt ",@ "]))];
-                  Format.fprintf fmt "@,))@]"]
+                        (seq_reduce ~sep:[%expr Ppx_deriving_runtime.Format.fprintf fmt ",@ "]))];
+                  Ppx_deriving_runtime.Format.fprintf fmt "@,))@]"]
             in
             Exp.case (pconstr name' (pattn typs)) printer
 #if OCAML_VERSION >= (4, 03, 0)
@@ -265,17 +265,17 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
             let args =
               labels |> List.map (fun { pld_name = { txt = n }; pld_type = typ } ->
                 [%expr
-                  Format.fprintf fmt "@[%s =@ " [%e str n];
+                  Ppx_deriving_runtime.Format.fprintf fmt "@[%s =@ " [%e str n];
                   [%e expr_of_typ quoter typ] [%e evar (argl n)];
-                  Format.fprintf fmt "@]"
+                  Ppx_deriving_runtime.Format.fprintf fmt "@]"
                 ])
             in
             let printer =
               [%expr
-                Format.fprintf fmt [%e str ("@[<2>" ^  constr_name ^ " {@,")];
+                Ppx_deriving_runtime.Format.fprintf fmt [%e str ("@[<2>" ^  constr_name ^ " {@,")];
                 [%e args |> Ppx_deriving.(fold_exprs
-                      (seq_reduce ~sep:[%expr Format.fprintf fmt ";@ "]))];
-                Format.fprintf fmt "@]}"]
+                      (seq_reduce ~sep:[%expr Ppx_deriving_runtime.Format.fprintf fmt ";@ "]))];
+                Ppx_deriving_runtime.Format.fprintf fmt "@]}"]
             in
             Exp.case (pconstrrec name' (pattl labels)) printer
 #endif
@@ -288,16 +288,16 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           let field_name = if i = 0 then expand_path show_opts ~path name else name in
           let pld_type = {pld_type with ptyp_attributes=pld_attributes@pld_type.ptyp_attributes} in
           [%expr
-            Format.fprintf fmt "@[%s =@ " [%e str field_name];
+            Ppx_deriving_runtime.Format.fprintf fmt "@[%s =@ " [%e str field_name];
             [%e expr_of_typ quoter pld_type] [%e Exp.field (evar "x") (mknoloc (Lident name))];
-            Format.fprintf fmt "@]"
+            Ppx_deriving_runtime.Format.fprintf fmt "@]"
           ])
       in
       [%expr fun fmt x ->
-        Format.fprintf fmt "@[<2>{ ";
+        Ppx_deriving_runtime.Format.fprintf fmt "@[<2>{ ";
         [%e fields |> Ppx_deriving.(fold_exprs
-              (seq_reduce ~sep:[%expr Format.fprintf fmt ";@ "]))];
-        Format.fprintf fmt "@ }@]"]
+              (seq_reduce ~sep:[%expr Ppx_deriving_runtime.Format.fprintf fmt ";@ "]))];
+        Ppx_deriving_runtime.Format.fprintf fmt "@ }@]"]
     | Ptype_abstract, None ->
       raise_errorf ~loc "%s cannot be derived for fully abstract types" deriver
     | Ptype_open, _        ->
@@ -305,7 +305,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   in
   let pp_poly_apply = Ppx_deriving.poly_apply_of_type_decl type_decl (evar
                         (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl)) in
-  let stringprinter = [%expr fun x -> Format.asprintf "%a" [%e pp_poly_apply] x] in
+  let stringprinter = [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" [%e pp_poly_apply] x] in
   let polymorphize  = Ppx_deriving.poly_fun_of_type_decl type_decl in
   let pp_type =
     Ppx_deriving.strong_type_of_type @@ pp_type_of_decl ~options ~path type_decl in
@@ -323,7 +323,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
 let () =
   Ppx_deriving.(register (create deriver
     ~core_type: (Ppx_deriving.with_quoter (fun quoter typ ->
-      [%expr fun x -> Format.asprintf "%a" (fun fmt -> [%e expr_of_typ quoter typ]) x]))
+      [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ quoter typ]) x]))
     ~type_decl_str: (fun ~options ~path type_decls ->
       [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
     ~type_decl_sig: (fun ~options ~path type_decls ->
