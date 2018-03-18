@@ -275,6 +275,19 @@ val make_record :
   record
 ```
 
+The deriving runtime
+--------------------
+
+_deriving_ comes with a small runtime library, the
+`Ppx_deriving_runtime` module, whose purpose is to re-export the
+modules and types of the standard library that code producers rely
+on -- ensuring hygienic code generation.
+
+By emitting code that references to `Ppx_deriving_runtime.Array`
+module instead of just `Array`, plugins ensure that they can be used
+in environments where the `Array` module is redefined with
+incompatible types.
+
 Building ppx drivers
 --------------------
 
