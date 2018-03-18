@@ -95,10 +95,10 @@ module M :
       | FP_infinite
       | FP_nan
     val pp_myfpclass : Format.formatter -> fpclass -> unit
-    val show_myfpclass : fpclass -> bytes
+    val show_myfpclass : fpclass -> string
   end
 # M.show_myfpclass FP_normal;;
-- : bytes = "FP_normal"
+- : string = "FP_normal"
 ```
 
 The module is used to demonstrate that `show_myfpclass` really accepts `Pervasives.fpclass`, and not just `M.myfpclass`.
@@ -127,9 +127,9 @@ _show_ derives a function that inspects a value; that is, pretty-prints it with 
 # type t = [ `A | `B of int ] [@@deriving show];;
 type t = [ `A | `B of i ]
 val pp : Format.formatter -> [< `A | `B of i ] -> unit = <fun>
-val show : [< `A | `B of i ] -> bytes = <fun>
+val show : [< `A | `B of i ] -> string = <fun>
 # show (`B 1);;
-- : bytes = "`B (1)"
+- : string = "`B (1)"
 ```
 
 For an abstract type `ty`, _show_ expects to find a `pp_ty` function in the corresponding module.
@@ -142,7 +142,7 @@ _show_ allows to specify custom formatters for types to override default behavio
   perm : int     [@printer fun fmt -> fprintf fmt "0o%03o"];
 } [@@deriving show];;
 # show_file { name = "dir"; perm = 0o755 };;
-- : bytes = "{ name = \"dir\"; perm = 0o755 }"
+- : string = "{ name = \"dir\"; perm = 0o755 }"
 ```
 
 It is also possible to use `[@polyprinter]`. The difference is that for a type `int list`, `[@printer]` should have a signature `formatter -> int list -> unit`, and for `[@polyprinter]` it's `('a -> formatter -> unit) -> formatter -> 'a list -> unit`.
@@ -156,7 +156,7 @@ By default all constructors are printed with prefix which is dot-separated filen
 # module X = struct type t = C [@@deriving show] end;;
 ...
 # X.(show C);;
-- : Ppx_deriving_runtime.string = "X.C"
+- : string = "X.C"
 ```
 
 This code will create printers which return the string `X.C`, `X` is a module path and `C` is a constructor name. File's name is omitted in the toplevel. To skip all module paths the one needs to derive show with option `with_path` (which defaults to `true`)
@@ -165,7 +165,7 @@ This code will create printers which return the string `X.C`, `X` is a module pa
 # module X = struct type t = C [@@deriving show { with_path = false }] end;;
 ...
 # X.(show C);;
-- : Ppx_deriving_runtime.string = "C"
+- : string = "C"
 ```
 
 
