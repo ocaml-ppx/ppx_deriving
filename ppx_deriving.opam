@@ -1,0 +1,28 @@
+opam-version: "1.2"
+maintainer: "whitequark <whitequark@whitequark.org>"
+authors: [ "whitequark <whitequark@whitequark.org>" ]
+license: "MIT"
+homepage: "https://github.com/whitequark/ppx_deriving"
+doc: "https://whitequark.github.io/ppx_deriving"
+bug-reports: "https://github.com/whitequark/ppx_deriving/issues"
+dev-repo: "https://github.com/whitequark/ppx_deriving.git"
+tags: [ "syntax" ]
+build: [
+  ["jbuilder" "subst" "-n" name] {pinned}
+  ["jbuilder" "build" "-p" name "-j" jobs]
+]
+build-test: [["jbuilder" "runtest" "-p" name "-j" jobs]]
+build-doc: [
+  ["jbuilder" "build" "@doc" "-p" name "-j" jobs]
+]
+depends: [
+  "jbuilder" {build}
+  "cppo"     {build}
+  "ppxfind"  {build}
+  "ocaml-migrate-parsetree"
+  "ppx_derivers"
+  "ppx_tools"  {>= "4.02.3"}
+  "result"
+  "ounit"      {test}
+]
+available: [ ocaml-version >= "4.03.0" & opam-version >= "1.2" ]
