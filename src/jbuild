@@ -1,0 +1,35 @@
+(jbuild_version 1)
+
+(rule
+ ((deps (ppx_deriving.cppo.ml))
+  (targets (ppx_deriving.ml))
+  (action (run ${bin:cppo} -V OCAML:${ocaml_version} ${<} -o ${@}))))
+
+(rule
+ ((deps (ppx_deriving.cppo.mli))
+  (targets (ppx_deriving.mli))
+  (action (run ${bin:cppo} -V OCAML:${ocaml_version} ${<} -o ${@}))))
+
+(library
+ ((name ppx_deriving_runtime)
+  (public_name ppx_deriving.runtime)
+  (wrapped false)
+  (synopsis "Type-driven code generation")
+  (libraries (result))
+  (modules (ppx_deriving_runtime))))
+
+(library
+ ((name ppx_deriving_api)
+  (public_name ppx_deriving.api)
+  (synopsis "Plugin API for ppx_deriving")
+  (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp ${<})))
+  (wrapped false)
+  (modules (ppx_deriving))
+  (ppx_runtime_libraries (ppx_deriving_runtime))
+  (libraries
+   (dynlink
+    compiler-libs.common
+    ppx_tools
+    result
+    ppx_derivers
+    ocaml-migrate-parsetree))))
