@@ -25,15 +25,6 @@ let test_hash_variant ctxt =
     assert_equal (Btype.hash_variant x) (Ppx_deriving.hash_variant x))
 
 let suite = "Test ppx_deriving" >::: [
-    Test_deriving_show.suite;
-    Test_deriving_eq.suite;
-    Test_deriving_ord.suite;
-    Test_deriving_enum.suite;
-    Test_deriving_iter.suite;
-    Test_deriving_map.suite;
-    Test_deriving_fold.suite;
-    Test_deriving_create.suite;
-    Test_deriving_make.suite;
     "test_inline"           >:: test_inline;
     "test_inline_shorthand" >:: test_inline_shorthand;
   ]

@@ -54,3 +54,5 @@ let suite = "Test deriving(create)" >::: [
     "test_no_main" >:: test_no_main;
     "test_main"    >:: test_main;
   ]
+
+let _ = run_test_tt_main suite

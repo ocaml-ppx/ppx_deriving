@@ -73,3 +73,5 @@ let suite = "Test deriving(iter)" >::: [
   "test_reflist" >:: test_reflist;
   "test_iter_res" >:: test_iter_res
 ]
+
+let _ = run_test_tt_main suite

@@ -46,3 +46,5 @@ let suite = "Test deriving(fold)" >::: [
   "test_result_result" >:: test_result_result;
   "test_reflist" >:: test_reflist;
 ]
+
+let _ = run_test_tt_main suite

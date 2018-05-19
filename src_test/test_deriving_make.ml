@@ -70,3 +70,5 @@ let suite = "Test deriving(make)" >::: [
     "test_main"    >:: test_main;
     "test_no_unit" >:: test_no_unit
   ]
+
+let _ = run_test_tt_main suite

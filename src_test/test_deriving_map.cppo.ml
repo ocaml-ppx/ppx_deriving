@@ -178,3 +178,4 @@ let suite = "Test deriving(map)" >::: [
   ]
 
 
+let _ = run_test_tt_main suite
