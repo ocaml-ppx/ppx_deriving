@@ -25,7 +25,6 @@
  (modules ppx_deriving)
  (ppx_runtime_libraries ppx_deriving_runtime)
  (libraries
-   dynlink
    compiler-libs.common
    ppx_tools
    result
