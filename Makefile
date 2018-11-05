@@ -1,19 +1,19 @@
 build:
-	jbuilder build
+	dune build
 
 test:
-	jbuilder runtest
+	dune runtest
 
 examples:
-	jbuilder build @examples
+	dune build @examples
 
 doc:
-	jbuilder build @doc
+	dune build @doc
 
 clean:
-	jbuilder clean
+	dune clean
 
 all-supported-ocaml-versions:
-	jbuilder build @install @runtest --workspace jbuild-workspace.dev
+	dune build @install @runtest --workspace dune-workspace.dev
 
 .PHONY: build test doc clean examples all-supported-ocaml-versions
