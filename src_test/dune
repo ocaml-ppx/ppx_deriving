@@ -7,7 +7,7 @@
  (name test_deriving_show)
  (modules test_deriving_show)
  (libraries oUnit)
- (preprocess (pps ppx_deriving.show)))
+ (preprocess (pps ppxlib ppx_deriving.show)))
 
 (alias
  (name runtest)
@@ -58,7 +58,7 @@
  (name test_deriving_fold)
  (modules test_deriving_fold)
  (libraries oUnit)
- (preprocess (pps ppx_deriving.fold ppx_deriving.show)))
+ (preprocess (pps ppxlib.runner ppx_deriving.fold)))
 
 (alias
  (name runtest)
@@ -115,7 +115,7 @@
  (name test_deriving_ord)
  (modules test_deriving_ord)
  (libraries oUnit)
- (preprocess (pps ppx_deriving.ord ppx_deriving.show)))
+ (preprocess (pps ppx_deriving.ord)))
 
 (alias
  (name runtest)
