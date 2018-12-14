@@ -8,7 +8,8 @@
  (public_name ppx_deriving.show)
  (synopsis "[@@deriving show]")
  (modules ppx_deriving_show)
- (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file})))
+ (preprocess
+  (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file})))
  (libraries compiler-libs.common ppx_tools ppx_deriving.api)
  (kind ppx_deriver))
 
@@ -22,7 +23,8 @@
  (public_name ppx_deriving.create)
  (synopsis "[@@deriving create]")
  (modules ppx_deriving_create)
- (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{deps})))
+ (preprocess
+  (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file})))
  (libraries compiler-libs.common ppx_tools ppx_deriving.api)
  (kind ppx_deriver))
 
@@ -36,7 +38,8 @@
  (public_name ppx_deriving.enum)
  (synopsis "[@@deriving enum]")
  (modules ppx_deriving_enum)
- (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{deps})))
+ (preprocess
+  (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file})))
  (libraries compiler-libs.common ppx_tools ppx_deriving.api)
  (kind ppx_deriver))
 
@@ -50,7 +53,8 @@
  (public_name ppx_deriving.eq)
  (synopsis "[@@deriving eq]")
  (modules ppx_deriving_eq)
- (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{deps})))
+ (preprocess
+  (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file})))
  (libraries compiler-libs.common ppx_tools ppx_deriving.api)
  (kind ppx_deriver))
 
@@ -64,7 +68,8 @@
  (public_name ppx_deriving.fold)
  (synopsis "[@@deriving fold]")
  (modules ppx_deriving_fold)
- (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{deps})))
+ (preprocess
+  (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file})))
  (libraries compiler-libs.common ppx_tools ppx_deriving.api)
  (kind ppx_deriver))
 
@@ -78,7 +83,8 @@
  (public_name ppx_deriving.iter)
  (synopsis "[@@deriving iter]")
  (modules ppx_deriving_iter)
- (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{deps})))
+ (preprocess
+  (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file})))
  (libraries compiler-libs.common ppx_tools ppx_deriving.api)
  (kind ppx_deriver))
 
@@ -92,7 +98,8 @@
  (public_name ppx_deriving.make)
  (synopsis "[@@deriving make]")
  (modules ppx_deriving_make)
- (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{deps})))
+ (preprocess
+  (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file})))
  (libraries compiler-libs.common ppx_tools ppx_deriving.api)
  (kind ppx_deriver))
 
@@ -106,7 +113,8 @@
  (public_name ppx_deriving.map)
  (synopsis "[@@deriving map]")
  (modules ppx_deriving_map)
- (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{deps})))
+ (preprocess
+  (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file})))
  (libraries compiler-libs.common ppx_tools ppx_deriving.api)
  (kind ppx_deriver))
 
@@ -120,7 +128,8 @@
  (public_name ppx_deriving.ord)
  (synopsis "[@@deriving ord]")
  (modules ppx_deriving_ord)
- (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{deps})))
+ (preprocess
+  (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file})))
  (libraries compiler-libs.common ppx_tools ppx_deriving.api)
  (kind ppx_deriver))
 
