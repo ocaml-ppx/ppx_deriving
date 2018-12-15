@@ -16,7 +16,7 @@ build-doc: [
   ["dune" "build" "@doc" "-p" name "-j" jobs]
 ]
 depends: [
-  "dune"     {build}
+  "dune"     {build >= "1.0.0"}
   "cppo"     {build}
   "ppxfind"  {build}
   "ocaml-migrate-parsetree"
