@@ -9,6 +9,7 @@ package "runtime" (
   description = "Runtime component of built-in derivers"
   archive(byte) = "ppx_deriving_runtime.cma"
   archive(native) = "ppx_deriving_runtime.cmxa"
+  plugin(native) = "ppx_deriving_runtime.cmxs"
   exists_if = "ppx_deriving_runtime.cma"
 )
 
