@@ -86,7 +86,7 @@ let create =
     raise_errorf "Type declarations in structures not supported by deriver %s" name
   in
   let def_decl_sig name ~options ~path typ_decl =
-    raise_errorf "Type declaratons in signatures not supported by deriver %s" name
+    raise_errorf "Type declarations in signatures not supported by deriver %s" name
   in
   let def_module_type_decl_str name ~options ~path module_type_decl =
     raise_errorf "Module type declarations in structures not supported by \
