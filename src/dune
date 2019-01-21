@@ -8,6 +8,11 @@
  (targets ppx_deriving.mli)
  (action (run %{bin:cppo} -V OCAML:%{ocaml_version} %{deps} -o %{targets})))
 
+(rule
+ (deps ppx_deriving_main.cppo.ml)
+ (targets ppx_deriving_main.ml)
+ (action (run %{bin:cppo} -V OCAML:%{ocaml_version} %{deps} -o %{targets})))
+
 (library
  (name ppx_deriving_runtime)
  (public_name ppx_deriving.runtime)
@@ -30,3 +35,14 @@
    result
    ppx_derivers
    ocaml-migrate-parsetree))
+
+(executable
+ (name ppx_deriving_main)
+ (modules ppx_deriving_main)
+ (libraries ppx_deriving_api findlib.dynload compiler-libs.common)
+ (link_flags :standard -linkall)
+ (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file}))))
+
+(install
+ (section libexec)
+ (files (ppx_deriving_main.exe as ppx_deriving)))
