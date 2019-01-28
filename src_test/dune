@@ -7,7 +7,7 @@
  (name test_deriving_show)
  (modules test_deriving_show)
  (libraries oUnit)
- (preprocess (pps ppxlib ppx_deriving.show)))
+ (preprocess (pps ppx_deriving.show)))
 
 (test
  (name test_deriving_create)
@@ -41,7 +41,7 @@
  (name test_deriving_fold)
  (modules test_deriving_fold)
  (libraries oUnit)
- (preprocess (pps ppxlib.runner ppx_deriving.fold)))
+ (preprocess (pps ppx_deriving.fold)))
 
 (rule
  (deps test_deriving_iter.cppo.ml)
