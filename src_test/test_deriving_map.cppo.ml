@@ -1,7 +1,7 @@
 open OUnit2
 
 module T : sig
-  
+
   type 'a btree = Node of 'a btree * 'a * 'a btree | Leaf
   [@@deriving map, show]
 
@@ -90,17 +90,17 @@ let test_btree ctxt =
 let test_var0 ctxt =
   assert_equal ~printer:show_var0 (A0 10) (map_var0 (A0 10))
 
-let test_var1 ctxt = 
+let test_var1 ctxt =
   assert_equal ~printer:(show_var1 fmt_int) (A1 1) (map_var1 ((+)1) (A1 0));
   assert_equal ~printer:(show_var1 fmt_str) (A1 "2") (map_var1 string_of_int (A1 2))
 
-let test_var2 ctxt = 
+let test_var2 ctxt =
   assert_equal ~printer:(show_var2 fmt_int) (B2 7) (map_var2 ((+)1) (B2 7));
   assert_equal ~printer:(show_var2 fmt_int) (A2 5) (map_var2 ((+)1) (A2 4));
   assert_equal ~printer:(show_var2 fmt_int) (A2 5) (map_var2 int_of_float (A2 5.))
 
-let test_var3 ctxt = 
-  let show,map = show_var3 fmt_int fmt_str, map_var3 ((+)1) String.uppercase in
+let test_var3 ctxt =
+  let show,map = show_var3 fmt_int fmt_str, map_var3 ((+)1) String.uppercase_ascii in
   assert_equal ~printer:show (A3 2) (map (A3 1));
   assert_equal ~printer:show (B3 false) (map (B3 false));
   assert_equal ~printer:show (C3("ABC", A3 3)) (map (C3("abc", A3 2)));
@@ -111,25 +111,25 @@ let test_var3 ctxt =
   assert_equal ~printer:show (C3(4., A3 98)) (map (C3(4, A3 'b')));
   assert_equal ~printer:show (C3(5., B3 true)) (map (C3(5, B3 true)))
 
-let test_record0 ctxt = 
+let test_record0 ctxt =
   assert_equal ~printer:show_record0 {a0=10} (map_record0 {a0=10})
 
-let test_record1 ctxt = 
+let test_record1 ctxt =
   assert_equal ~printer:(show_record1 fmt_int) {a1=1} (map_record1 ((+)1) {a1=0});
   assert_equal ~printer:(show_record1 fmt_str) {a1="2"} (map_record1 string_of_int {a1=2})
 
-let test_record2 ctxt = 
+let test_record2 ctxt =
   assert_equal ~printer:(show_record2 fmt_int) {a2=5;b2=7} (map_record2 ((+)1) {a2=4;b2=7});
   assert_equal ~printer:(show_record2 fmt_int) {a2=5;b2=0} (map_record2 int_of_float {a2=5.;b2=0})
 
-let test_record3 ctxt = 
+let test_record3 ctxt =
   assert_equal ~printer:(show_record3 fmt_int fmt_str)
-    {a3=5;b3=false;c3="ABC"} (map_record3 ((+)1) String.uppercase {a3=4;b3=false;c3="abc"});
+    {a3=5;b3=false;c3="ABC"} (map_record3 ((+)1) String.uppercase_ascii {a3=4;b3=false;c3="abc"});
   assert_equal ~printer:(show_record3 fmt_int fmt_flt)
     {a3=97;b3=false;c3=4.} (map_record3 Char.code float_of_int {a3='a';b3=false;c3=4})
 
-let test_pvar3 ctxt = 
-  let show,map = show_pvar3 fmt_str fmt_int fmt_int, 
+let test_pvar3 ctxt =
+  let show,map = show_pvar3 fmt_str fmt_int fmt_int,
                  map_pvar3 string_of_int Char.code int_of_string
   in
   assert_equal ~printer:show (`A "1") (map (`A 1));
