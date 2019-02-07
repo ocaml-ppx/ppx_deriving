@@ -1,4 +1,4 @@
-opam-version: "1.2"
+opam-version: "2.0"
 name: "ppx_deriving"
 version: "4.2.1"
 maintainer: "whitequark <whitequark@whitequark.org>"
@@ -7,21 +7,20 @@ license: "MIT"
 homepage: "https://github.com/whitequark/ppx_deriving"
 doc: "https://whitequark.github.io/ppx_deriving"
 bug-reports: "https://github.com/whitequark/ppx_deriving/issues"
-dev-repo: "https://github.com/whitequark/ppx_deriving.git"
+dev-repo: "git://github.com/whitequark/ppx_deriving.git"
 tags: [ "syntax" ]
 substs: [ "pkg/META" ]
 build: [
   # If there is no native dynlink, we can't use native builds
-  "ocaml" "pkg/build.ml" "native=%{ocaml-native-dynlink}%"
-                         "native-dynlink=%{ocaml-native-dynlink}%"
+  ["ocaml" "pkg/build.ml" "native=%{ocaml-native-dynlink}%"
+                         "native-dynlink=%{ocaml-native-dynlink}%"]
+  [make "doc"] {with-doc}
 ]
-build-test: [
+run-test: [
   "ocamlbuild" "-classic-display" "-use-ocamlfind" "src_test/test_ppx_deriving.byte" "--"
 ]
-build-doc: [
-  make "doc"
-]
 depends: [
+  "ocaml" {>= "4.02.1"}
   "ocamlbuild" {build}
   "ocamlfind"  {build & >= "1.6.0"}
   "cppo"       {build}
@@ -30,6 +29,5 @@ depends: [
   "ppx_derivers"
   "ppx_tools"  {>= "4.02.3"}
   "result"
-  "ounit"      {test}
+  "ounit"      {with-test & >= "2.0.0"}
 ]
-available: [ ocaml-version >= "4.02.1" & opam-version >= "1.2" ]
