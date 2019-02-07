@@ -31,3 +31,9 @@ depends: [
   "result"
   "ounit"      {with-test & >= "2.0.0"}
 ]
+synopsis: "Type-driven code generation for OCaml >=4.02"
+description: """
+ppx_deriving provides common infrastructure for generating
+code based on type definitions, and a set of useful plugins
+for common tasks.
+"""
