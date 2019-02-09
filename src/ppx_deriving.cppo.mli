@@ -182,7 +182,7 @@ val quote : quoter:quoter -> expression -> expression
 (** [sanitize module_ quoter expr] wraps [expr] in a way that ensures that the
     contents of [module_] and {!Pervasives}, as well as the identifiers in
     expressions returned by [quote] are in scope, and returns the wrapped
-    expression. [module_] defaults to !{Ppx_deriving_runtime} if it's not
+    expression. [module_] defaults to {!Ppx_deriving_runtime} if it's not
     provided*)
 val sanitize : ?module_:Longident.t -> ?quoter:quoter -> expression -> expression
 
