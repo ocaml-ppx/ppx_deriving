@@ -195,3 +195,5 @@ let suite = "Test deriving(ord)" >::: [
 #endif
     "test_ord_result_result" >:: test_ord_result_result;
   ]
+
+let _ = run_test_tt_main suite

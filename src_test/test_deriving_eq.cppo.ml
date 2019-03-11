@@ -165,3 +165,4 @@ let suite = "Test deriving(eq)" >::: [
     "test_result_result" >:: test_result_result;
   ]
 
+let _ = run_test_tt_main suite
