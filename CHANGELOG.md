@@ -13,6 +13,9 @@ NEXT_RELEASE
 * use dune
   #170
   (Rudi Grinberg, Jérémie Dimino)
+* silence an unused-value warning for show
+  #179
+  (Nathan Rebours)
 
 4.2.1
 -----
