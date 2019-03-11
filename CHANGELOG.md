@@ -10,6 +10,9 @@ NEXT_RELEASE
 * silence a ambiguous-field warning (41) in generated code
   #163
   (Étienne Millon, review by Gabriel Scherer)
+* use dune
+  #170
+  (Rudi Grinberg, Jérémie Dimino)
 
 4.2.1
 -----
