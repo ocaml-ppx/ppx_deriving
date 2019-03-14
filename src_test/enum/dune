@@ -1,0 +1,4 @@
+(test
+ (name test_deriving_enum)
+ (libraries oUnit)
+ (preprocess (pps ppx_deriving.enum ppx_deriving.show)))
