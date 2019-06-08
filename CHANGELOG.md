@@ -1,6 +1,13 @@
 Changelog
 =========
 
+NEXT RELEASE
+------------
+
+* Restore support for OCaml 4.02.3
+  #188
+  (ELLIOTTCABLE)
+
 4.3
 ---
 
