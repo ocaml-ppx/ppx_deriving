@@ -1,8 +1,8 @@
 Changelog
 =========
 
-NEXT_RELEASE
-------------
+4.3
+---
 
 * use Format through Ppx_deriving_runtime to avoid deprecation warning
   for users of JaneStreet Base
