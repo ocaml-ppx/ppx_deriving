@@ -266,9 +266,11 @@ let attr ~deriver name attrs =
 
 let attr_nobuiltin ~deriver attrs =
   attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver
+
 let rec remove_pervasive_lid = function
   | Lident _ as lid -> lid
   | Ldot (Lident "Pervasives", s) -> Lident s
+  | Ldot (Lident "Stdlib", s) -> Lident s
   | Ldot (lid, s) -> Ldot (remove_pervasive_lid lid, s)
   | Lapply (lid, lid2) ->
     Lapply (remove_pervasive_lid lid, remove_pervasive_lid lid2)
