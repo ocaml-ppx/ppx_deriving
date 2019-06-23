@@ -70,9 +70,9 @@ let lookup name =
   | Some (Internal d) -> Some d
   | Some (External _) | None -> None
 
-let raise_errorf ?sub ?if_highlight ?loc message =
+let raise_errorf ?sub ?loc message =
   message |> Printf.kprintf (fun str ->
-    let err = Location.error ?sub ?if_highlight ?loc str in
+    let err = Location.error ?sub ?loc str in
     raise (Location.Error err))
 
 let create =
