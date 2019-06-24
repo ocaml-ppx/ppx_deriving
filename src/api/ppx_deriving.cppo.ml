@@ -84,10 +84,18 @@ let lookup name =
   | Some (Internal d) -> Some d
   | Some (External _) | None -> None
 
-let raise_errorf ?sub ?loc message =
-  message |> Printf.kprintf (fun str ->
+let raise_errorf ?sub ?loc fmt =
+  let raise_msg str =
+#if OCAML_VERSION >= (4, 08, 0)
+    let sub =
+      let msg_of_error err =
+        { txt = (fun fmt -> Location.print_report fmt err);
+          loc = err.Location.main.loc } in
+      Option.map (List.map msg_of_error) sub in
+#endif
     let err = Location.error ?sub ?loc str in
-    raise (Location.Error err))
+    raise (Location.Error err) in
+  Printf.kprintf raise_msg fmt
 
 let create =
   let def_ext_str name ~options ~path typ_ext =
