@@ -19,6 +19,14 @@
                                               attr_loc = _ }
 #endif
 
+#if OCAML_VERSION < (4, 08, 0)
+#define Rtag_patt(label, constant, args) Rtag(label, _, constant, args)
+#define Rinherit_patt(typ) Rinherit(typ)
+#else
+#define Rtag_patt(label, constant, args) {prf_desc = Rtag(label, constant, args); _}
+#define Rinherit_patt(typ) {prf_desc = Rinherit(typ); _}
+#endif
+
 open Longident
 open Location
 open Asttypes
@@ -385,8 +393,8 @@ let free_vars_in_core_type typ =
       List.filter (fun y -> not (List.mem y bound)) (free_in x)
     | { ptyp_desc = Ptyp_variant (rows, _, _) } ->
       List.map (
-          function Rtag (_,_,_,ts) -> List.map free_in ts
-                 | Rinherit t -> [free_in t]
+          function Rtag_patt(_,_,ts) -> List.map free_in ts
+                 | Rinherit_patt(t) -> [free_in t]
         ) rows |> List.concat |> List.concat
     | _ -> assert false
   in

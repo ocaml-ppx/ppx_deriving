@@ -1,6 +1,4 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pcstr_tuple(core_types) core_types
-#endif
+#include "../compat_macros.cppo"
 
 open Longident
 open Location
@@ -140,12 +138,12 @@ and expr_of_typ quoter typ =
         fields |> List.map (fun field ->
           let pdup f = ptuple [f "lhs"; f "rhs"] in
           match field with
-          | Rtag (label, _, true (*empty*), []) ->
+          | Rtag_patt(label, true (*empty*), []) ->
             Exp.case (pdup (fun _ -> variant label None)) [%expr 0]
-          | Rtag (label, _, false, [typ]) ->
+          | Rtag_patt(label, false, [typ]) ->
             Exp.case (pdup (fun var -> variant label (Some (pvar var))))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
-          | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
+          | Rinherit_patt({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case (pdup (fun var -> Pat.alias (Pat.type_ tname) (mknoloc var)))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
           | _ ->
@@ -155,11 +153,11 @@ and expr_of_typ quoter typ =
       let int_cases =
         fields |> List.mapi (fun i field ->
           match field with
-          | Rtag (label, _, true (*empty*), []) ->
+          | Rtag_patt(label, true (*empty*), []) ->
             Exp.case (variant label None) (int i)
-          | Rtag (label, _, false, [typ]) ->
+          | Rtag_patt(label, false, [typ]) ->
             Exp.case (variant label (Some [%pat? _])) (int i)
-          | Rinherit { ptyp_desc = Ptyp_constr (tname, []) } ->
+          | Rinherit_patt({ ptyp_desc = Ptyp_constr (tname, []) }) ->
             Exp.case (Pat.type_ tname) (int i)
           | _ -> assert false)
       in
