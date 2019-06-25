@@ -10,6 +10,7 @@ module T : sig
   [@@deriving iter]
 
   type 'a reflist = 'a Pervasives.ref list
+  [@@ocaml.warning "-3"]
   [@@deriving iter]
 
 end = struct
@@ -21,6 +22,7 @@ end = struct
   [@@deriving iter]
 
   type 'a reflist = 'a Pervasives.ref list
+  [@@ocaml.warning "-3"]
   [@@deriving iter]
 
 end
