@@ -14,7 +14,19 @@ type nonrec int64 = int64
 type nonrec 'a lazy_t = 'a lazy_t
 type nonrec bytes = bytes
 
+#if OCAML_VERSION >= (4, 08, 0)
+(* We require 4.08 while 4.07 already has a Stdlib module.
+   In 4.07, the type equalities on Stdlib.Pervasives
+   are not strong enough for the 'include Stdlib'
+   below to satisfy the signature constraints on
+   Ppx_deriving_runtime.Pervasives. *)
+module Stdlib = Stdlib
+
+include Stdlib
+#else
 module Pervasives = Pervasives
+module Stdlib = Pervasives
+
 module Char = Char
 module String = String
 module Printexc = Printexc
@@ -36,6 +48,18 @@ module Weak = Weak
 module Printf = Printf
 module Format = Format
 module Buffer = Buffer
-module Result = Result
+module Result = struct
+  (* the "result" compatibility module defines Result.result,
+     not Result.t as the 4.08 stdlib *)
+  type ('a, 'b) t = ('a, 'b) Result.result =
+    | Ok of 'a
+    | Error of 'b
+
+  (* ... and we also expose Result.result for backward-compatibility *)
+  type ('a, 'b) result = ('a, 'b) Result.result =
+    | Ok of 'a
+    | Error of 'b
+end
 
 include Pervasives
+#endif

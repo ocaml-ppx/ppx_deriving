@@ -22,6 +22,18 @@ type nonrec bytes = bytes
 (** {2 Predefined modules}
     {3 Operations on predefined types} *)
 
+#if OCAML_VERSION >= (4, 08, 0)
+include (module type of Stdlib with
+  type fpclass = Stdlib.fpclass and
+  type in_channel = Stdlib.in_channel and
+  type out_channel = Stdlib.out_channel and
+  type open_flag = Stdlib.open_flag and
+  type 'a ref = 'a Stdlib.ref and
+  type ('a, 'b, 'c, 'd, 'e, 'f) format6 = ('a, 'b, 'c, 'd, 'e, 'f) Stdlib.format6 and
+  type ('a, 'b, 'c, 'd) format4 = ('a, 'b, 'c, 'd) Stdlib.format4 and
+  type ('a, 'b, 'c) format = ('a, 'b, 'c) Stdlib.format
+)
+#else
 module Pervasives : (module type of Pervasives with
   type fpclass = Pervasives.fpclass and
   type in_channel = Pervasives.in_channel and
@@ -31,6 +43,9 @@ module Pervasives : (module type of Pervasives with
   type ('a, 'b, 'c, 'd, 'e, 'f) format6 = ('a, 'b, 'c, 'd, 'e, 'f) Pervasives.format6 and
   type ('a, 'b, 'c, 'd) format4 = ('a, 'b, 'c, 'd) Pervasives.format4 and
   type ('a, 'b, 'c) format = ('a, 'b, 'c) Pervasives.format)
+
+module Stdlib = Pervasives
+
 include (module type of Pervasives with
   type fpclass = Pervasives.fpclass and
   type in_channel = Pervasives.in_channel and
@@ -71,7 +86,7 @@ module Weak : (module type of Weak with
 module Buffer : (module type of Buffer with
   type t = Buffer.t)
 module Result : sig
-  type ('a, 'b) result = ('a, 'b) Result.result =
+  type ('a, 'b) t = ('a, 'b) Result.result =
     | Ok of 'a
     | Error of 'b
 end
@@ -83,3 +98,4 @@ module Format : (module type of Format with
   type formatter_out_functions = Format.formatter_out_functions and
   type formatter_tag_functions = Format.formatter_tag_functions and
   type formatter = Format.formatter)
+#endif
