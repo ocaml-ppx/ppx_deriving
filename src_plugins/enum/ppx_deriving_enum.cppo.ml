@@ -1,6 +1,4 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pcstr_tuple(core_types) core_types
-#endif
+#include "../compat_macros.cppo"
 
 open Longident
 open Location
@@ -41,19 +39,36 @@ let mappings_of_type type_decl =
     | Ptype_abstract, Some { ptyp_desc = Ptyp_variant (constrs, Closed, None); ptyp_loc } ->
       `Polymorphic,
       List.fold_left (fun (acc, mappings) row_field ->
-          (* TODO: use row_field location instead of ptyp_loc when fixed in Parsetree *)
+          let error_inherit loc =
+            raise_errorf ~loc:ptyp_loc
+                         "%s cannot be derived for inherited variant cases"
+                         deriver
+          in
+          let error_arguments loc =
+            raise_errorf ~loc:ptyp_loc
+                         "%s can be derived only for argumentless constructors"
+                         deriver
+          in
+#if OCAML_VERSION < (4, 08, 0)
+          let loc = ptyp_loc in
           match row_field with
-          | Rinherit _ ->
-            raise_errorf ~loc:ptyp_loc
-                         "%s cannot be derived for inherited variant cases" deriver
+          | Rinherit _ -> error_inherit loc
           | Rtag (name, attrs, true, []) ->
-#if OCAML_VERSION < (4, 06, 0)
-            let name = mkloc name ptyp_loc in
-#endif
+  #if OCAML_VERSION < (4, 06, 0)
+            let name = mkloc name loc in
+  #endif
             map acc mappings attrs name
-          | Rtag _ ->
-            raise_errorf ~loc:ptyp_loc
-                         "%s can be derived only for argumentless constructors" deriver)
+          | Rtag _ -> error_arguments loc
+#else
+          let loc = row_field.prf_loc in
+          let attrs = row_field.prf_attributes in
+          match row_field.prf_desc with
+          | Rinherit _ -> error_inherit loc
+          | Rtag (name, true, []) ->
+            map acc mappings attrs name
+          | Rtag _ -> error_arguments loc
+#endif
+)
         (0, []) constrs
     | _ -> raise_errorf ~loc:type_decl.ptype_loc
                         "%s can be derived only for variants" deriver

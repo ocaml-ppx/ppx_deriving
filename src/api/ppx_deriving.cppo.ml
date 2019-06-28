@@ -5,6 +5,28 @@
 #define Psig_type(rec_flag, type_decls) Psig_type(type_decls)
 #endif
 
+#if OCAML_VERSION < (4, 08, 0)
+#define Attribute_expr(loc_, txt_, payload) ({txt = txt_; loc = loc_}, payload)
+#define Attribute_patt(loc_, txt_, payload) ({txt = txt_; loc = loc_}, payload)
+#else
+#define Attribute_expr(loc_, txt_, payload) { attr_name = \
+                                                { txt = txt_; loc = loc_ }; \
+                                              attr_payload = payload; \
+                                              attr_loc = loc_ }
+#define Attribute_patt(loc_, txt_, payload) { attr_name = \
+                                               { txt = txt_; loc = loc_ }; \
+                                              attr_payload = payload; \
+                                              attr_loc = _ }
+#endif
+
+#if OCAML_VERSION < (4, 08, 0)
+#define Rtag_patt(label, constant, args) Rtag(label, _, constant, args)
+#define Rinherit_patt(typ) Rinherit(typ)
+#else
+#define Rtag_patt(label, constant, args) {prf_desc = Rtag(label, constant, args); _}
+#define Rinherit_patt(typ) {prf_desc = Rinherit(typ); _}
+#endif
+
 open Longident
 open Location
 open Asttypes
@@ -70,10 +92,18 @@ let lookup name =
   | Some (Internal d) -> Some d
   | Some (External _) | None -> None
 
-let raise_errorf ?sub ?if_highlight ?loc message =
-  message |> Printf.kprintf (fun str ->
-    let err = Location.error ?sub ?if_highlight ?loc str in
-    raise (Location.Error err))
+let raise_errorf ?sub ?loc fmt =
+  let raise_msg str =
+#if OCAML_VERSION >= (4, 08, 0)
+    let sub =
+      let msg_of_error err =
+        { txt = (fun fmt -> Location.print_report fmt err);
+          loc = err.Location.main.loc } in
+      Option.map (List.map msg_of_error) sub in
+#endif
+    let err = Location.error ?sub ?loc str in
+    raise (Location.Error err) in
+  Printf.kprintf raise_msg fmt
 
 let create =
   let def_ext_str name ~options ~path typ_ext =
@@ -163,20 +193,21 @@ module Arg = struct
   let get_attr ~deriver conv attr =
     match attr with
     | None -> None
-    | Some ({ txt = name }, PStr [{ pstr_desc = Pstr_eval (expr, []) }]) ->
+    | Some (Attribute_patt(loc, name,
+                           PStr [{ pstr_desc = Pstr_eval (expr, []) }])) ->
       begin match conv expr with
       | Ok v -> Some v
       | Error desc ->
         raise_errorf ~loc:expr.pexp_loc "%s: invalid [@%s]: %s expected" deriver name desc
       end
-    | Some ({ txt = name; loc }, _) ->
+    | Some (Attribute_patt(loc, name, _)) ->
       raise_errorf ~loc "%s: invalid [@%s]: value expected" deriver name
 
   let get_flag ~deriver attr =
     match attr with
     | None -> false
-    | Some ({ txt = name }, PStr []) -> true
-    | Some ({ txt = name; loc }, _) ->
+    | Some (Attribute_patt(_loc, name, PStr [])) -> true
+    | Some (Attribute_patt(loc, name, _)) ->
       raise_errorf ~loc "%s: invalid [@%s]: empty structure expected" deriver name
 
   let get_expr ~deriver conv expr =
@@ -188,7 +219,7 @@ end
 let attr_warning expr =
   let loc = !default_loc in
   let structure = {pstr_desc = Pstr_eval (expr, []); pstr_loc = loc} in
-  {txt = "ocaml.warning"; loc}, PStr [structure]
+  Attribute_expr(loc, "ocaml.warning", PStr [structure])
 
 type quoter = {
   mutable next_id : int;
@@ -205,9 +236,16 @@ let quote ~quoter expr =
 
 let sanitize ?(module_=Lident "Ppx_deriving_runtime") ?(quoter=create_quoter ()) expr =
   let body =
-    Exp.open_
-      ~attrs:[attr_warning [%expr "-A"]]
-      Override { txt=module_; loc=(!Ast_helper.default_loc) } expr in
+    let loc = !Ast_helper.default_loc in
+    let attrs = [attr_warning [%expr "-A"]] in
+    let modname = { txt = module_; loc } in
+    Exp.open_ ~loc ~attrs
+#if OCAML_VERSION < (4, 08, 0)
+      Override modname
+#else
+      (Opn.mk ~loc ~attrs ~override:Override (Mod.ident ~loc ~attrs modname))
+#endif
+      expr in
   match quoter.bindings with
   | [] -> body
   | bindings -> Exp.let_ Nonrecursive bindings body
@@ -247,12 +285,14 @@ let mangle_lid ?fixpoint affix lid =
   | Lapply _    -> assert false
 
 let attr ~deriver name attrs =
-  let starts str prefix =
+  let starts prefix str =
     String.length str >= String.length prefix &&
       String.sub str 0 (String.length prefix) = prefix
   in
+  let attr_starts prefix (Attribute_patt(_loc, txt, _)) = starts prefix txt in
+  let attr_is name (Attribute_patt(_loc, txt, _)) = name = txt in
   let try_prefix prefix f =
-    if List.exists (fun ({ txt }, _) -> starts txt prefix) attrs
+    if List.exists (attr_starts prefix) attrs
     then prefix ^ name
     else f ()
   in
@@ -261,14 +301,16 @@ let attr ~deriver name attrs =
       try_prefix (deriver^".") (fun () ->
         name))
   in
-  try Some (List.find (fun ({ txt }, _) -> txt = name) attrs)
+  try Some (List.find (attr_is name) attrs)
   with Not_found -> None
 
 let attr_nobuiltin ~deriver attrs =
   attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver
+
 let rec remove_pervasive_lid = function
   | Lident _ as lid -> lid
   | Ldot (Lident "Pervasives", s) -> Lident s
+  | Ldot (Lident "Stdlib", s) -> Lident s
   | Ldot (lid, s) -> Ldot (remove_pervasive_lid lid, s)
   | Lapply (lid, lid2) ->
     Lapply (remove_pervasive_lid lid, remove_pervasive_lid lid2)
@@ -351,8 +393,8 @@ let free_vars_in_core_type typ =
       List.filter (fun y -> not (List.mem y bound)) (free_in x)
     | { ptyp_desc = Ptyp_variant (rows, _, _) } ->
       List.map (
-          function Rtag (_,_,_,ts) -> List.map free_in ts
-                 | Rinherit t -> [free_in t]
+          function Rtag_patt(_,_,ts) -> List.map free_in ts
+                 | Rinherit_patt(t) -> [free_in t]
         ) rows |> List.concat |> List.concat
     | _ -> assert false
   in

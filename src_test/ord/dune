@@ -5,5 +5,5 @@
 
 (test
  (name test_deriving_ord)
- (libraries oUnit)
+ (libraries oUnit ppx_deriving.runtime)
  (preprocess (pps ppx_deriving.ord)))

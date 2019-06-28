@@ -1,3 +1,5 @@
+#include "../compat_macros.cppo"
+
 open Longident
 open Location
 open Asttypes

@@ -1,6 +1,4 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pcstr_tuple(core_types) core_types
-#endif
+#include "../compat_macros.cppo"
 
 open Longident
 open Location
@@ -129,12 +127,12 @@ and expr_of_typ quoter typ =
 #endif
           in
           match field with
-          | Rtag (label, _, true (*empty*), []) ->
+          | Rtag_patt(label, true (*empty*), []) ->
             Exp.case (pdup (fun _ -> variant label None)) [%expr true]
-          | Rtag (label, _, false, [typ]) ->
+          | Rtag_patt(label, false, [typ]) ->
             Exp.case (pdup (fun var -> variant label (Some (pvar var))))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
-          | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
+          | Rinherit_patt({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case (pdup (fun var -> Pat.alias (Pat.type_ tname) (mknoloc var)))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
           | _ ->

@@ -5,5 +5,5 @@
 
 (test
  (name test_deriving_map)
- (libraries oUnit)
+ (libraries oUnit ppx_deriving.runtime)
  (preprocess (pps ppx_deriving.map ppx_deriving.show)))

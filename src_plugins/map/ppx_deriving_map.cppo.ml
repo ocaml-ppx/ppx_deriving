@@ -1,6 +1,4 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pcstr_tuple(core_types) core_types
-#endif
+#include "../compat_macros.cppo"
 
 open Longident
 open Location
@@ -74,12 +72,12 @@ let rec expr_of_typ ?decl typ =
 #endif
         in
         match field with
-        | Rtag (label, _, true (*empty*), []) ->
+        | Rtag_patt(label, true (*empty*), []) ->
           Exp.case (pat_variant label None) (exp_variant label None)
-        | Rtag (label, _, false, [typ]) ->
+        | Rtag_patt(label, false, [typ]) ->
           Exp.case (pat_variant label (Some [%pat? x]))
                    (exp_variant label (Some [%expr [%e expr_of_typ ?decl typ] x]))
-        | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) -> begin
+        | Rinherit_patt({ ptyp_desc = Ptyp_constr (tname, _) } as typ) -> begin
           match decl with
           | None -> 
             raise_errorf "inheritance of polymorphic variants not supported"

@@ -1,6 +1,4 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pcstr_tuple(core_types) core_types
-#endif
+#include "../compat_macros.cppo"
 
 open Longident
 open Location
@@ -40,7 +38,7 @@ let reduce_compare l =
 let wildcard_case int_cases =
   Exp.case [%pat? _] [%expr
     let to_int = [%e Exp.function_ int_cases] in
-    Pervasives.compare (to_int lhs) (to_int rhs)]
+    Ppx_deriving_runtime.compare (to_int lhs) (to_int rhs)]
 
 let pattn side typs =
   List.mapi (fun i _ -> pvar (argn side i)) typs
@@ -78,7 +76,7 @@ and expr_of_typ quoter typ =
               | [%type: int64] | [%type: Int64.t] | [%type: nativeint]
               | [%type: Nativeint.t] | [%type: float] | [%type: bool]
               | [%type: char] | [%type: string] | [%type: bytes]) ->
-        let compare_fn = [%expr fun (a:[%t typ]) b -> Pervasives.compare a b] in
+        let compare_fn = [%expr fun (a:[%t typ]) b -> Ppx_deriving_runtime.compare a b] in
         Ppx_deriving.quote quoter compare_fn
       | true, [%type: [%t? typ] ref] ->
         [%expr fun a b -> [%e expr_of_typ typ] !a !b]
@@ -100,7 +98,7 @@ and expr_of_typ quoter typ =
                                     [%expr [%e expr_of_typ typ] x.(i) y.(i)]]
           in
           [%e compare_reduce [%expr loop 0]
-                             [%expr Pervasives.compare (Array.length x) (Array.length y)]]]
+                             [%expr Ppx_deriving_runtime.compare (Array.length x) (Array.length y)]]]
       | true, [%type: [%t? typ] option] ->
         [%expr fun x y ->
           match x, y with
@@ -140,12 +138,12 @@ and expr_of_typ quoter typ =
         fields |> List.map (fun field ->
           let pdup f = ptuple [f "lhs"; f "rhs"] in
           match field with
-          | Rtag (label, _, true (*empty*), []) ->
+          | Rtag_patt(label, true (*empty*), []) ->
             Exp.case (pdup (fun _ -> variant label None)) [%expr 0]
-          | Rtag (label, _, false, [typ]) ->
+          | Rtag_patt(label, false, [typ]) ->
             Exp.case (pdup (fun var -> variant label (Some (pvar var))))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
-          | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
+          | Rinherit_patt({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case (pdup (fun var -> Pat.alias (Pat.type_ tname) (mknoloc var)))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
           | _ ->
@@ -155,11 +153,11 @@ and expr_of_typ quoter typ =
       let int_cases =
         fields |> List.mapi (fun i field ->
           match field with
-          | Rtag (label, _, true (*empty*), []) ->
+          | Rtag_patt(label, true (*empty*), []) ->
             Exp.case (variant label None) (int i)
-          | Rtag (label, _, false, [typ]) ->
+          | Rtag_patt(label, false, [typ]) ->
             Exp.case (variant label (Some [%pat? _])) (int i)
-          | Rinherit { ptyp_desc = Ptyp_constr (tname, []) } ->
+          | Rinherit_patt({ ptyp_desc = Ptyp_constr (tname, []) }) ->
             Exp.case (Pat.type_ tname) (int i)
           | _ -> assert false)
       in

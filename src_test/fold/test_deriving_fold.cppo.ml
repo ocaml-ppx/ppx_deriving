@@ -8,6 +8,7 @@ let test_btree ctxt =
   assert_equal ~printer:string_of_int 6 (fold_btree (+) 0 btree)
 
 type 'a reflist = 'a Pervasives.ref list
+[@@ocaml.warning "-3"]
 [@@deriving fold]
 
 let test_reflist ctxt =

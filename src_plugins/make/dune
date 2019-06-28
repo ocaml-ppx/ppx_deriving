@@ -1,7 +1,7 @@
 (rule
- (deps ppx_deriving_make.cppo.ml)
+ (deps ../compat_macros.cppo)
  (targets ppx_deriving_make.ml)
- (action (run %{bin:cppo} -V OCAML:%{ocaml_version} %{deps} -o %{targets})))
+ (action (run %{bin:cppo} -V OCAML:%{ocaml_version} %{dep:ppx_deriving_make.cppo.ml} -o %{targets})))
 
 (library
  (name ppx_deriving_make)

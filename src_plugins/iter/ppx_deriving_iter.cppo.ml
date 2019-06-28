@@ -1,6 +1,4 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pcstr_tuple(core_types) core_types
-#endif
+#include "../compat_macros.cppo"
 
 open Longident
 open Location
@@ -68,12 +66,12 @@ let rec expr_of_typ typ =
 #endif
         in
         match field with
-        | Rtag (label, _, true (*empty*), []) ->
+        | Rtag_patt(label, true (*empty*), []) ->
           Exp.case (variant label None) [%expr ()]
-        | Rtag (label, _, false, [typ]) ->
+        | Rtag_patt(label, false, [typ]) ->
           Exp.case (variant label (Some [%pat? x]))
                    [%expr [%e expr_of_typ typ] x]
-        | Rinherit ({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
+        | Rinherit_patt({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
           Exp.case [%pat? [%p Pat.type_ tname] as x]
                    [%expr [%e expr_of_typ typ] x]
         | _ ->
