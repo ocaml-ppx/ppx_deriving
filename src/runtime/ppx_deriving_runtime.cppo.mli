@@ -89,6 +89,11 @@ module Result : sig
   type ('a, 'b) t = ('a, 'b) Result.result =
     | Ok of 'a
     | Error of 'b
+    
+  (* we also expose Result.result for backward-compatibility *)
+  type ('a, 'b) result = ('a, 'b) Result.result =
+    | Ok of 'a
+    | Error of 'b
 end
 
 (** {3 Formatting} *)
