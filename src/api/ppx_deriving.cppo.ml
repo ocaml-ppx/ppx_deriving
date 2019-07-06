@@ -587,6 +587,7 @@ let derive_module_type_decl path module_type_decl pstr_loc item fn =
 
 let module_from_input_name () =
   match !Location.input_name with
+  | ""
   | "//toplevel//" -> []
   | filename ->
     let capitalize =
