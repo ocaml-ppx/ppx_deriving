@@ -201,6 +201,10 @@ let rec expr_of_typ quoter typ =
       raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
                    deriver (Ppx_deriving.string_of_core_type typ)
 
+and expr_of_label_decl quoter { pld_type; pld_attributes } =
+  let attrs = pld_type.ptyp_attributes @ pld_attributes in
+  expr_of_typ quoter { pld_type with ptyp_attributes = attrs }
+
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   let show_opts = parse_options options in
   let quoter = Ppx_deriving.create_quoter () in
@@ -261,10 +265,11 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
 #if OCAML_VERSION >= (4, 03, 0)
           | None, Pcstr_record(labels) ->
             let args =
-              labels |> List.map (fun { pld_name = { txt = n }; pld_type = typ } ->
+              labels |> List.map (fun ({ pld_name = { txt = n }; _ } as pld) ->
                 [%expr
                   Ppx_deriving_runtime.Format.fprintf fmt "@[%s =@ " [%e str n];
-                  [%e expr_of_typ quoter typ] [%e evar (argl n)];
+                  [%e expr_of_label_decl quoter pld]
+                    [%e evar (argl n)];
                   Ppx_deriving_runtime.Format.fprintf fmt "@]"
                 ])
             in
@@ -282,12 +287,12 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       [%expr fun fmt -> [%e Exp.function_ cases]]
     | Ptype_record labels, _ ->
       let fields =
-        labels |> List.mapi (fun i { pld_name = { txt = name }; pld_type; pld_attributes } ->
+        labels |> List.mapi (fun i ({ pld_name = { txt = name }; _} as pld) ->
           let field_name = if i = 0 then expand_path show_opts ~path name else name in
-          let pld_type = {pld_type with ptyp_attributes=pld_attributes@pld_type.ptyp_attributes} in
           [%expr
             Ppx_deriving_runtime.Format.fprintf fmt "@[%s =@ " [%e str field_name];
-            [%e expr_of_typ quoter pld_type] [%e Exp.field (evar "x") (mknoloc (Lident name))];
+            [%e expr_of_label_decl quoter pld]
+              [%e Exp.field (evar "x") (mknoloc (Lident name))];
             Ppx_deriving_runtime.Format.fprintf fmt "@]"
           ])
       in

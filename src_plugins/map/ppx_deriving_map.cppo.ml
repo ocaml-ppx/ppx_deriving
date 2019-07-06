@@ -97,6 +97,10 @@ let rec expr_of_typ ?decl typ =
     raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
                  deriver (Ppx_deriving.string_of_core_type typ)
 
+and expr_of_label_decl ?decl { pld_type; pld_attributes } =
+  let attrs = pld_type.ptyp_attributes @ pld_attributes in
+  expr_of_typ ?decl { pld_type with ptyp_attributes = attrs }
+
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   parse_options options;
   let mapper =
@@ -112,8 +116,9 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                    (constr name' args)
 #if OCAML_VERSION >= (4, 03, 0)
         | Pcstr_record(labels) ->
-          let args = labels |> List.map (fun { pld_name = { txt = n }; pld_type = typ } ->
-                        n, [%expr [%e expr_of_typ ~decl:type_decl typ] [%e evar (argl n)]]) in
+          let args = labels |> List.map (fun ({ pld_name = { txt = n }; _ } as pld) ->
+                        n, [%expr [%e expr_of_label_decl ~decl:type_decl pld]
+                               [%e evar (argl n)]]) in
           Exp.case (pconstrrec name' (pattl labels))
                    (constrrec name' args)
 #endif
@@ -121,8 +126,8 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       Exp.function_
     | Ptype_record labels, _ ->
       let fields =
-        labels |> List.mapi (fun i { pld_name = { txt = name }; pld_type } ->
-          name, [%expr [%e expr_of_typ ~decl:type_decl pld_type]
+        labels |> List.mapi (fun i ({ pld_name = { txt = name }; _ } as pld) ->
+          name, [%expr [%e expr_of_label_decl ~decl:type_decl pld]
                        [%e Exp.field (evar "x") (mknoloc (Lident name))]])
       in
       let annot_typ = Ppx_deriving.core_type_of_type_decl type_decl in
