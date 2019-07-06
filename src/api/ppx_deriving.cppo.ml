@@ -596,7 +596,13 @@ let module_from_input_name () =
 #else
       String.capitalize
 #endif
-    in [capitalize (Filename.(basename (chop_suffix filename ".ml")))]
+    in
+    match Filename.chop_suffix filename ".ml" with
+      | exception _ ->
+         (* see https://github.com/ocaml-ppx/ppx_deriving/pull/196 *)
+         []
+      | path ->
+         [capitalize (Filename.basename path)]
 
 let pstr_desc_rec_flag pstr =
   match pstr with
