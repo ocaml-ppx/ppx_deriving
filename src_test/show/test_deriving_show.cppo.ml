@@ -85,6 +85,16 @@ let test_record ctxt =
   assert_equal ~printer "{ Test_deriving_show.f1 = 1; f2 = \"foo\"; f3 = <opaque> }"
                         (show_re { f1 = 1; f2 = "foo"; f3 = 1.0 })
 
+type variant = Foo of {
+  f1 : int;
+  f2 : string;
+  f3 : float [@opaque];
+} [@@deriving show]
+let test_variant_record ctxt =
+  assert_equal ~printer
+    "Test_deriving_show.Foo {f1 = 1; f2 = \"foo\"; f3 = <opaque>}"
+    (show_variant (Foo { f1 = 1; f2 = "foo"; f3 = 1.0 }))
+
 
 module M : sig
   type t = A [@@deriving show]
@@ -247,6 +257,7 @@ let suite = "Test deriving(show)" >::: [
     "test_poly"            >:: test_poly;
     "test_poly_inherit"    >:: test_poly_inherit;
     "test_record"          >:: test_record;
+    "test_variant_record"  >:: test_variant_record;
     "test_abstr"           >:: test_abstr;
     "test_custom"          >:: test_custom;
     "test_parametric"      >:: test_parametric;
