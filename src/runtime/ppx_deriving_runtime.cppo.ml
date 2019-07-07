@@ -23,6 +23,16 @@ type nonrec bytes = bytes
 module Stdlib = Stdlib
 
 include Stdlib
+
+module Result = struct
+  type ('a, 'b) t = ('a, 'b) Result.t =
+    | Ok of 'a
+    | Error of 'b
+
+  type ('a, 'b) result = ('a, 'b) Result.t =
+    | Ok of 'a
+    | Error of 'b
+end
 #else
 module Pervasives = Pervasives
 module Stdlib = Pervasives

@@ -33,6 +33,18 @@ include (module type of Stdlib with
   type ('a, 'b, 'c, 'd) format4 = ('a, 'b, 'c, 'd) Stdlib.format4 and
   type ('a, 'b, 'c) format = ('a, 'b, 'c) Stdlib.format
 )
+
+module Result : sig
+  type ('a, 'b) t = ('a, 'b) Result.t =
+    | Ok of 'a
+    | Error of 'b
+
+  (* we also expose Result.result for backward-compatibility
+     with the Result package! *)
+  type ('a, 'b) result = ('a, 'b) Result.t =
+    | Ok of 'a
+    | Error of 'b
+end
 #else
 module Pervasives : (module type of Pervasives with
   type fpclass = Pervasives.fpclass and
@@ -89,7 +101,7 @@ module Result : sig
   type ('a, 'b) t = ('a, 'b) Result.result =
     | Ok of 'a
     | Error of 'b
-    
+
   (* we also expose Result.result for backward-compatibility *)
   type ('a, 'b) result = ('a, 'b) Result.result =
     | Ok of 'a
