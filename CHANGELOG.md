@@ -1,8 +1,8 @@
 Changelog
 =========
 
-NEXT RELEASE
-------------
+4.4
+---
 
 * Restore support for OCaml 4.02.3
   #188
