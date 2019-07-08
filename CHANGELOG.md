@@ -4,13 +4,16 @@ Changelog
 NEXT RELEASE
 ------------
 
+* Restore support for OCaml 4.02.3
+  #188
+  (ELLIOTTCABLE)
 * workaround Location.input_filename being empty
   when using reason-language-server
   #196
   (Ryan Artecona)
-* Restore support for OCaml 4.02.3
-  #188
-  (ELLIOTTCABLE)
+* Add support for OCaml 4.08.0
+  #193, #197, #200
+  (Gabriel Scherer)
 
 4.3
 ---
