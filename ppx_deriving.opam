@@ -24,7 +24,7 @@ depends: [
   "ounit"      {with-test}
   "ocaml" {>= "4.02.2"}
 ]
-synopsis: "Type-driven code generation for OCaml >=4.02"
+synopsis: "Type-driven code generation for OCaml >=4.02.2"
 description: """
 ppx_deriving provides common infrastructure for generating
 code based on type definitions, and a set of useful plugins
