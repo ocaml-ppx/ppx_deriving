@@ -400,7 +400,7 @@ let free_vars_in_core_type typ =
   in
   let uniq lst =
     let module StringSet = Set.Make(String) in
-    let add name (names, txts) =
+    let add (rev_names, txts) name =
       let txt =
 #if OCAML_VERSION >= (4, 05, 0)
         name.txt
@@ -409,9 +409,9 @@ let free_vars_in_core_type typ =
 #endif
       in
       if StringSet.mem txt txts
-      then (names, txts)
-      else (name :: names, StringSet.add txt txts)
-    in fst (List.fold_right add lst ([], StringSet.empty))
+      then (rev_names, txts)
+      else (name :: rev_names, StringSet.add txt txts)
+    in List.rev (fst (List.fold_left add ([], StringSet.empty) lst))
   in free_in typ |> uniq
 
 let var_name_of_int i =
