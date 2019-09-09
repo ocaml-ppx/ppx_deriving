@@ -1,11 +1,9 @@
-#include "../compat_macros.cppo"
-
-open Longident
+open Ppxlib
 open Location
 open Asttypes
 open Parsetree
 open Ast_helper
-open Ast_convenience
+open Ppx_deriving.Ast_convenience
 
 let deriver = "enum"
 let raise_errorf = Ppx_deriving.raise_errorf
@@ -49,17 +47,6 @@ let mappings_of_type type_decl =
                          "%s can be derived only for argumentless constructors"
                          deriver
           in
-#if OCAML_VERSION < (4, 08, 0)
-          let loc = ptyp_loc in
-          match row_field with
-          | Rinherit _ -> error_inherit loc
-          | Rtag (name, attrs, true, []) ->
-  #if OCAML_VERSION < (4, 06, 0)
-            let name = mkloc name loc in
-  #endif
-            map acc mappings attrs name
-          | Rtag _ -> error_arguments loc
-#else
           let loc = row_field.prf_loc in
           let attrs = row_field.prf_attributes in
           match row_field.prf_desc with
@@ -67,7 +54,6 @@ let mappings_of_type type_decl =
           | Rtag (name, true, []) ->
             map acc mappings attrs name
           | Rtag _ -> error_arguments loc
-#endif
 )
         (0, []) constrs
     | _ -> raise_errorf ~loc:type_decl.ptype_loc
@@ -77,7 +63,9 @@ let mappings_of_type type_decl =
     match mappings with
     | (a, { txt=atxt; loc=aloc }) :: (b, { txt=btxt; loc=bloc }) :: _ when a = b ->
       let sigil = match kind with `Regular -> "" | `Polymorphic -> "`" in
-      let sub = [Location.errorf ~loc:bloc "Same as for %s%s" sigil btxt] in
+      let sub =
+        [Ocaml_common.Location.errorf
+          ~loc:bloc "Same as for %s%s" sigil btxt] in
       raise_errorf ~sub ~loc:aloc
                    "%s: duplicate value %d for constructor %s%s" deriver a sigil atxt
     | _ :: rest -> check_dup rest
@@ -116,6 +104,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (Exp.function_ from_enum_cases)]
 
 let sig_of_type ~options ~path type_decl =
+  let loc = type_decl.ptype_loc in
   parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "min") type_decl))

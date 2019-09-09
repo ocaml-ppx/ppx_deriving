@@ -1,11 +1,9 @@
-#include "../compat_macros.cppo"
-
-open Longident
+open Ppxlib
 open Location
 open Asttypes
 open Parsetree
 open Ast_helper
-open Ast_convenience
+open Ppx_deriving.Ast_convenience
 
 let deriver = "make"
 let raise_errorf = Ppx_deriving.raise_errorf
@@ -94,12 +92,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (Ppx_deriving.sanitize ~quoter creator)]
 
 let wrap_predef_option typ =
-#if OCAML_VERSION < (4, 03, 0)
-  let predef_option = mknoloc (Ldot (Lident "*predef*", "option")) in
-  Typ.constr predef_option [typ]
-#else
   typ
-#endif
 
 let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   parse_options options;

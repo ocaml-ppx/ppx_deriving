@@ -1,11 +1,9 @@
-#include "../compat_macros.cppo"
-
-open Longident
+open Ppxlib
 open Location
 open Asttypes
 open Parsetree
 open Ast_helper
-open Ast_convenience
+open Ppx_deriving.Ast_convenience
 
 let deriver = "show"
 let raise_errorf = Ppx_deriving.raise_errorf
@@ -51,10 +49,12 @@ let pattl labels = List.map (fun { pld_name = { txt = n } } -> n, pvar (argl n))
 let pconstrrec name fields = pconstr name [precord ~closed:Closed fields]
 
 let wrap_printer quoter printer =
+  let loc = !Ast_helper.default_loc in
   Ppx_deriving.quote quoter
     [%expr (let fprintf = Ppx_deriving_runtime.Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
 
 let pp_type_of_decl ~options ~path type_decl =
+  let loc = type_decl.ptype_loc in
   let _ = parse_options options in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
@@ -63,6 +63,7 @@ let pp_type_of_decl ~options ~path type_decl =
     [%type: Ppx_deriving_runtime.Format.formatter -> [%t typ] -> Ppx_deriving_runtime.unit]
 
 let show_type_of_decl ~options ~path type_decl =
+  let loc = type_decl.ptype_loc in
   let _ = parse_options options in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
@@ -78,6 +79,7 @@ let sig_of_type ~options ~path type_decl =
               (show_type_of_decl ~options ~path type_decl))]
 
 let rec expr_of_typ quoter typ =
+  let loc = typ.ptyp_loc in
   let expr_of_typ = expr_of_typ quoter in
   match attr_printer typ.ptyp_attributes with
   | Some printer -> [%expr [%e wrap_printer quoter printer] fmt]
@@ -172,22 +174,18 @@ let rec expr_of_typ quoter typ =
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
       let cases =
         fields |> List.map (fun field ->
-          match field with
-          | Rtag_patt(label, true (*empty*), []) ->
-#if OCAML_VERSION >= (4, 06, 0)
+          match field.prf_desc with
+          | Rtag(label, true (*empty*), []) ->
             let label = label.txt in
-#endif
             Exp.case (Pat.variant label None)
                      [%expr Ppx_deriving_runtime.Format.pp_print_string fmt [%e str ("`" ^ label)]]
-          | Rtag_patt(label, false, [typ]) ->
-#if OCAML_VERSION >= (4, 06, 0)
+          | Rtag(label, false, [typ]) ->
             let label = label.txt in
-#endif
             Exp.case (Pat.variant label (Some [%pat? x]))
                      [%expr Ppx_deriving_runtime.Format.fprintf fmt [%e str ("`" ^ label ^ " (@[<hov>")];
                             [%e expr_of_typ typ] x;
                             Ppx_deriving_runtime.Format.fprintf fmt "@])"]
-          | Rinherit_patt({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
+          | Rinherit({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case [%pat? [%p Pat.type_ tname] as x]
                      [%expr [%e expr_of_typ typ] x]
           | _ ->
@@ -237,12 +235,10 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
             Exp.case (pconstr name' pattern_vars)
               [%expr [%e wrap_printer quoter printer] fmt
                         [%e tuple expr_vars]]
-#if OCAML_VERSION >= (4, 03, 0)
           | Some printer, Pcstr_record(labels) ->
             let args = labels |> List.map (fun { pld_name = { txt = n } } -> evar (argl n)) in
             Exp.case (pconstrrec name' (pattl labels))
                      (app (wrap_printer quoter printer) ([%expr fmt] :: args))
-#endif
           | None, Pcstr_tuple(typs) ->
             let args =
               List.mapi (fun i typ -> app (expr_of_typ quoter typ) [evar (argn i)]) typs in
@@ -262,7 +258,6 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                   Ppx_deriving_runtime.Format.fprintf fmt "@,))@]"]
             in
             Exp.case (pconstr name' (pattn typs)) printer
-#if OCAML_VERSION >= (4, 03, 0)
           | None, Pcstr_record(labels) ->
             let args =
               labels |> List.map (fun ({ pld_name = { txt = n }; _ } as pld) ->
@@ -281,7 +276,6 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
                 Ppx_deriving_runtime.Format.fprintf fmt "@]}"]
             in
             Exp.case (pconstrrec name' (pattl labels)) printer
-#endif
           )
       in
       [%expr fun fmt -> [%e Exp.function_ cases]]
@@ -325,6 +319,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
    Vb.mk ~attrs:[no_warn_32] (Pat.constraint_ show_var show_type) (polymorphize stringprinter);]
 
 let () =
+  let loc = !Ast_helper.default_loc in
   Ppx_deriving.(register (create deriver
     ~core_type: (Ppx_deriving.with_quoter (fun quoter typ ->
       [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ quoter typ]) x]))

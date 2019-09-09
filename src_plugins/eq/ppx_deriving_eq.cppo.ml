@@ -1,11 +1,9 @@
-#include "../compat_macros.cppo"
-
-open Longident
+open Ppxlib
 open Location
 open Asttypes
 open Parsetree
 open Ast_helper
-open Ast_convenience
+open Ppx_deriving.Ast_convenience
 
 let deriver = "eq"
 let raise_errorf = Ppx_deriving.raise_errorf
@@ -37,6 +35,7 @@ let pconstrrec name fields =
   pconstr name [precord ~closed:Closed fields]
 
 let core_type_of_decl ~options ~path type_decl =
+  let loc = !Ast_helper.default_loc in
   parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
@@ -64,6 +63,7 @@ and expr_of_label_decl quoter { pld_type; pld_attributes } =
   expr_of_typ quoter { pld_type with ptyp_attributes = attrs }
 
 and expr_of_typ quoter typ =
+  let loc = !Ast_helper.default_loc in
   let typ = Ppx_deriving.remove_pervasives ~deriver typ in
   let expr_of_typ = expr_of_typ quoter in
   match attr_equal typ.ptyp_attributes with
@@ -126,19 +126,15 @@ and expr_of_typ quoter typ =
         (fields |> List.map (fun field ->
           let pdup f = ptuple [f "lhs"; f "rhs"] in
           let variant label popt =
-#if OCAML_VERSION < (4, 06, 0)
-            Pat.variant label popt
-#else
             Pat.variant label.txt popt
-#endif
           in
-          match field with
-          | Rtag_patt(label, true (*empty*), []) ->
+          match field.prf_desc with
+          | Rtag(label, true (*empty*), []) ->
             Exp.case (pdup (fun _ -> variant label None)) [%expr true]
-          | Rtag_patt(label, false, [typ]) ->
+          | Rtag(label, false, [typ]) ->
             Exp.case (pdup (fun var -> variant label (Some (pvar var))))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
-          | Rinherit_patt({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
+          | Rinherit({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case (pdup (fun var -> Pat.alias (Pat.type_ tname) (mknoloc var)))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
           | _ ->
@@ -169,13 +165,11 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
             Ppx_deriving.(fold_exprs ~unit:[%expr true] (binop_reduce [%expr (&&)])) |>
             Exp.case (ptuple [pconstr name (pattn `lhs typs);
                               pconstr name (pattn `rhs typs)])
-#if OCAML_VERSION >= (4, 03, 0)
           | Pcstr_record(labels) ->
             exprl quoter labels |>
             Ppx_deriving.(fold_exprs ~unit:[%expr true] (binop_reduce [%expr (&&)])) |>
             Exp.case (ptuple [pconstrrec name (pattl `lhs labels);
                               pconstrrec name (pattl `rhs labels)])
-#endif
           )) @
         [Exp.case (pvar "_") [%expr false]]
       in

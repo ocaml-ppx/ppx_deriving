@@ -1,12 +1,9 @@
 (** Public API of [ppx_deriving] executable. *)
 
-open Parsetree
+open Ppxlib
 
-#if OCAML_VERSION >= (4, 05, 0)
 type tyvar = string Location.loc
-#else
-type tyvar = string
-#endif
+
 
 (** {2 Registration} *)
 
@@ -79,7 +76,7 @@ val create :
 val lookup : string -> deriver option
 
 (** {2 Error handling} *)
-val raise_errorf : ?sub:Location.error list ->
+val raise_errorf : ?sub:Ocaml_common.Location.error list ->
                    ?loc:Location.t -> ('a, unit, string, 'b) format4 -> 'a
 
 (** [string_of_core_type typ] unparses [typ], omitting any attributes. *)
@@ -324,9 +321,60 @@ val strong_type_of_type: core_type -> core_type
 
 (** The mapper for the currently loaded deriving plugins. It is useful for
     recursively processing expression-valued attributes. *)
+
+module Ast_mapper = Migrate_parsetree.OCaml_current.Ast.Ast_mapper
+
 val mapper : Ast_mapper.mapper
 
 (** {2 Miscellanea} *)
 
 (** [hash_variant x] ≡ [Btype.hash_variant x]. *)
 val hash_variant : string -> int
+
+module Ast_convenience : sig
+  val mkloc : 'a -> Location.t -> 'a loc
+
+  val mknoloc : 'a -> 'a loc
+
+  val unit : unit -> expression
+
+  val punit : unit -> pattern
+
+  val int : int -> expression
+
+  val pint : int -> pattern
+
+  val str : string -> expression
+
+  val evar : string -> expression
+
+  val pvar : string -> pattern
+
+  val app : expression -> expression list -> expression
+
+  val constr : string -> expression list -> expression
+
+  val pconstr : string -> pattern list -> pattern
+
+  val tconstr : string -> core_type list -> core_type
+
+  val record : (string * expression) list -> expression
+
+  val precord : closed:closed_flag -> (string * pattern) list -> pattern
+
+  val tuple : expression list -> expression
+
+  val ptuple : pattern list -> pattern
+
+  val has_attr : string -> attributes -> bool
+
+  val find_attr : string -> attributes -> payload option
+
+  module Label : sig
+    val nolabel : arg_label
+
+    val labelled : string -> arg_label
+
+    val optional : string -> arg_label
+  end
+end

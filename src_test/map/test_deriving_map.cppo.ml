@@ -5,10 +5,8 @@ module T : sig
   type 'a btree = Node of 'a btree * 'a * 'a btree | Leaf
   [@@deriving map, show]
 
-#if OCAML_VERSION >= (4, 03, 0)
   type 'a btreer = Noder of { lft: 'a btree; elt: 'a; rgt: 'a btree } | Leafr
   [@@deriving map]
-#endif
 
   type var0 = A0 of int [@@deriving map,show]
 
@@ -36,10 +34,8 @@ end = struct
   type 'a btree = Node of 'a btree * 'a * 'a btree | Leaf
   [@@deriving map, show]
 
-#if OCAML_VERSION >= (4, 03, 0)
   type 'a btreer = Noder of { lft: 'a btree; elt: 'a; rgt: 'a btree } | Leafr
   [@@deriving map]
-#endif
 
   type 'a ty = 'a * int list
   [@@deriving map]
@@ -143,7 +139,6 @@ let test_pvar3 ctxt =
   assert_equal ~printer:show `F (map `F);
   assert_equal ~printer:show `G (map `G)
 
-#if OCAML_VERSION >= (4, 03, 0)
 type 'a result0 = ('a, bool) result [@@deriving show,map]
 
 let test_map_result ctxt =
@@ -151,7 +146,6 @@ let test_map_result ctxt =
   let printer = show_result0 fmt_int in
   assert_equal ~printer (Ok 10) (f (Ok 9));
   assert_equal ~printer (Error true) (f (Error true))
-#endif
 
 type 'a result_result0 = ('a, bool) Result.result [@@deriving show,map]
 
@@ -173,9 +167,7 @@ let suite = "Test deriving(map)" >::: [
     "test_record2" >:: test_record2;
     "test_record3" >:: test_record3;
     "test_pvar3" >:: test_pvar3;
-#if OCAML_VERSION >= (4, 03, 0)
     "test_map_result" >:: test_map_result;
-#endif
     "test_map_result_result" >:: test_map_result_result;
   ]
 

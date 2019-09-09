@@ -1,5 +1,4 @@
 (rule
- (deps ../compat_macros.cppo)
  (targets ppx_deriving_ord.ml)
  (action (run %{bin:cppo} -V OCAML:%{ocaml_version}
               %{dep:ppx_deriving_ord.cppo.ml} -o %{targets})))
@@ -9,6 +8,6 @@
  (public_name ppx_deriving.ord)
  (synopsis "[@@deriving ord]")
  (preprocess
-  (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file})))
- (libraries compiler-libs.common ppx_tools ppx_deriving.api)
+  (pps ppxlib.metaquot))
+ (libraries compiler-libs.common ppxlib ppx_deriving.api)
  (kind ppx_deriver))

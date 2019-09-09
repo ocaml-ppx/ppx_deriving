@@ -38,9 +38,7 @@ let test_ref2 ctxt =
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving eq]
 
-#if OCAML_VERSION >= (4, 03, 0)
 type rv = RFoo | RBar of { x: int; y: string; } [@@deriving eq]
-#endif
 
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving eq]
 type pv2 = [ `Baz | pv1 ] [@@deriving eq]
@@ -133,13 +131,11 @@ end
 type 'a std_clash = 'a List.t option
 [@@deriving eq]
 
-#if OCAML_VERSION >= (4, 03, 0)
 let test_result ctxt =
   let eq = [%eq: (string, int) result] in
   assert_equal ~printer true (eq (Ok "ttt") (Ok "ttt"));
   assert_equal ~printer false (eq (Ok "123") (Error 123));
   assert_equal ~printer false (eq (Error 123) (Error 0))
-#endif
 
 let test_result_result ctxt =
   let open Result in
@@ -159,9 +155,7 @@ let suite = "Test deriving(eq)" >::: [
     "test_mut_rec"       >:: test_mut_rec;
     "test_std_shadowing" >:: test_std_shadowing;
     "test_poly_app"      >:: test_poly_app;
-#if OCAML_VERSION >= (4, 03, 0)
     "test_result"        >:: test_result;
-#endif
     "test_result_result" >:: test_result_result;
   ]
 

@@ -2,12 +2,12 @@
  (name ppx_deriving_api)
  (public_name ppx_deriving.api)
  (synopsis "Plugin API for ppx_deriving")
- (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file})))
+ (preprocess (pps ppxlib.metaquot))
  (wrapped false)
  (ppx_runtime_libraries ppx_deriving_runtime)
  (libraries
    compiler-libs.common
-   ppx_tools
+   ppxlib
    result
    ppx_derivers
    ocaml-migrate-parsetree))

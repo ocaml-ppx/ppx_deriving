@@ -1,11 +1,10 @@
-#include "../compat_macros.cppo"
-
+open Ppxlib
 open Longident
 open Location
 open Asttypes
 open Parsetree
 open Ast_helper
-open Ast_convenience
+open Ppx_deriving.Ast_convenience
 
 let deriver = "ord"
 let raise_errorf = Ppx_deriving.raise_errorf
@@ -28,14 +27,17 @@ let argl kind =
   Printf.sprintf (match kind with `lhs -> "lhs%s" | `rhs -> "rhs%s")
 
 let compare_reduce acc expr =
+  let loc = !Ast_helper.default_loc in
   [%expr match [%e expr] with 0 -> [%e acc] | x -> x]
 
 let reduce_compare l =
+  let loc = !Ast_helper.default_loc in
   match List.rev l with
   | [] -> [%expr 0]
   | x :: xs -> List.fold_left compare_reduce x xs
 
 let wildcard_case int_cases =
+  let loc = !Ast_helper.default_loc in
   Exp.case [%pat? _] [%expr
     let to_int = [%e Exp.function_ int_cases] in
     Ppx_deriving_runtime.compare (to_int lhs) (to_int rhs)]
@@ -63,6 +65,7 @@ and expr_of_label_decl quoter { pld_type; pld_attributes } =
   expr_of_typ quoter { pld_type with ptyp_attributes = attrs }
 
 and expr_of_typ quoter typ =
+  let loc = typ.ptyp_loc in
   let expr_of_typ = expr_of_typ quoter in
   match attr_compare typ.ptyp_attributes with
   | Some fn -> Ppx_deriving.quote quoter fn
@@ -133,22 +136,18 @@ and expr_of_typ quoter typ =
         [%e exprn quoter typs |> reduce_compare]]
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
       let variant label popt =
-#if OCAML_VERSION < (4, 06, 0)
-        Pat.variant label popt
-#else
         Pat.variant label.txt popt
-#endif
       in
       let cases =
         fields |> List.map (fun field ->
           let pdup f = ptuple [f "lhs"; f "rhs"] in
-          match field with
-          | Rtag_patt(label, true (*empty*), []) ->
+          match field.prf_desc with
+          | Rtag(label, true (*empty*), []) ->
             Exp.case (pdup (fun _ -> variant label None)) [%expr 0]
-          | Rtag_patt(label, false, [typ]) ->
+          | Rtag(label, false, [typ]) ->
             Exp.case (pdup (fun var -> variant label (Some (pvar var))))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
-          | Rinherit_patt({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
+          | Rinherit({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case (pdup (fun var -> Pat.alias (Pat.type_ tname) (mknoloc var)))
                      (app (expr_of_typ typ) [evar "lhs"; evar "rhs"])
           | _ ->
@@ -157,12 +156,12 @@ and expr_of_typ quoter typ =
       in
       let int_cases =
         fields |> List.mapi (fun i field ->
-          match field with
-          | Rtag_patt(label, true (*empty*), []) ->
+          match field.prf_desc with
+          | Rtag(label, true (*empty*), []) ->
             Exp.case (variant label None) (int i)
-          | Rtag_patt(label, false, [typ]) ->
+          | Rtag(label, false, [typ]) ->
             Exp.case (variant label (Some [%pat? _])) (int i)
-          | Rinherit_patt({ ptyp_desc = Ptyp_constr (tname, []) }) ->
+          | Rinherit({ ptyp_desc = Ptyp_constr (tname, []) }) ->
             Exp.case (Pat.type_ tname) (int i)
           | _ -> assert false)
       in
@@ -176,6 +175,7 @@ and expr_of_typ quoter typ =
 
 let core_type_of_decl ~options ~path type_decl =
   parse_options options;
+  let loc = type_decl.ptype_loc in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
           (fun var -> [%type: [%t var] -> [%t var] -> Ppx_deriving_runtime.int]) type_decl in
@@ -204,12 +204,10 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
             exprn quoter typs |> reduce_compare |>
             Exp.case (ptuple [pconstr name (pattn `lhs typs);
                               pconstr name (pattn `rhs typs)])
-#if OCAML_VERSION >= (4, 03, 0)
           | Pcstr_record(labels) ->
             exprl quoter labels |> reduce_compare |>
             Exp.case (ptuple [pconstrrec name (pattl `lhs labels);
                               pconstrrec name (pattl `rhs labels)])
-#endif
           )
       in
       [%expr fun lhs rhs ->
