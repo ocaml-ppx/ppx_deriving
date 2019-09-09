@@ -52,10 +52,8 @@ let test_reflist ctxt =
                [ ref 0 ; ref 1 ; ref 2 ] ;
   assert_equal [2;1;0] !lst
 
-#if OCAML_VERSION >= (4, 03, 0)
 type 'a btreer = Node of { lft: 'a btree; elt: 'a; rgt: 'a btree } | Leaf
 [@@deriving iter]
-#endif
 
 type 'a ty = 'a * int list
 [@@deriving iter]

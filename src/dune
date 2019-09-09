@@ -7,7 +7,7 @@
  (name ppx_deriving_main)
  (libraries ppx_deriving_api findlib.dynload compiler-libs.common)
  (link_flags :standard -linkall)
- (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file}))))
+ (preprocess (pps ppxlib.metaquot)))
 
 (install
  (section libexec)

@@ -47,7 +47,6 @@ let test_variant ctxt =
   assert_equal ~printer "(Test_deriving_show.Bar (1, \"foo\"))" (show_v (Bar (1, "foo")));
   assert_equal ~printer "(Test_deriving_show.Baz \"foo\")"      (show_v (Baz "foo"))
 
-#if OCAML_VERSION >= (4, 03, 0)
 type rv = RFoo | RBar of { x: int; y: string } | RBaz of { z: string } [@@deriving show]
 let test_variant_record ctxt =
   assert_equal ~printer "Test_deriving_show.RFoo"
@@ -56,7 +55,6 @@ let test_variant_record ctxt =
                         (show_rv (RBar {x=1; y="foo"}));
   assert_equal ~printer "(Test_deriving_show.RBaz {z = \"foo\"}"
                         (show_rv (RBaz {z="foo"}))
-#endif
 
 type vn = Foo of int option [@@deriving show]
 let test_variant_nest ctxt =
@@ -85,7 +83,6 @@ let test_record ctxt =
   assert_equal ~printer "{ Test_deriving_show.f1 = 1; f2 = \"foo\"; f3 = <opaque> }"
                         (show_re { f1 = 1; f2 = "foo"; f3 = 1.0 })
 
-#if OCAML_VERSION >= (4, 03, 0)
 type variant = Foo of {
   f1 : int;
   f2 : string;
@@ -95,7 +92,6 @@ let test_variant_record ctxt =
   assert_equal ~printer
     "Test_deriving_show.Foo {f1 = 1; f2 = \"foo\"; f3 = <opaque>}"
     (show_variant (Foo { f1 = 1; f2 = "foo"; f3 = 1.0 }))
-#endif
 
 
 module M : sig
@@ -166,7 +162,6 @@ let test_mrec ctxt =
   assert_equal ~printer "(Test_deriving_show.B\n   { Test_deriving_show.x = 12; r = (Test_deriving_show.F 16) })" (show_foo e1)
 
 
-#if OCAML_VERSION >= (4, 03, 0)
 type i_has_result = I_has of (bool, string) result [@@deriving show]
 
 let test_result ctxt =
@@ -176,7 +171,6 @@ let test_result ctxt =
     (show_i_has_result (I_has (Ok true)));
   assert_equal ~printer "(Test_deriving_show.I_has (Error \"err\"))"
     (show_i_has_result (I_has (Error "err")))
-#endif
 
 type i_has_result_result = I_has of (bool, string) Result.result [@@deriving show]
 
@@ -259,9 +253,7 @@ let suite = "Test deriving(show)" >::: [
     "test_poly"            >:: test_poly;
     "test_poly_inherit"    >:: test_poly_inherit;
     "test_record"          >:: test_record;
-#if OCAML_VERSION >= (4, 03, 0)
     "test_variant_record"  >:: test_variant_record;
-#endif
     "test_abstr"           >:: test_abstr;
     "test_custom"          >:: test_custom;
     "test_parametric"      >:: test_parametric;
@@ -273,9 +265,7 @@ let suite = "Test deriving(show)" >::: [
     "test_poly_app"        >:: test_poly_app;
     "test_variant_printer" >:: test_variant_printer;
     "test_paths"           >:: test_paths_printer;
-#if OCAML_VERSION >= (4, 03, 0)
     "test_result"          >:: test_result;
-#endif
     "test_result_result"   >:: test_result_result;
   ]
 

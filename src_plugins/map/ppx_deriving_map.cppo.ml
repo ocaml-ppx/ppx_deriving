@@ -1,11 +1,9 @@
-#include "../compat_macros.cppo"
-
-open Longident
+open Ppxlib
 open Location
 open Asttypes
 open Parsetree
 open Ast_helper
-open Ast_convenience
+open Ppx_deriving.Ast_convenience
 
 let deriver = "map"
 let raise_errorf = Ppx_deriving.raise_errorf
@@ -28,6 +26,7 @@ let pconstrrec name fields = pconstr name [precord ~closed:Closed fields]
 let  constrrec name fields =  constr name [ record                fields]
 
 let rec expr_of_typ ?decl typ =
+  let loc = typ.ptyp_loc in
   let typ = Ppx_deriving.remove_pervasives ~deriver typ in
   match typ with
   | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun x -> x]
@@ -58,26 +57,18 @@ let rec expr_of_typ ?decl typ =
     let cases =
       fields |> List.map (fun field ->
         let pat_variant label popt =
-#if OCAML_VERSION < (4, 06, 0)
-          Pat.variant label popt
-#else
           Pat.variant label.txt popt
-#endif
         in
         let exp_variant label popt =
-#if OCAML_VERSION < (4, 06, 0)
-          Exp.variant label popt
-#else
           Exp.variant label.txt popt
-#endif
         in
-        match field with
-        | Rtag_patt(label, true (*empty*), []) ->
+        match field.prf_desc with
+        | Rtag(label, true (*empty*), []) ->
           Exp.case (pat_variant label None) (exp_variant label None)
-        | Rtag_patt(label, false, [typ]) ->
+        | Rtag(label, false, [typ]) ->
           Exp.case (pat_variant label (Some [%pat? x]))
                    (exp_variant label (Some [%expr [%e expr_of_typ ?decl typ] x]))
-        | Rinherit_patt({ ptyp_desc = Ptyp_constr (tname, _) } as typ) -> begin
+        | Rinherit({ ptyp_desc = Ptyp_constr (tname, _) } as typ) -> begin
           match decl with
           | None -> 
             raise_errorf "inheritance of polymorphic variants not supported"
@@ -114,14 +105,12 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           let args = List.mapi (fun i typ -> app (expr_of_typ ~decl:type_decl typ) [evar (argn i)]) typs in
           Exp.case (pconstr name' (pattn typs))
                    (constr name' args)
-#if OCAML_VERSION >= (4, 03, 0)
         | Pcstr_record(labels) ->
           let args = labels |> List.map (fun ({ pld_name = { txt = n }; _ } as pld) ->
                         n, [%expr [%e expr_of_label_decl ~decl:type_decl pld]
                                [%e evar (argl n)]]) in
           Exp.case (pconstrrec name' (pattl labels))
                    (constrrec name' args)
-#endif
         ) |>
       Exp.function_
     | Ptype_record labels, _ ->
@@ -143,6 +132,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (polymorphize mapper)]
 
 let sig_of_type ~options ~path type_decl =
+  let loc = type_decl.ptype_loc in
   parse_options options;
   let typ_arg, var_arg, bound = Ppx_deriving.instantiate []    type_decl in
   let typ_ret, var_ret, _     = Ppx_deriving.instantiate bound type_decl in

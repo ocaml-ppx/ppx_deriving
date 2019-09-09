@@ -1,14 +1,5 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pconst_char Const_char
-#define Pconst_string Const_string
-#define Pstr_type(rec_flag, type_decls) Pstr_type(type_decls)
-#define Psig_type(rec_flag, type_decls) Psig_type(type_decls)
-#endif
+open Ppxlib
 
-#if OCAML_VERSION < (4, 08, 0)
-#define Attribute_expr(loc_, txt_, payload) ({txt = txt_; loc = loc_}, payload)
-#define Attribute_patt(loc_, txt_, payload) ({txt = txt_; loc = loc_}, payload)
-#else
 #define Attribute_expr(loc_, txt_, payload) { attr_name = \
                                                 { txt = txt_; loc = loc_ }; \
                                               attr_payload = payload; \
@@ -17,28 +8,122 @@
                                                { txt = txt_; loc = loc_ }; \
                                               attr_payload = payload; \
                                               attr_loc = _ }
-#endif
-
-#if OCAML_VERSION < (4, 08, 0)
-#define Rtag_patt(label, constant, args) Rtag(label, _, constant, args)
-#define Rinherit_patt(typ) Rinherit(typ)
-#else
-#define Rtag_patt(label, constant, args) {prf_desc = Rtag(label, constant, args); _}
-#define Rinherit_patt(typ) {prf_desc = Rinherit(typ); _}
-#endif
-
-open Longident
 open Location
 open Asttypes
-open Parsetree
 open Ast_helper
+
+module Ast_convenience = struct
+  (* Formerly defined in Ppx_tools.Ast_convenience.
+     Ppx_tools is not compatible with Ppxlib. *)
+
+  let mkloc txt loc =
+    { txt; loc }
+
+  let mknoloc txt =
+    mkloc txt !Ast_helper.default_loc
+
+  let str_of_string s =
+    mknoloc s
+
+  let lid_of_string s =
+    mknoloc (Lident s)
+
+  let unit () =
+    let loc = !Ast_helper.default_loc in
+    [%expr ()]
+
+  let punit () =
+    let loc = !Ast_helper.default_loc in
+    [%pat? ()]
+
+  let str s =
+    Ast_helper.Exp.constant (Ast_helper.Const.string s)
+
+  let int i =
+    Ast_helper.Exp.constant (Ast_helper.Const.int i)
+
+  let pint i =
+    Ast_helper.Pat.constant (Ast_helper.Const.int i)
+
+  let evar name =
+    Ast_helper.Exp.ident (lid_of_string name)
+
+  let pvar name =
+    Ast_helper.Pat.var (str_of_string name)
+
+  let app f args =
+    match args with
+    | [] -> f
+    | _ ->
+        let args = List.map (fun e -> (Nolabel, e)) args in
+        Ast_helper.Exp.apply f args
+
+  let constr name args =
+    let args =
+      match args with
+      | [] -> None
+      | [arg] -> Some arg
+      | _ -> Some (Ast_helper.Exp.tuple args) in
+    Ast_helper.Exp.construct (lid_of_string name) args
+
+  let pconstr name args =
+    let args =
+      match args with
+      | [] -> None
+      | [arg] -> Some arg
+      | _ -> Some (Ast_helper.Pat.tuple args) in
+    Ast_helper.Pat.construct (lid_of_string name) args
+
+  let tconstr name args =
+    Ast_helper.Typ.constr (lid_of_string name) args
+
+  let record fields =
+    let fields =
+      List.map (fun (name, value) -> (lid_of_string name, value)) fields in
+    Ast_helper.Exp.record fields None
+
+  let precord ~closed fields =
+    let fields =
+      List.map (fun (name, value) -> (lid_of_string name, value)) fields in
+    Ast_helper.Pat.record fields closed
+
+  let tuple items =
+    match items with
+    | [] -> unit ()
+    | [item] -> item
+    | _ -> Ast_helper.Exp.tuple items
+
+  let ptuple items =
+    match items with
+    | [] -> punit ()
+    | [item] -> item
+    | _ -> Ast_helper.Pat.tuple items
+
+  let attribute_has_name name attribute =
+    attribute.attr_name.txt = name
+
+  let has_attr name attributes =
+    List.exists (attribute_has_name name) attributes
+
+  let find_attr name attributes =
+    match List.find (attribute_has_name name) attributes with
+    | exception Not_found -> None
+    | attribute -> Some attribute.attr_payload
+
+  module Label = struct
+    let nolabel = Nolabel
+
+    let labelled s =
+      Labelled s
+
+    let optional s =
+      Optional s
+  end
+end
+
 open Ast_convenience
 
-#if OCAML_VERSION >= (4, 05, 0)
 type tyvar = string Location.loc
-#else
-type tyvar = string
-#endif
 
 type deriver = {
   name : string ;
@@ -93,6 +178,7 @@ let lookup name =
   | Some (External _) | None -> None
 
 let raise_errorf ?sub ?loc fmt =
+  let module Location = Ocaml_common.Location in
   let raise_msg str =
 #if OCAML_VERSION >= (4, 08, 0)
     let sub =
@@ -150,11 +236,7 @@ module Arg = struct
 
   let int expr =
     match expr with
-#if OCAML_VERSION < (4, 03, 0)
-    | { pexp_desc = Pexp_constant (Const_int n) } -> Ok n
-#else
     | { pexp_desc = Pexp_constant (Pconst_integer (sn, _)) } -> Ok (int_of_string sn)
-#endif
     | _ -> Error "integer"
 
   let bool expr =
@@ -229,6 +311,7 @@ type quoter = {
 let create_quoter () = { next_id = 0; bindings = [] }
 
 let quote ~quoter expr =
+  let loc = !Ast_helper.default_loc in
   let name = "__" ^ string_of_int quoter.next_id in
   quoter.bindings <- (Vb.mk (pvar name) [%expr fun () -> [%e expr]]) :: quoter.bindings;
   quoter.next_id <- quoter.next_id + 1;
@@ -240,11 +323,7 @@ let sanitize ?(module_=Lident "Ppx_deriving_runtime") ?(quoter=create_quoter ())
     let attrs = [attr_warning [%expr "-A"]] in
     let modname = { txt = module_; loc } in
     Exp.open_ ~loc ~attrs
-#if OCAML_VERSION < (4, 08, 0)
-      Override modname
-#else
       (Opn.mk ~loc ~attrs ~override:Override (Mod.ident ~loc ~attrs modname))
-#endif
       expr in
   match quoter.bindings with
   | [] -> body
@@ -262,7 +341,7 @@ let path_of_type_decl ~path type_decl =
   | Some { ptyp_desc = Ptyp_constr ({ txt = lid }, _) } ->
     begin match lid with
     | Lident _ -> []
-    | Ldot (lid, _) -> Longident.flatten lid
+    | Ldot (lid, _) -> Ocaml_common.Longident.flatten lid
     | Lapply _ -> assert false
     end
   | _ -> path
@@ -318,7 +397,7 @@ let rec remove_pervasive_lid = function
 let remove_pervasives ~deriver typ =
   if attr_nobuiltin ~deriver typ.ptyp_attributes then typ
   else
-    let open Ast_mapper in
+    let open Migrate_parsetree.OCaml_408.Ast.Ast_mapper in
     let map_typ mapper typ = match typ.ptyp_desc with
       | Ptyp_constr (lid, l) ->
         let lid = {lid with txt = remove_pervasive_lid lid.txt} in
@@ -333,14 +412,14 @@ let remove_pervasives ~deriver typ =
     let m = { default_mapper with typ = map_typ} in
     m.typ m typ
 
+let mkloc = Ocaml_common.Location.mkloc
+
 let fold_left_type_params fn accum params =
   List.fold_left (fun accum (param, _) ->
       match param with
       | { ptyp_desc = Ptyp_any } -> accum
       | { ptyp_desc = Ptyp_var name } ->
-#if OCAML_VERSION >= (4, 05, 0)
         let name = mkloc name param.ptyp_loc in
-#endif
         fn accum name
       | _ -> assert false)
     accum params
@@ -356,9 +435,7 @@ let fold_right_type_params fn params accum =
       match param with
       | { ptyp_desc = Ptyp_any } -> accum
       | { ptyp_desc = Ptyp_var name } ->
-#if OCAML_VERSION >= (4, 05, 0)
         let name = mkloc name param.ptyp_loc in
-#endif
         fn name accum
       | _ -> assert false)
     params accum
@@ -374,27 +451,19 @@ let free_vars_in_core_type typ =
     match typ with
     | { ptyp_desc = Ptyp_any } -> []
     | { ptyp_desc = Ptyp_var name } ->
-#if OCAML_VERSION >= (4, 05, 0)
       [mkloc name typ.ptyp_loc]
-#else
-      [name]
-#endif
     | { ptyp_desc = Ptyp_arrow (_, x, y) } -> free_in x @ free_in y
     | { ptyp_desc = (Ptyp_tuple xs | Ptyp_constr (_, xs)) } ->
       List.map free_in xs |> List.concat
     | { ptyp_desc = Ptyp_alias (x, name) } ->
-#if OCAML_VERSION >= (4, 05, 0)
       [mkloc name typ.ptyp_loc]
-#else
-      [name]
-#endif
       @ free_in x
     | { ptyp_desc = Ptyp_poly (bound, x) } ->
       List.filter (fun y -> not (List.mem y bound)) (free_in x)
     | { ptyp_desc = Ptyp_variant (rows, _, _) } ->
       List.map (
-          function Rtag_patt(_,_,ts) -> List.map free_in ts
-                 | Rinherit_patt(t) -> [free_in t]
+          function { prf_desc = Rtag(_,_,ts) } -> List.map free_in ts
+                 | { prf_desc = Rinherit(t) } -> [free_in t]
         ) rows |> List.concat |> List.concat
     | _ -> assert false
   in
@@ -402,11 +471,7 @@ let free_vars_in_core_type typ =
     let module StringSet = Set.Make(String) in
     let add (rev_names, txts) name =
       let txt =
-#if OCAML_VERSION >= (4, 05, 0)
         name.txt
-#else
-        name
-#endif
       in
       if StringSet.mem txt txts
       then (rev_names, txts)
@@ -430,47 +495,33 @@ let fresh_var bound =
 
 let poly_fun_of_type_decl type_decl expr =
   fold_right_type_decl (fun name expr ->
-#if OCAML_VERSION >= (4, 05, 0)
     let name = name.txt in
-#endif
     Exp.fun_ Label.nolabel None (pvar ("poly_"^name)) expr) type_decl expr
 
 let poly_fun_of_type_ext type_ext expr =
   fold_right_type_ext (fun name expr ->
-#if OCAML_VERSION >= (4, 05, 0)
     let name = name.txt in
-#endif
     Exp.fun_ Label.nolabel None (pvar ("poly_"^name)) expr) type_ext expr
 
 let poly_apply_of_type_decl type_decl expr =
   fold_left_type_decl (fun expr name ->
-#if OCAML_VERSION >= (4, 05, 0)
     let name = name.txt in
-#endif
     Exp.apply expr [Label.nolabel, evar ("poly_"^name)]) expr type_decl
 
 let poly_apply_of_type_ext type_ext expr =
   fold_left_type_ext (fun expr name ->
-#if OCAML_VERSION >= (4, 05, 0)
     let name = name.txt in
-#endif
     Exp.apply expr [Label.nolabel, evar ("poly_"^name)]) expr type_ext
 
 let poly_arrow_of_type_decl fn type_decl typ =
   fold_right_type_decl (fun name typ ->
-#if OCAML_VERSION >= (4, 05, 0)
     let name = name.txt in
-#endif
     Typ.arrow Label.nolabel (fn (Typ.var name)) typ) type_decl typ
 
 let poly_arrow_of_type_ext fn type_ext typ =
   fold_right_type_ext (fun name typ ->
     let var =
-#if OCAML_VERSION >= (4, 05, 0)
       Typ.var ~loc:name.loc name.txt
-#else
-      Typ.var name
-#endif
     in
     Typ.arrow Label.nolabel (fn var) typ) type_ext typ
 
@@ -507,11 +558,13 @@ let fold_exprs ?unit fn exprs =
     | None -> raise (Invalid_argument "Ppx_deriving.fold_exprs")
 
 let seq_reduce ?sep a b =
+  let loc = !Ast_helper.default_loc in
   match sep with
   | Some x -> [%expr [%e a]; [%e x]; [%e b]]
   | None -> [%expr [%e a]; [%e b]]
 
 let binop_reduce x a b =
+  let loc = !Ast_helper.default_loc in
   [%expr [%e x] [%e a] [%e b]]
 
 let strong_type_of_type ty =
@@ -545,13 +598,13 @@ let derive path pstr_loc item attributes fn arg =
           name,
           Options
             (options |> List.map (fun ({ txt }, expr) ->
-               String.concat "." (Longident.flatten txt), expr))
+               String.concat "." (Ocaml_common.Longident.flatten txt), expr))
         | { pexp_desc = Pexp_apply ({ pexp_desc = Pexp_ident name }, _) } ->
           name, Unknown_syntax
         | { pexp_loc } ->
           raise_errorf ~loc:pexp_loc "Unrecognized [@@deriving] syntax"
       in
-      let name, loc = String.concat "_" (Longident.flatten name.txt), name.loc in
+      let name, loc = String.concat "_" (Ocaml_common.Longident.flatten name.txt), name.loc in
       let is_optional, options =
         match options with
         | Unknown_syntax -> false, options
@@ -586,16 +639,12 @@ let derive_module_type_decl path module_type_decl pstr_loc item fn =
   derive path pstr_loc item attributes fn module_type_decl
 
 let module_from_input_name () =
-  match !Location.input_name with
+  match !Ocaml_common.Location.input_name with
   | ""
   | "//toplevel//" -> []
   | filename ->
     let capitalize =
-#if OCAML_VERSION >= (4, 03, 0)
       String.capitalize_ascii
-#else
-      String.capitalize
-#endif
     in
     match Filename.chop_suffix filename ".ml" with
       | exception _ ->
@@ -605,21 +654,60 @@ let module_from_input_name () =
          [capitalize (Filename.basename path)]
 
 let pstr_desc_rec_flag pstr =
+  let open Migrate_parsetree.OCaml_current.Ast.Parsetree in
   match pstr with
   | Pstr_type(rec_flag, typ_decls) ->
-#if OCAML_VERSION < (4, 03, 0)
-    begin
-      if List.exists (fun ty -> has_attr "nonrec" ty.ptype_attributes) typ_decls then
-        Nonrecursive
-      else
-        Recursive
-    end
-#else
     rec_flag
-#endif
+  | _ -> assert false
+
+
+module Ast_mapper = Migrate_parsetree.OCaml_current.Ast.Ast_mapper
+
+module Ast_helper_current = Migrate_parsetree.OCaml_current.Ast.Ast_helper
+
+module OCaml_408_of_current =
+  Migrate_parsetree.Convert (Migrate_parsetree.OCaml_current)
+    (Migrate_parsetree.OCaml_408)
+
+module OCaml_current_of_408 =
+  Migrate_parsetree.Convert (Migrate_parsetree.OCaml_408)
+    (Migrate_parsetree.OCaml_current)
+
+let copy_deriver f typ =
+  OCaml_current_of_408.copy_expression
+    (f (OCaml_408_of_current.copy_core_type typ))
+
+let copy_attributes attrs =
+  (OCaml_408_of_current.copy_core_type
+    (Ast_helper_current.Typ.any ~attrs ()))
+    .ptyp_attributes
+
+let copy_structure_item item =
+  match OCaml_408_of_current.copy_structure [item] with
+  | [item] -> item
+  | _ -> assert false
+
+let copy_signature_item item =
+  match OCaml_408_of_current.copy_signature [item] with
+  | [item] -> item
+  | _ -> assert false
+
+let has_attr_current name attributes =
+  has_attr name (copy_attributes attributes)
+
+let copy_derive derive item f =
+  OCaml_current_of_408.copy_structure (derive (copy_structure_item item) f)
+
+let copy_derive_sig derive item f =
+  OCaml_current_of_408.copy_signature (derive (copy_signature_item item) f)
+
+let copy_module_type_declaration modtype =
+  match copy_structure_item (Ast_helper_current.Str.modtype modtype) with
+  | { pstr_desc = Pstr_modtype modtype } -> modtype
   | _ -> assert false
 
 let mapper =
+  let open Migrate_parsetree.OCaml_current.Ast.Parsetree in
   let module_nesting = ref [] in
   let with_module name f =
     let old_nesting = !module_nesting in
@@ -647,13 +735,14 @@ let mapper =
         | None -> raise_errorf ~loc "Cannot locate deriver %s" name
       in
       begin match payload with
-      | PTyp typ -> deriver typ
+      | PTyp typ -> copy_deriver deriver typ
       | _ -> raise_errorf ~loc "Unrecognized [%%derive.*] syntax"
       end
     | { pexp_desc = Pexp_extension ({ txt = name; loc }, PTyp typ) } ->
       begin match lookup_internal_or_external name with
       | Some (Internal { core_type = Some deriver }) ->
-        Ast_helper.with_default_loc typ.ptyp_loc (fun () -> deriver typ)
+        Ast_helper.with_default_loc typ.ptyp_loc (fun () ->
+          copy_deriver deriver typ)
       | _ -> Ast_mapper.(default_mapper.expr) mapper expr
       end
     | _ -> Ast_mapper.(default_mapper.expr) mapper expr
@@ -661,29 +750,33 @@ let mapper =
   let structure mapper items =
     match items with
     | { pstr_desc = Pstr_type(_, typ_decls) as pstr_desc ; pstr_loc } :: rest when
-        List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls
+        List.exists (fun ty -> has_attr_current "deriving" ty.ptype_attributes) typ_decls
         && pstr_desc_rec_flag pstr_desc = Nonrecursive ->
       raise_errorf ~loc:pstr_loc "The nonrec flag is not supported by ppx_deriving"
     | { pstr_desc = Pstr_type(_, typ_decls); pstr_loc } as item :: rest when
-        List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
+        List.exists (fun ty -> has_attr_current "deriving" ty.ptype_attributes) typ_decls ->
       let derived =
         Ast_helper.with_default_loc pstr_loc (fun () ->
-          derive_type_decl module_nesting typ_decls pstr_loc item
+          let typ_decls =
+            List.map OCaml_408_of_current.copy_type_declaration typ_decls in
+          copy_derive (derive_type_decl module_nesting typ_decls pstr_loc) item
             (fun deriver -> deriver.type_decl_str))
       in derived @ mapper.Ast_mapper.structure mapper rest
     | { pstr_desc = Pstr_typext typ_ext; pstr_loc } as item :: rest when
-          has_attr "deriving" typ_ext.ptyext_attributes ->
+          has_attr_current "deriving" typ_ext.ptyext_attributes ->
+      let typ_ext = OCaml_408_of_current.copy_type_extension typ_ext in
       let derived =
         Ast_helper.with_default_loc pstr_loc (fun () ->
-          derive_type_ext module_nesting typ_ext pstr_loc item
+          copy_derive (derive_type_ext module_nesting typ_ext pstr_loc) item
             (fun deriver -> deriver.type_ext_str))
       in derived @ mapper.Ast_mapper.structure mapper rest
     | { pstr_desc = Pstr_modtype modtype; pstr_loc } as item :: rest when
-          has_attr "deriving" modtype.pmtd_attributes ->
+          has_attr_current "deriving" modtype.pmtd_attributes ->
+      let modtype = copy_module_type_declaration modtype in
       let derived =
         Ast_helper.with_default_loc pstr_loc (fun () ->
-          derive_module_type_decl module_nesting modtype pstr_loc item
-            (fun deriver -> deriver.module_type_decl_str))
+          copy_derive (derive_module_type_decl module_nesting modtype pstr_loc)
+            item (fun deriver -> deriver.module_type_decl_str))
       in derived @ mapper.Ast_mapper.structure mapper rest
     | { pstr_desc = Pstr_module ({ pmb_name = { txt = name } } as mb) } as item :: rest ->
       let derived =
@@ -706,24 +799,32 @@ let mapper =
   let signature mapper items =
     match items with
     | { psig_desc = Psig_type(_, typ_decls); psig_loc } as item :: rest when
-        List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls ->
+        List.exists (fun ty -> has_attr_current "deriving" ty.ptype_attributes)
+          typ_decls ->
+      let typ_decls =
+        List.map OCaml_408_of_current.copy_type_declaration typ_decls in
       let derived =
         Ast_helper.with_default_loc psig_loc (fun () ->
-          derive_type_decl module_nesting typ_decls psig_loc item
+          copy_derive_sig
+            (derive_type_decl module_nesting typ_decls psig_loc) item
             (fun deriver -> deriver.type_decl_sig))
       in derived @ mapper.Ast_mapper.signature mapper rest
     | { psig_desc = Psig_typext typ_ext; psig_loc } as item :: rest when
-        has_attr "deriving" typ_ext.ptyext_attributes ->
+        has_attr_current "deriving" typ_ext.ptyext_attributes ->
+      let typ_ext = OCaml_408_of_current.copy_type_extension typ_ext in
       let derived =
         Ast_helper.with_default_loc psig_loc (fun () ->
-          derive_type_ext module_nesting typ_ext psig_loc item
-            (fun deriver -> deriver.type_ext_sig))
+          copy_derive_sig
+            (derive_type_ext module_nesting typ_ext psig_loc) item
+               (fun deriver -> deriver.type_ext_sig))
       in derived @ mapper.Ast_mapper.signature mapper rest
     | { psig_desc = Psig_modtype modtype; psig_loc } as item :: rest when
-        has_attr "deriving" modtype.pmtd_attributes ->
+        has_attr_current "deriving" modtype.pmtd_attributes ->
+      let modtype = copy_module_type_declaration modtype in
       let derived =
         Ast_helper.with_default_loc psig_loc (fun () ->
-          derive_module_type_decl module_nesting modtype psig_loc item
+          copy_derive_sig
+            (derive_module_type_decl module_nesting modtype psig_loc) item
             (fun deriver -> deriver.module_type_decl_sig))
       in derived @ mapper.Ast_mapper.signature mapper rest
     | { psig_desc = Psig_module ({ pmd_name = { txt = name } } as md) } as item :: rest ->

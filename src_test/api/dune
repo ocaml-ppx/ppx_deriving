@@ -6,4 +6,4 @@
 (test
  (name test_api)
  (libraries oUnit compiler-libs.common ppx_deriving.api)
- (preprocess (action (run ppxfind -legacy ppx_tools.metaquot --as-pp %{input-file}))))
+ (preprocess (pps ppxlib.metaquot)))

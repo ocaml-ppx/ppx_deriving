@@ -30,9 +30,7 @@ let test_variant ctxt =
   assert_equal ~printer (1) (compare_v (Baz "") (Bar (1, "")));
   assert_equal ~printer (-1) (compare_v Foo (Baz ""))
 
-#if OCAML_VERSION >= (4, 03, 0)
 type rv = RFoo | RBar of { x: int; y: string; } [@@deriving ord]
-#endif
 
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving ord]
 type pv2 = [ `Baz | pv1 ] [@@deriving ord]
@@ -101,13 +99,11 @@ let test_mrec2 ctxt =
   assert_equal ~printer (-1) (compare_e ce1 ce2);
   assert_equal ~printer (1) (compare_e ce2 ce1)
 
-#if OCAML_VERSION >= (4, 03, 0)
 let test_ord_result ctx =
   let compare_res0 = [%ord: (unit, unit) result] in
   assert_equal ~printer 0 (compare_res0 (Ok ()) (Ok ()));
   assert_equal ~printer (-1) (compare_res0 (Ok ()) (Error ()));
   assert_equal ~printer 1 (compare_res0 (Error ()) (Ok ()))
-#endif
 
 let test_ord_result_result ctx =
   let compare_res0 = [%ord: (unit, unit) Result.result] in
@@ -192,9 +188,7 @@ let suite = "Test deriving(ord)" >::: [
     "test_ref2"          >:: test_ref2;
     "test_std_shadowing" >:: test_std_shadowing;
     "test_poly_app"      >:: test_poly_app;
-#if OCAML_VERSION >= (4, 03, 0)
     "test_ord_result"    >:: test_ord_result;
-#endif
     "test_ord_result_result" >:: test_ord_result_result;
   ]
 

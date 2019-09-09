@@ -1,10 +1,9 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pconst_string Const_string
-#endif
-
+open Ppxlib
 open Asttypes
 open Parsetree
 open Ast_helper
+
+module Ast_mapper = Migrate_parsetree.OCaml_408.Ast.Ast_mapper
 
 let raise_errorf = Ppx_deriving.raise_errorf
 
@@ -59,7 +58,11 @@ let add_plugins plugins =
 let mapper argv =
   get_plugins () |> List.iter load_plugin;
   add_plugins argv;
-  let omp_mapper = Migrate_parsetree.Driver.run_as_ast_mapper [] in
+  let module Convert =
+    Migrate_parsetree.Convert (Migrate_parsetree.OCaml_current)
+      (Migrate_parsetree.OCaml_408) in
+  let omp_mapper =
+    Convert.copy_mapper (Migrate_parsetree.Driver.run_as_ast_mapper []) in
   let structure mapper = function
     | [%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
           [%expr "ppx_deriving"] :: elems) }]]] :: rest ->

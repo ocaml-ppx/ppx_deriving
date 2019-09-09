@@ -9,6 +9,7 @@ let string_of_tyvar tyvar =
 #endif
 
 let test_free_vars ctxt =
+  let loc = !Ast_helper.default_loc in
   let free_vars = Ppx_deriving.free_vars_in_core_type in
   let (!!) li = List.map string_of_tyvar li in
   let printer li =
