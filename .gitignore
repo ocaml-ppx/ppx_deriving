@@ -7,3 +7,7 @@ pkg/META
 src_test/_tags
 .merlin
 _opam
+
+# dune-promoted cppo output
+src/runtime/ppx_deriving_runtime.ml
+src/runtime/ppx_deriving_runtime.mli

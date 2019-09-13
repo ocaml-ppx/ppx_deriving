@@ -8,9 +8,11 @@
 (rule
  (deps ppx_deriving_runtime.cppo.ml)
  (targets ppx_deriving_runtime.ml)
+ (mode (promote (until-clean)))
  (action (run %{bin:cppo} -V OCAML:%{ocaml_version} %{deps} -o %{targets})))
 
 (rule
  (deps ppx_deriving_runtime.cppo.mli)
  (targets ppx_deriving_runtime.mli)
+ (mode (promote (until-clean)))
  (action (run %{bin:cppo} -V OCAML:%{ocaml_version} %{deps} -o %{targets})))
