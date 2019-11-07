@@ -303,7 +303,7 @@ Currently, the resulting ppx driver still depends on Dynlink as well as retains 
 Developing plugins
 ------------------
 
-This section only explains the tooling and best practices. Anyone aiming to implement their own _deriving_ plugin is encouraged to explore the existing ones, e.g. [eq](src_plugins/ppx_deriving_eq.cppo.ml) or [show](src_plugins/ppx_deriving_show.cppo.ml).
+This section only explains the tooling and best practices. Anyone aiming to implement their own _deriving_ plugin is encouraged to explore the existing ones, e.g. [eq](src_plugins/eq/ppx_deriving_eq.cppo.ml) or [show](src_plugins/show/ppx_deriving_show.cppo.ml).
 
 ### Tooling and environment
 
@@ -386,7 +386,7 @@ As such, _deriving_:
 
 ### Using the API
 
-Complete API documentation is available [online](http://ocaml-ppx.github.io/ppx_deriving/Ppx_deriving.html).
+Complete API documentation is available [online](http://ocaml-ppx.github.io/ppx_deriving/ppx_deriving/Ppx_deriving).
 
 #### Hygiene
 
@@ -430,13 +430,13 @@ The following is a list of tips for developers trying to use the ppx interface:
 
   * Module paths overwhelm you? Open all of the following modules, they don't conflict with each other: `Longident`, `Location`, `Asttypes`, `Parsetree`, `Ast_helper`, `Ast_convenience`.
   * Need to insert some ASTs? See [ppx_metaquot](https://github.com/alainfrisch/ppx_tools/blob/master/ppx_metaquot.ml); it is contained in the `ppx_tools.metaquot` package.
-  * Need to display an error? Use `Ppx_deriving.raise_errorf ~loc "Cannot derive Foo: (error description)"` ([doc](http://ocaml-ppx.github.io/ppx_deriving/Ppx_deriving.html#VALraise_errorf)); keep it clear which deriving plugin raised the error!
-  * Need to derive a function name from a type name? Use [Ppx_deriving.mangle_type_decl](http://ocaml-ppx.github.io/ppx_deriving/Ppx_deriving.html#VALmangle_type_decl) and [Ppx_deriving.mangle_lid](http://ocaml-ppx.github.io/ppx_deriving/Ppx_deriving.html#VALmangle_lid).
-  * Need to fetch an attribute from a node? Use `Ppx_deriving.attr ~prefix "foo" nod.nod_attributes` ([doc](http://ocaml-ppx.github.io/ppx_deriving/Ppx_deriving.html#VALattr)); this takes care of interoperability.
+  * Need to display an error? Use `Ppx_deriving.raise_errorf ~loc "Cannot derive Foo: (error description)"` ([doc](http://ocaml-ppx.github.io/ppx_deriving/ppx_deriving/Ppx_deriving/index.html#val-raise_errorf)); keep it clear which deriving plugin raised the error!
+  * Need to derive a function name from a type name? Use [Ppx_deriving.mangle_type_decl](http://ocaml-ppx.github.io/ppx_deriving/ppx_deriving/Ppx_deriving/index.html#val-mangle_type_decl) and [Ppx_deriving.mangle_lid](http://ocaml-ppx.github.io/ppx_deriving/ppx_deriving/Ppx_deriving/index.html#val-mangle_lid).
+  * Need to fetch an attribute from a node? Use `Ppx_deriving.attr ~prefix "foo" nod.nod_attributes` ([doc](http://ocaml-ppx.github.io/ppx_deriving/ppx_deriving/Ppx_deriving/index.html#val-attr)); this takes care of interoperability.
   * Put all functions derived from a set of type declarations into a single `let rec` block; this reflects the always-recursive nature of type definitions.
-  * Need to handle polymorphism? Use [Ppx_deriving.poly_fun_of_type_decl](http://ocaml-ppx.github.io/ppx_deriving/Ppx_deriving.html#VALpoly_fun_of_type_decl) for derived functions, [Ppx_deriving.poly_arrow_of_type_decl](http://ocaml-ppx.github.io/ppx_deriving/Ppx_deriving.html#VALpoly_arrow_of_type_decl) for signatures, and [Ppx_deriving.poly_apply_of_type_decl](http://ocaml-ppx.github.io/ppx_deriving/Ppx_deriving.html#VALpoly_apply_of_type_decl) for "forwarding" the arguments corresponding to type variables to another generated function.
-  * Need to display a full path to a type, e.g. for an error message? Use [Ppx_deriving.path_of_type_decl](http://ocaml-ppx.github.io/ppx_deriving/Ppx_deriving.html#VALpath_of_type_decl).
-  * Need to apply a sequence or a binary operator to variant, tuple or record elements? Use [Ppx_deriving.fold_exprs](http://ocaml-ppx.github.io/ppx_deriving/Ppx_deriving.html#VALfold_exprs).
+  * Need to handle polymorphism? Use [Ppx_deriving.poly_fun_of_type_decl](http://ocaml-ppx.github.io/ppx_deriving/ppx_deriving/Ppx_deriving/index.html#val-poly_fun_of_type_decl) for derived functions, [Ppx_deriving.poly_arrow_of_type_decl](http://ocaml-ppx.github.io/ppx_deriving/ppx_deriving/Ppx_deriving/index.html#val-poly_arrow_of_type_decl) for signatures, and [Ppx_deriving.poly_apply_of_type_decl](http://ocaml-ppx.github.io/ppx_deriving/ppx_deriving/Ppx_deriving/index.html#val-poly_apply_of_type_decl) for "forwarding" the arguments corresponding to type variables to another generated function.
+  * Need to display a full path to a type, e.g. for an error message? Use [Ppx_deriving.path_of_type_decl](http://ocaml-ppx.github.io/ppx_deriving/ppx_deriving/Ppx_deriving/index.html#val-path_of_type_decl).
+  * Need to apply a sequence or a binary operator to variant, tuple or record elements? Use [Ppx_deriving.fold_exprs](http://ocaml-ppx.github.io/ppx_deriving/ppx_deriving/Ppx_deriving/index.html#val-fold_exprs).
   * Don't forget to display an error message if your plugin doesn't parse any options.
 
 License
