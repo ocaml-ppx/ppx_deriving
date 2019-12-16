@@ -2,11 +2,7 @@ open Parsetree
 open OUnit2
 
 let string_of_tyvar tyvar =
-#if OCAML_VERSION >= (4, 05, 0)
   tyvar.Location.txt
-#else
-  tyvar
-#endif
 
 let test_free_vars ctxt =
   let loc = !Ast_helper.default_loc in

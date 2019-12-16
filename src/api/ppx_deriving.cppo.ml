@@ -1,13 +1,5 @@
 open Ppxlib
 
-#define Attribute_expr(loc_, txt_, payload) { attr_name = \
-                                                { txt = txt_; loc = loc_ }; \
-                                              attr_payload = payload; \
-                                              attr_loc = loc_ }
-#define Attribute_patt(loc_, txt_, payload) { attr_name = \
-                                               { txt = txt_; loc = loc_ }; \
-                                              attr_payload = payload; \
-                                              attr_loc = _ }
 open Location
 open Asttypes
 open Ast_helper
@@ -275,21 +267,21 @@ module Arg = struct
   let get_attr ~deriver conv attr =
     match attr with
     | None -> None
-    | Some (Attribute_patt(loc, name,
-                           PStr [{ pstr_desc = Pstr_eval (expr, []) }])) ->
+    | Some { attr_name = {txt = name; loc = _};
+      attr_payload = PStr [{ pstr_desc = Pstr_eval (expr, []) }]; attr_loc = _ } ->
       begin match conv expr with
       | Ok v -> Some v
       | Error desc ->
         raise_errorf ~loc:expr.pexp_loc "%s: invalid [@%s]: %s expected" deriver name desc
       end
-    | Some (Attribute_patt(loc, name, _)) ->
+    | Some { attr_name = {txt = name; loc}; attr_payload = _; attr_loc = _ } ->
       raise_errorf ~loc "%s: invalid [@%s]: value expected" deriver name
 
   let get_flag ~deriver attr =
     match attr with
     | None -> false
-    | Some (Attribute_patt(_loc, name, PStr [])) -> true
-    | Some (Attribute_patt(loc, name, _)) ->
+    | Some { attr_name = _; attr_payload = PStr []; attr_loc = _ } -> true
+    | Some { attr_name = {txt = name; loc}; attr_payload = _; attr_loc = _ } ->
       raise_errorf ~loc "%s: invalid [@%s]: empty structure expected" deriver name
 
   let get_expr ~deriver conv expr =
@@ -301,7 +293,10 @@ end
 let attr_warning expr =
   let loc = !default_loc in
   let structure = {pstr_desc = Pstr_eval (expr, []); pstr_loc = loc} in
-  Attribute_expr(loc, "ocaml.warning", PStr [structure])
+  { attr_name = { txt = "ocaml.warning"; loc; };
+    attr_payload = PStr [structure];
+    attr_loc = loc;
+  }
 
 type quoter = {
   mutable next_id : int;
@@ -368,8 +363,8 @@ let attr ~deriver name attrs =
     String.length str >= String.length prefix &&
       String.sub str 0 (String.length prefix) = prefix
   in
-  let attr_starts prefix (Attribute_patt(_loc, txt, _)) = starts prefix txt in
-  let attr_is name (Attribute_patt(_loc, txt, _)) = name = txt in
+  let attr_starts prefix attr = starts prefix attr.attr_name.txt in
+  let attr_is name attr = name = attr.attr_name.txt in
   let try_prefix prefix f =
     if List.exists (attr_starts prefix) attrs
     then prefix ^ name
