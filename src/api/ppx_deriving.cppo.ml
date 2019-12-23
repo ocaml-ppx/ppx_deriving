@@ -623,7 +623,14 @@ let mapper =
   let module_nesting = ref [] in
   let with_module name f =
     let old_nesting = !module_nesting in
+#if OCAML_VERSION >= (4, 10, 0)
+    begin match name with
+    | Some name -> module_nesting := !module_nesting @ [name]
+    | None -> ()
+    end;
+#else
     module_nesting := !module_nesting @ [name];
+#endif
     let result = f () in
     module_nesting := old_nesting;
     result
