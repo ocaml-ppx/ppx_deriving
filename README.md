@@ -31,6 +31,16 @@ For example, if you are using ocamlbuild, add the following to `_tags` to use th
 
     <src/*>: package(ppx_deriving.std)
 
+With Dune, you should add a `preprocess` directive to your target:
+
+    (executable
+      (libraries whatever)
+      (preprocess (pps ppx_deriving.show ppx_deriving.ord))
+      (name blah))
+
+Dune's `pps` directive allows faster preprocessing by linking the specified preprocessors into a single executable (documented [here](https://readthedocs.org/projects/dune/downloads/pdf/latest/#subsection.5.7.2)). This can significantly speed up compilation on large projects which use many derivers.
+
+
 If you are using another buildsystem, just make sure it passes `-package ppx_deriving.whatever` to ocamlfind.
 
 Usage
