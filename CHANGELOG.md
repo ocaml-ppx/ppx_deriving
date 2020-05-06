@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Future version (4.5)
+--------------------
+
+* Migrate to ppxlib #206, #210
+  (Anton Kochkov, Gabriel Scherer, Thierry Martinez)
+
 4.4
 ---
 
