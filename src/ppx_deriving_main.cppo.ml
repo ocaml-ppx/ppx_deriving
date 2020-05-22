@@ -3,7 +3,15 @@ open Asttypes
 open Parsetree
 open Ast_helper
 
-module Ast_mapper = Migrate_parsetree.OCaml_408.Ast.Ast_mapper
+module Ast_mapper = Ocaml_common.Ast_mapper
+
+module From_current =
+  Migrate_parsetree.Convert (Migrate_parsetree.OCaml_current)
+    (Migrate_parsetree.OCaml_408)
+
+module To_current =
+  Migrate_parsetree.Convert (Migrate_parsetree.OCaml_408)
+    (Migrate_parsetree.OCaml_current)
 
 let raise_errorf = Ppx_deriving.raise_errorf
 
@@ -39,13 +47,15 @@ let load_plugin ?loc plugin =
 
 let get_plugins () =
   match Ast_mapper.get_cookie "ppx_deriving" with
-  | Some { pexp_desc = Pexp_tuple exprs } ->
-    exprs |> List.map (fun expr ->
-      match expr with
-      | { pexp_desc = Pexp_constant (Pconst_string (file, None)) } -> file
-      | _ -> assert false)
-  | Some _ -> assert false
   | None -> []
+  | Some expr ->
+      match From_current.copy_expression expr with
+      | { pexp_desc = Pexp_tuple exprs } ->
+        exprs |> List.map (fun expr ->
+          match expr with
+          | { pexp_desc = Pexp_constant (Pconst_string (file, None)) } -> file
+          | _ -> assert false)
+      | _ -> assert false
 
 let add_plugins plugins =
   let loaded  = get_plugins () in
@@ -53,29 +63,39 @@ let add_plugins plugins =
   List.iter load_plugin plugins;
   let loaded  = loaded @ plugins in
   Ast_mapper.set_cookie "ppx_deriving"
-    (Exp.tuple (List.map (fun file -> Exp.constant (Pconst_string (file, None))) loaded))
+    (To_current.copy_expression
+       (Exp.tuple (List.map (fun file ->
+          Exp.constant (Pconst_string (file, None))) loaded)))
 
 let mapper argv =
   get_plugins () |> List.iter load_plugin;
   add_plugins argv;
-  let module Convert =
-    Migrate_parsetree.Convert (Migrate_parsetree.OCaml_current)
-      (Migrate_parsetree.OCaml_408) in
-  let omp_mapper =
-    Convert.copy_mapper (Migrate_parsetree.Driver.run_as_ast_mapper []) in
-  let structure mapper = function
-    | [%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
-          [%expr "ppx_deriving"] :: elems) }]]] :: rest ->
-      elems |>
-        List.map (fun elem ->
-          match elem with
-          | { pexp_desc = Pexp_constant (Pconst_string (file, None))} -> file
-          | _ -> assert false) |>
-        add_plugins;
-        mapper.Ast_mapper.structure mapper rest
-    | items -> omp_mapper.Ast_mapper.structure mapper items in
-  { omp_mapper with Ast_mapper.structure }
+  let copy_structure_item item =
+    match From_current.copy_structure [item] with
+    | [item] -> item
+    | _ -> failwith "Ppx_deriving_main.copy_structure_item" in
+  let module Current_ast = Migrate_parsetree.OCaml_current.Ast in
+  let omp_mapper = Migrate_parsetree.Driver.run_as_ast_mapper [] in
+  let structure mapper s =
+    match s with
+    | [] -> []
+    | hd :: tl ->
+        match
+          try Some (copy_structure_item hd)
+          with Migrate_parsetree.Def.Migration_error (_, _) -> None
+        with
+        | Some ([%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
+            [%expr "ppx_deriving"] :: elems) }]]]) ->
+            elems |>
+            List.map (fun elem ->
+              match elem with
+              | { pexp_desc = Pexp_constant (Pconst_string (file, None))} ->
+                  file
+              | _ -> assert false) |>
+            add_plugins;
+            mapper.Current_ast.Ast_mapper.structure mapper tl
+        | _ -> omp_mapper.Current_ast.Ast_mapper.structure mapper s in
+  { omp_mapper with Current_ast.Ast_mapper.structure }
 
 let () =
   Ast_mapper.register "ppx_deriving" mapper
-
