@@ -3,7 +3,7 @@ open Asttypes
 open Parsetree
 open Ast_helper
 
-module Ast_mapper = Migrate_parsetree.OCaml_current.Ast.Ast_mapper
+module Ast_mapper = Ocaml_common.Ast_mapper
 
 module From_current =
   Migrate_parsetree.Convert (Migrate_parsetree.OCaml_current)
@@ -46,16 +46,16 @@ let load_plugin ?loc plugin =
     dynlink ?loc plugin
 
 let get_plugins () =
-  match Ast_mapper.get_cookie "ppx_deriving"
-        |> Option.map From_current.copy_expression
-  with
-  | Some { pexp_desc = Pexp_tuple exprs } ->
-    exprs |> List.map (fun expr ->
-      match expr with
-      | { pexp_desc = Pexp_constant (Pconst_string (file, None)) } -> file
-      | _ -> assert false)
-  | Some _ -> assert false
+  match Ast_mapper.get_cookie "ppx_deriving" with
   | None -> []
+  | Some expr ->
+      match From_current.copy_expression expr with
+      | { pexp_desc = Pexp_tuple exprs } ->
+        exprs |> List.map (fun expr ->
+          match expr with
+          | { pexp_desc = Pexp_constant (Pconst_string (file, None)) } -> file
+          | _ -> assert false)
+      | _ -> assert false
 
 let add_plugins plugins =
   let loaded  = get_plugins () in
@@ -80,9 +80,12 @@ let mapper argv =
     match s with
     | [] -> []
     | hd :: tl ->
-        match copy_structure_item hd with
-        | [%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
-            [%expr "ppx_deriving"] :: elems) }]]] ->
+        match
+          try Some (copy_structure_item hd)
+          with Migrate_parsetree.Def.Migration_error (_, _) -> None
+        with
+        | Some ([%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
+            [%expr "ppx_deriving"] :: elems) }]]]) ->
             elems |>
             List.map (fun elem ->
               match elem with
@@ -91,7 +94,6 @@ let mapper argv =
               | _ -> assert false) |>
             add_plugins;
             mapper.Current_ast.Ast_mapper.structure mapper tl
-        | exception Migrate_parsetree.Def.Migration_error _ ->
         | _ -> omp_mapper.Current_ast.Ast_mapper.structure mapper s in
   { omp_mapper with Current_ast.Ast_mapper.structure }
 
