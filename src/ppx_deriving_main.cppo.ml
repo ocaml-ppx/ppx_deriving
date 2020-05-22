@@ -46,10 +46,12 @@ let load_plugin ?loc plugin =
     dynlink ?loc plugin
 
 let get_plugins () =
-  match Ast_mapper.get_cookie "ppx_deriving" with
+  match Ast_mapper.get_cookie "ppx_deriving"
+        |> Option.map From_current.copy_expression
+  with
   | Some { pexp_desc = Pexp_tuple exprs } ->
     exprs |> List.map (fun expr ->
-      match From_current.copy_expression expr with
+      match expr with
       | { pexp_desc = Pexp_constant (Pconst_string (file, None)) } -> file
       | _ -> assert false)
   | Some _ -> assert false
