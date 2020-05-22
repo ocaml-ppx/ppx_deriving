@@ -3,7 +3,15 @@ open Asttypes
 open Parsetree
 open Ast_helper
 
-module Ast_mapper = Migrate_parsetree.OCaml_408.Ast.Ast_mapper
+module Ast_mapper = Migrate_parsetree.OCaml_current.Ast.Ast_mapper
+
+module From_current =
+  Migrate_parsetree.Convert (Migrate_parsetree.OCaml_current)
+    (Migrate_parsetree.OCaml_408)
+
+module To_current =
+  Migrate_parsetree.Convert (Migrate_parsetree.OCaml_408)
+    (Migrate_parsetree.OCaml_current)
 
 let raise_errorf = Ppx_deriving.raise_errorf
 
@@ -41,7 +49,7 @@ let get_plugins () =
   match Ast_mapper.get_cookie "ppx_deriving" with
   | Some { pexp_desc = Pexp_tuple exprs } ->
     exprs |> List.map (fun expr ->
-      match expr with
+      match From_current.copy_expression expr with
       | { pexp_desc = Pexp_constant (Pconst_string (file, None)) } -> file
       | _ -> assert false)
   | Some _ -> assert false
@@ -53,7 +61,9 @@ let add_plugins plugins =
   List.iter load_plugin plugins;
   let loaded  = loaded @ plugins in
   Ast_mapper.set_cookie "ppx_deriving"
-    (Exp.tuple (List.map (fun file -> Exp.constant (Pconst_string (file, None))) loaded))
+    (To_current.copy_expression
+       (Exp.tuple (List.map (fun file ->
+          Exp.constant (Pconst_string (file, None))) loaded)))
 
 let mapper argv =
   get_plugins () |> List.iter load_plugin;
@@ -62,7 +72,7 @@ let mapper argv =
     Migrate_parsetree.Convert (Migrate_parsetree.OCaml_current)
       (Migrate_parsetree.OCaml_408) in
   let copy_structure_item item =
-    match Convert.copy_structure [item] with
+    match From_current.copy_structure [item] with
     | [item] -> item
     | _ -> failwith "Ppx_deriving_main.copy_structure_item" in
   let module Current_ast = Migrate_parsetree.OCaml_current.Ast in
@@ -86,4 +96,4 @@ let mapper argv =
   { omp_mapper with Current_ast.Ast_mapper.structure }
 
 let () =
-  Ocaml_common.Ast_mapper.register "ppx_deriving" mapper
+  Ast_mapper.register "ppx_deriving" mapper
