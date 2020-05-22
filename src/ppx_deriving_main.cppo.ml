@@ -94,6 +94,7 @@ let mapper argv =
               | _ -> assert false) |>
             add_plugins;
             mapper.Current_ast.Ast_mapper.structure mapper tl
+        | exception Migrate_parsetree.Def.Migration_error ->
         | _ -> omp_mapper.Current_ast.Ast_mapper.structure mapper s in
   { omp_mapper with Current_ast.Ast_mapper.structure }
 
