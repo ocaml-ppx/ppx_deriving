@@ -107,6 +107,13 @@ module Result : sig
     | Ok of 'a
     | Error of 'b
 end
+module Option : sig
+  type 'a t = 'a option
+
+  val get : 'a t -> 'a
+
+  val to_result : none:'e -> 'a option -> ('a, 'e) result
+end
 
 (** {3 Formatting} *)
 
@@ -116,3 +123,7 @@ module Format : (module type of Format with
   type formatter_tag_functions = Format.formatter_tag_functions and
   type formatter = Format.formatter)
 #endif
+
+val string_of_constant_opt : Parsetree.constant -> string option
+
+val string_of_expression_opt : Parsetree.expression -> string option

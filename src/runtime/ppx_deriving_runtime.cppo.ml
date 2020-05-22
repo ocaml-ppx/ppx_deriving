@@ -70,6 +70,35 @@ module Result = struct
     | Ok of 'a
     | Error of 'b
 end
+module Option = struct
+  type 'a t = 'a option
+
+  let get o =
+    match o with
+    | None -> invalid_arg "get"
+    | Some x -> x
+
+  let to_result ~none o =
+    match o with
+    | None -> Error none
+    | Some x -> Ok x
+end
 
 include Pervasives
 #endif
+
+let string_of_constant_opt (constant : Parsetree.constant) : string option =
+  match constant with
+  #if OCAML_VERSION >= (4, 11, 0)
+  | Pconst_string (s, _, _) ->
+  #else
+  | Pconst_string (s, _) ->
+  #endif
+      Some s
+  | _ -> None
+
+let string_of_expression_opt (e : Parsetree.expression) : string option =
+  match e with
+  | { pexp_desc = Pexp_constant constant } ->
+      string_of_constant_opt constant
+  | _ -> None

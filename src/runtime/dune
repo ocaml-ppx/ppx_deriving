@@ -3,7 +3,7 @@
  (public_name ppx_deriving.runtime)
  (wrapped false)
  (synopsis "Type-driven code generation")
- (libraries result))
+ (libraries result compiler-libs.common))
 
 (rule
  (deps ppx_deriving_runtime.cppo.ml)
