@@ -79,6 +79,13 @@ module Result : sig
     | Ok of 'a
     | Error of 'b
 end
+module Option : sig
+  type 'a t = 'a option
+
+  val get : 'a t -> 'a
+
+  val to_result : none:'e -> 'a option -> ('a, 'e) result
+end
 
 module Option : sig
   type 'a t = 'a option
@@ -88,3 +95,7 @@ module Option : sig
   val to_result : none:'e -> 'a option -> ('a, 'e) result
 end
 #endif
+
+val string_of_constant_opt : Parsetree.constant -> string option
+
+val string_of_expression_opt : Parsetree.expression -> string option

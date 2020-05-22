@@ -114,6 +114,7 @@ module Ast_convenience = struct
 end
 
 open Ast_convenience
+open Ppx_deriving_runtime
 
 type tyvar = string Location.loc
 
@@ -250,9 +251,7 @@ module Arg = struct
     | _ -> Error "boolean"
 
   let string expr =
-    match expr with
-    | { pexp_desc = Pexp_constant (Pconst_string (n, None)) } -> Ok n
-    | _ -> Error "string"
+    Option.to_result ~none:"string" (string_of_expression_opt expr)
 
   let char = function
     | { pexp_desc = Pexp_constant (Pconst_char c) } -> Ok c
