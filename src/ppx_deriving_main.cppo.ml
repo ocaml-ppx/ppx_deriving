@@ -70,9 +70,6 @@ let add_plugins plugins =
 let mapper argv =
   get_plugins () |> List.iter load_plugin;
   add_plugins argv;
-  let module Convert =
-    Migrate_parsetree.Convert (Migrate_parsetree.OCaml_current)
-      (Migrate_parsetree.OCaml_408) in
   let copy_structure_item item =
     match From_current.copy_structure [item] with
     | [item] -> item
