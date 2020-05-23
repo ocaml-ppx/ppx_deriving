@@ -80,8 +80,8 @@ module Option = struct
 
   let to_result ~none o =
     match o with
-    | None -> Error none
-    | Some x -> Ok x
+    | None -> Result.Error none
+    | Some x -> Result.Ok x
 end
 
 include Pervasives
