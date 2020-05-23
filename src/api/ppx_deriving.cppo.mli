@@ -82,12 +82,40 @@ val lookup : string -> deriver option
 val raise_errorf : ?sub:Location.error list ->
                    ?loc:Location.t -> ('a, unit, string, 'b) format4 -> 'a
 
+(** {2 Compatibility module Const} *)
+
+(** [Ast_helper.Const] is not defined in OCaml <4.03. *)
+
+type constant =
+  #if OCAML_VERSION >= (4, 03, 0)
+    Parsetree.constant
+  #else
+    Asttypes.constant
+  #endif
+
+#if OCAML_VERSION >= (4, 03, 0)
+  module Const = Ast_helper.Const
+#else
+  module Const : sig
+    val char : char -> constant
+    val string : ?quotation_delimiter:string -> string -> constant
+    val integer : ?suffix:char -> string -> constant
+    val int : ?suffix:char -> int -> constant
+    val int32 : ?suffix:char -> int32 -> constant
+    val int64 : ?suffix:char -> int64 -> constant
+    val nativeint : ?suffix:char -> nativeint -> constant
+    val float : ?suffix:char -> string -> constant
+  end
+#endif
+
+(** {2 Coercions} *)
+
 (** [string_of_core_type typ] unparses [typ], omitting any attributes. *)
 val string_of_core_type : Parsetree.core_type -> string
 
 (** [string_of_constant_opt c] returns [Some s] if the constant [c]
     is a string [s], [None] otherwise. *)
-val string_of_constant_opt : Parsetree.constant -> string option
+val string_of_constant_opt : constant -> string option
 
 (** [string_of_expression_opt e] returns [Some s] if the expression [e]
     is a string constant [s], [None] otherwise. *)
