@@ -27,6 +27,12 @@
 #define Rinherit_patt(typ) {prf_desc = Rinherit(typ); _}
 #endif
 
+#if OCAML_VERSION < (4, 11, 0)
+#define Pconst_string_patt(s, loc) Pconst_string (s, loc)
+#else
+#define Pconst_string_patt(s, loc) Pconst_string (s, loc, _)
+#endif
+
 open Longident
 open Location
 open Asttypes
@@ -152,12 +158,7 @@ type constant =
 
 let string_of_constant_opt (constant : constant) : string option =
   match constant with
-  #if OCAML_VERSION >= (4, 11, 0)
-  | Pconst_string (s, _, _) ->
-  #else
-  | Pconst_string (s, _) ->
-  #endif
-      Some s
+  | Pconst_string_patt(s, _) -> Some s
   | _ -> None
 
 let string_of_expression_opt (e : Parsetree.expression) : string option =
