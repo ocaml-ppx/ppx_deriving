@@ -1,7 +1,3 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pconst_string Const_string
-#endif
-
 open Asttypes
 open Parsetree
 open Ast_helper
