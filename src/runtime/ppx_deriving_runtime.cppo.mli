@@ -123,7 +123,3 @@ module Format : (module type of Format with
   type formatter_tag_functions = Format.formatter_tag_functions and
   type formatter = Format.formatter)
 #endif
-
-val string_of_constant_opt : Parsetree.constant -> string option
-
-val string_of_expression_opt : Parsetree.expression -> string option

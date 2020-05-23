@@ -33,7 +33,6 @@ open Asttypes
 open Parsetree
 open Ast_helper
 open Ast_convenience
-open Ppx_deriving_runtime
 
 #if OCAML_VERSION >= (4, 05, 0)
 type tyvar = string Location.loc
@@ -142,6 +141,22 @@ let create =
 
 let string_of_core_type typ =
   Format.asprintf "%a" Pprintast.core_type { typ with ptyp_attributes = [] }
+
+let string_of_constant_opt (constant : Parsetree.constant) : string option =
+  match constant with
+  #if OCAML_VERSION >= (4, 11, 0)
+  | Pconst_string (s, _, _) ->
+  #else
+  | Pconst_string (s, _) ->
+  #endif
+      Some s
+  | _ -> None
+
+let string_of_expression_opt (e : Parsetree.expression) : string option =
+  match e with
+  | { pexp_desc = Pexp_constant constant } ->
+      string_of_constant_opt constant
+  | _ -> None
 
 module Arg = struct
   type 'a conv = expression -> ('a, string) Result.result
