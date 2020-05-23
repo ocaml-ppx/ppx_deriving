@@ -2,6 +2,7 @@ open Asttypes
 open Parsetree
 open Ast_helper
 open Ppx_deriving
+open Ppx_deriving_runtime
 
 let dynlink ?(loc=Location.none) filename =
   let filename = Dynlink.adapt_filename filename in

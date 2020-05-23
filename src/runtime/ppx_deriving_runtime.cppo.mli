@@ -112,7 +112,7 @@ module Option : sig
 
   val get : 'a t -> 'a
 
-  val to_result : none:'e -> 'a option -> ('a, 'e) result
+  val to_result : none:'e -> 'a option -> ('a, 'e) Result.result
 end
 
 (** {3 Formatting} *)

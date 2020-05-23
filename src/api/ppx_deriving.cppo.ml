@@ -33,6 +33,7 @@ open Asttypes
 open Parsetree
 open Ast_helper
 open Ast_convenience
+open Ppx_deriving_runtime
 
 #if OCAML_VERSION >= (4, 05, 0)
 type tyvar = string Location.loc
