@@ -114,6 +114,7 @@ module Ast_convenience = struct
 end
 
 open Ast_convenience
+open Ppx_deriving_runtime
 
 type tyvar = string Location.loc
 
