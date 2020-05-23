@@ -95,7 +95,3 @@ module Option : sig
   val to_result : none:'e -> 'a option -> ('a, 'e) result
 end
 #endif
-
-val string_of_constant_opt : Parsetree.constant -> string option
-
-val string_of_expression_opt : Parsetree.expression -> string option

@@ -114,7 +114,6 @@ module Ast_convenience = struct
 end
 
 open Ast_convenience
-open Ppx_deriving_runtime
 
 type tyvar = string Location.loc
 
@@ -223,7 +222,11 @@ let string_of_core_type typ =
 
 let string_of_constant_opt (constant : Parsetree.constant) : string option =
   match constant with
+  #if OCAML_VERSION >= (4, 11, 0)
+  | Pconst_string (s, _, _) ->
+  #else
   | Pconst_string (s, _) ->
+  #endif
       Some s
   | _ -> None
 
