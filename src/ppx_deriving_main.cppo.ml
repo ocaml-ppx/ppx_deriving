@@ -1,12 +1,8 @@
-#if OCAML_VERSION < (4, 03, 0)
-#define Pconst_string Const_string
-#endif
-
 open Asttypes
 open Parsetree
 open Ast_helper
-
-let raise_errorf = Ppx_deriving.raise_errorf
+open Ppx_deriving
+open Ppx_deriving_runtime
 
 let dynlink ?(loc=Location.none) filename =
   let filename = Dynlink.adapt_filename filename in
@@ -41,10 +37,7 @@ let load_plugin ?loc plugin =
 let get_plugins () =
   match Ast_mapper.get_cookie "ppx_deriving" with
   | Some { pexp_desc = Pexp_tuple exprs } ->
-    exprs |> List.map (fun expr ->
-      match expr with
-      | { pexp_desc = Pexp_constant (Pconst_string (file, None)) } -> file
-      | _ -> assert false)
+    exprs |> List.map (fun expr -> Option.get (string_of_expression_opt expr))
   | Some _ -> assert false
   | None -> []
 
@@ -54,7 +47,7 @@ let add_plugins plugins =
   List.iter load_plugin plugins;
   let loaded  = loaded @ plugins in
   Ast_mapper.set_cookie "ppx_deriving"
-    (Exp.tuple (List.map (fun file -> Exp.constant (Pconst_string (file, None))) loaded))
+    (Exp.tuple (List.map (fun file -> Exp.constant (Const.string file)) loaded))
 
 let mapper argv =
   get_plugins () |> List.iter load_plugin;
@@ -64,10 +57,7 @@ let mapper argv =
     | [%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
           [%expr "ppx_deriving"] :: elems) }]]] :: rest ->
       elems |>
-        List.map (fun elem ->
-          match elem with
-          | { pexp_desc = Pexp_constant (Pconst_string (file, None))} -> file
-          | _ -> assert false) |>
+        List.map (fun elem -> Option.get (string_of_expression_opt elem)) |>
         add_plugins;
         mapper.Ast_mapper.structure mapper rest
     | items -> omp_mapper.Ast_mapper.structure mapper items in
