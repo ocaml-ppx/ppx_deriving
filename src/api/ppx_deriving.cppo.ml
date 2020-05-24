@@ -220,6 +220,18 @@ let create =
 let string_of_core_type typ =
   Format.asprintf "%a" Pprintast.core_type { typ with ptyp_attributes = [] }
 
+let string_of_constant_opt (constant : Parsetree.constant) : string option =
+  match constant with
+  | Pconst_string (s, _) ->
+      Some s
+  | _ -> None
+
+let string_of_expression_opt (e : Parsetree.expression) : string option =
+  match e with
+  | { pexp_desc = Pexp_constant constant } ->
+      string_of_constant_opt constant
+  | _ -> None
+
 module Arg = struct
   type 'a conv = expression -> ('a, string) Result.result
 

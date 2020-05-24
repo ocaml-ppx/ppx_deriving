@@ -82,6 +82,14 @@ val raise_errorf : ?sub:Ocaml_common.Location.error list ->
 (** [string_of_core_type typ] unparses [typ], omitting any attributes. *)
 val string_of_core_type : Parsetree.core_type -> string
 
+(** [string_of_constant_opt c] returns [Some s] if the constant [c]
+    is a string [s], [None] otherwise. *)
+val string_of_constant_opt : Parsetree.constant -> string option
+
+(** [string_of_expression_opt e] returns [Some s] if the expression [e]
+    is a string constant [s], [None] otherwise. *)
+val string_of_expression_opt : Parsetree.expression -> string option
+
 (** {2 Option parsing} *)
 
 (** {!Arg} contains convenience functions that extract constants from
