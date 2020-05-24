@@ -18,19 +18,18 @@ env:
       ppx_deriving_morphism
       visitors"
   matrix:
-  # we require >=4.02.2 but this picks 4.02.3
-  - OCAML_VERSION=4.02
-  - OCAML_VERSION=4.03
-  - OCAML_VERSION=4.04
-  - OCAML_VERSION=4.05
-  - OCAML_VERSION=4.06
-  - OCAML_VERSION=4.07
-  - OCAML_VERSION=4.08
-  - OCAML_VERSION=4.09
-  - OCAML_VERSION=4.10
   - OCAML_VERSION=4.11.0+trunk OCAML_BETA=enable
     PINS="ppx_tools:https://github.com/kit-ty-kate/ppx_tools.git#411
       ppx_deriving_yojson:https://github.com/thierry-martinez/ppx_deriving_yojson.git#411_lightning
       ppx_deriving_protobuf:https://github.com/thierry-martinez/ppx_deriving_protobuf.git#411"
+  - OCAML_VERSION=4.10
+  - OCAML_VERSION=4.09
+  - OCAML_VERSION=4.08
+  - OCAML_VERSION=4.07
+  - OCAML_VERSION=4.06
+  - OCAML_VERSION=4.05
+  - OCAML_VERSION=4.04
+  - OCAML_VERSION=4.03
+  - OCAML_VERSION=4.02 # we require >=4.02.2 but this picks 4.02.3
 os:
   - linux
