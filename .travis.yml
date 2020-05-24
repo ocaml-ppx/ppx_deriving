@@ -5,16 +5,16 @@ install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.t
 script: bash -ex .travis-opam.sh
 env:
   matrix:
-  - OCAML_VERSION=4.02 # we require >=4.02.2 but this picks 4.02.3
-  - OCAML_VERSION=4.03
-  - OCAML_VERSION=4.04
-  - OCAML_VERSION=4.05
-  - OCAML_VERSION=4.06
-  - OCAML_VERSION=4.07
-  - OCAML_VERSION=4.08
-  - OCAML_VERSION=4.09
-  - OCAML_VERSION=4.10
-  - OCAML_VERSION=4.11.0+trunk OCAML_BETA=enable
+  - REVDEPS=y OCAML_VERSION=4.02 # we require >=4.02.2 but this picks 4.02.3
+  - REVDEPS=y OCAML_VERSION=4.03
+  - REVDEPS=y OCAML_VERSION=4.04
+  - REVDEPS=y OCAML_VERSION=4.05
+  - REVDEPS=y OCAML_VERSION=4.06
+  - REVDEPS=y OCAML_VERSION=4.07
+  - REVDEPS=y OCAML_VERSION=4.08
+  - REVDEPS=y OCAML_VERSION=4.09
+  - REVDEPS=y OCAML_VERSION=4.10
+  - REVDEPS=y OCAML_VERSION=4.11.0+trunk OCAML_BETA=enable
     PINS="ppx_tools:https://github.com/kit-ty-kate/ppx_tools.git#411"
 os:
   - linux
