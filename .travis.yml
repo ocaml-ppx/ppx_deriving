@@ -5,7 +5,8 @@ install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.t
 script: bash -ex .travis-opam.sh
 env:
   matrix:
-  - OCAML_VERSION=4.02 # we require >=4.02.2 but this picks 4.02.3
+  # we require >=4.02.2 but this picks 4.02.3
+  - OCAML_VERSION=4.02
     REVDEPS="ppx_deriving_morphism
       visitors"
   - OCAML_VERSION=4.03
