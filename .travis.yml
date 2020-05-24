@@ -31,6 +31,6 @@ env:
   - OCAML_VERSION=4.11.0+trunk OCAML_BETA=enable
     PINS="ppx_tools:https://github.com/kit-ty-kate/ppx_tools.git#411
       ppx_deriving_yojson:https://github.com/thierry-martinez/ppx_deriving_yojson.git#411_lightning
-      ppx_deriving_protobuf::https://github.com/thierry-martinez/ppx_deriving_protobuf.git#411"
+      ppx_deriving_protobuf:https://github.com/thierry-martinez/ppx_deriving_protobuf.git#411"
 os:
   - linux
