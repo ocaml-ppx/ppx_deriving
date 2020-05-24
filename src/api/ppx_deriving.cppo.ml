@@ -222,7 +222,7 @@ let string_of_core_type typ =
 
 let string_of_constant_opt (constant : Parsetree.constant) : string option =
   match constant with
-  | Pconst_string (s, _, _) ->
+  | Pconst_string (s, _) ->
       Some s
   | _ -> None
 
