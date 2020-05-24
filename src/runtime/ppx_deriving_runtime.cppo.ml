@@ -14,7 +14,7 @@ type nonrec int64 = int64
 type nonrec 'a lazy_t = 'a lazy_t
 type nonrec bytes = bytes
 
-#if OCAML_VERSION >= (4, 08, 0)
+#if OCAML_VERSION >= (4, 07, 0)
 (* We require 4.08 while 4.07 already has a Stdlib module.
    In 4.07, the type equalities on Stdlib.Pervasives
    are not strong enough for the 'include Stdlib'
@@ -25,11 +25,11 @@ module Stdlib = Stdlib
 include Stdlib
 
 module Result = struct
-  type ('a, 'b) t = ('a, 'b) Result.t =
+  type ('a, 'b) t = ('a, 'b) result =
     | Ok of 'a
     | Error of 'b
 
-  type ('a, 'b) result = ('a, 'b) Result.t =
+  type ('a, 'b) result = ('a, 'b) t =
     | Ok of 'a
     | Error of 'b
 end
