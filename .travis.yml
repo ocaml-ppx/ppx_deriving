@@ -4,6 +4,8 @@ dist: xenial
 install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
 script: bash -ex .travis-opam.sh
 env:
+  global:
+  - TESTS=true
   matrix:
   # we require >=4.02.2 but this picks 4.02.3
   - OCAML_VERSION=4.02
