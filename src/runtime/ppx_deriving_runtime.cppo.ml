@@ -14,22 +14,25 @@ type nonrec int64 = int64
 type nonrec 'a lazy_t = 'a lazy_t
 type nonrec bytes = bytes
 
-#if OCAML_VERSION >= (4, 08, 0)
-(* We require 4.08 while 4.07 already has a Stdlib module.
-   In 4.07, the type equalities on Stdlib.Pervasives
-   are not strong enough for the 'include Stdlib'
-   below to satisfy the signature constraints on
-   Ppx_deriving_runtime.Pervasives. *)
+#if OCAML_VERSION >= (4, 07, 0)
 module Stdlib = Stdlib
 
 include Stdlib
 
 module Result = struct
-  type ('a, 'b) t = ('a, 'b) Result.t =
+  (* Type manifest shoud be [('a, 'b) result]:
+     - it can't be [Result.t] because [Result] is not defined in 4.07 std-lib
+       and the result package just exposes [Result.t] as an alias to [result]
+       without re-exporting the constructors
+     - it can't be [Result.result] because the [include Stdlib] above makes
+       [Result] be [Stdlib.Result] (shadowing the [Result] module from the
+       result package), and [Stdlib.Result] does not define [result] (that's
+       why we override the [Result] module as the first place. *)
+  type ('a, 'b) t = ('a, 'b) result =
     | Ok of 'a
     | Error of 'b
 
-  type ('a, 'b) result = ('a, 'b) Result.t =
+  type ('a, 'b) result = ('a, 'b) t =
     | Ok of 'a
     | Error of 'b
 end
@@ -58,9 +61,12 @@ module Weak = Weak
 module Printf = Printf
 module Format = Format
 module Buffer = Buffer
+
+include Pervasives
+
 module Result = struct
-  (* the "result" compatibility module defines Result.result,
-     not Result.t as the 4.08 stdlib *)
+  (* the "result" compatibility module defines Result.result as a variant
+     and Result.t as an alias *)
   type ('a, 'b) t = ('a, 'b) Result.result =
     | Ok of 'a
     | Error of 'b
@@ -70,6 +76,9 @@ module Result = struct
     | Ok of 'a
     | Error of 'b
 end
+#endif
+
+#if OCAML_VERSION < (4, 08, 0)
 module Option = struct
   type 'a t = 'a option
 
@@ -83,6 +92,4 @@ module Option = struct
     | None -> Result.Error none
     | Some x -> Result.Ok x
 end
-
-include Pervasives
 #endif
