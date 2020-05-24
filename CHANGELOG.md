@@ -8,24 +8,24 @@ Changelog
   - `Ppx_deriving.string_of_{constant,expression}_opt` to destruct
     `Pconst_string` in a version-independent way
   #220, #222
-  (kit-ty-kate, Thierry Martinez, reviewed by Gabriel Scherer)
+  (kit-ty-kate, Thierry Martinez, review by Gabriel Scherer)
 
 * Stronger type equalities in `Ppx_deriving_runtime` (for instance,
   `Ppx_deriving_runtime.result` and `Result.result` are now compatible with
   all OCaml versions)
   #223, #225
-  (Thierry Martinez, reviewed by Gabriel Scherer)
+  (Thierry Martinez, review by Gabriel Scherer)
 
 * `Ppx_deriving_runtime.Option` compatibility module
   #222
-  (Thierry Martinez, reviewed by Gabriel Scherer)
+  (Thierry Martinez, review by Gabriel Scherer)
 
 4.4.1
 -----
 
 * Add support for OCaml 4.10
   #211
-  (kit-ty-kate, reviewed by Gabriel Scherer)
+  (kit-ty-kate, review by Gabriel Scherer)
 
 4.4
 ---
