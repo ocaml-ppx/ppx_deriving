@@ -70,6 +70,19 @@ module Result = struct
     | Ok of 'a
     | Error of 'b
 end
+module Option = struct
+  type 'a t = 'a option
+
+  let get o =
+    match o with
+    | None -> invalid_arg "get"
+    | Some x -> x
+
+  let to_result ~none o =
+    match o with
+    | None -> Error none
+    | Some x -> Ok x
+end
 
 include Pervasives
 #endif
