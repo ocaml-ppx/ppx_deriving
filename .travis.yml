@@ -9,7 +9,6 @@ env:
       ppx_deriving_crowbar
       ppx_deriving_yojson
       ppx_deriving_madcast
-      ppx_deriving_protocol
       ppx_deriving_rpc
       ppx_deriving_argparse
       ppx_deriving_cmdliner
