@@ -8,7 +8,7 @@ Changelog
   - `Ppx_deriving.string_of_{constant,expression}_opt` to destruct
     `Pconst_string` in a version-independent way
   #220, #222
-  (kit-ty-kate, Thierry Martinez, review by Gabriel Scherer)
+  (Kate Deplaix, Thierry Martinez, review by Gabriel Scherer)
 
 * Stronger type equalities in `Ppx_deriving_runtime` (for instance,
   `Ppx_deriving_runtime.result` and `Result.result` are now compatible with
