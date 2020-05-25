@@ -25,7 +25,7 @@ Changelog
 
 * Add support for OCaml 4.10
   #211
-  (kit-ty-kate, review by Gabriel Scherer)
+  (Kate Deplaix, review by Gabriel Scherer)
 
 4.4
 ---
