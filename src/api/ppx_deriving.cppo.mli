@@ -330,9 +330,7 @@ val strong_type_of_type: core_type -> core_type
 (** The mapper for the currently loaded deriving plugins. It is useful for
     recursively processing expression-valued attributes. *)
 
-module Ast_mapper = Migrate_parsetree.OCaml_current.Ast.Ast_mapper
-
-val mapper : Ast_mapper.mapper
+class mapper : Ast_traverse.map
 
 (** {2 Miscellanea} *)
 
