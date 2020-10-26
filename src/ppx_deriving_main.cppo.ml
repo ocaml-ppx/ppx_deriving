@@ -7,10 +7,10 @@ module Ast_mapper = Ocaml_common.Ast_mapper
 
 module From_current =
   Migrate_parsetree.Convert (Migrate_parsetree.OCaml_current)
-    (Migrate_parsetree.OCaml_408)
+    (Migrate_parsetree.OCaml_410)
 
 module To_current =
-  Migrate_parsetree.Convert (Migrate_parsetree.OCaml_408)
+  Migrate_parsetree.Convert (Migrate_parsetree.OCaml_410)
     (Migrate_parsetree.OCaml_current)
 
 let raise_errorf = Ppx_deriving.raise_errorf

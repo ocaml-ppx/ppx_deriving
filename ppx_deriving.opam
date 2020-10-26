@@ -18,9 +18,9 @@ depends: [
   "dune" {>= "1.6.3"}
   "cppo" {build}
   "ocamlfind"
-  "ocaml-migrate-parsetree"
+  "ocaml-migrate-parsetree" {< "2.0.0"}
   "ppx_derivers"
-  "ppxlib" {>= "0.9.0" & < "0.14.0"}
+  "ppxlib" {>= "0.9.0" & < "0.16.0"}
   "result"
   "ounit" {with-test}
 ]

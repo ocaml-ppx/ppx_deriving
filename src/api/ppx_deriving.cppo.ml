@@ -404,7 +404,7 @@ let rec remove_pervasive_lid = function
 let remove_pervasives ~deriver typ =
   if attr_nobuiltin ~deriver typ.ptyp_attributes then typ
   else
-    let open Migrate_parsetree.OCaml_408.Ast.Ast_mapper in
+    let open Migrate_parsetree.OCaml_410.Ast.Ast_mapper in
     let map_typ mapper typ = match typ.ptyp_desc with
       | Ptyp_constr (lid, l) ->
         let lid = {lid with txt = remove_pervasive_lid lid.txt} in
@@ -672,30 +672,30 @@ module Ast_mapper = Migrate_parsetree.OCaml_current.Ast.Ast_mapper
 
 module Ast_helper_current = Migrate_parsetree.OCaml_current.Ast.Ast_helper
 
-module OCaml_408_of_current =
+module OCaml_410_of_current =
   Migrate_parsetree.Convert (Migrate_parsetree.OCaml_current)
-    (Migrate_parsetree.OCaml_408)
+    (Migrate_parsetree.OCaml_410)
 
-module OCaml_current_of_408 =
-  Migrate_parsetree.Convert (Migrate_parsetree.OCaml_408)
+module OCaml_current_of_410 =
+  Migrate_parsetree.Convert (Migrate_parsetree.OCaml_410)
     (Migrate_parsetree.OCaml_current)
 
 let copy_deriver f typ =
-  OCaml_current_of_408.copy_expression
-    (f (OCaml_408_of_current.copy_core_type typ))
+  OCaml_current_of_410.copy_expression
+    (f (OCaml_410_of_current.copy_core_type typ))
 
 let copy_attributes attrs =
-  (OCaml_408_of_current.copy_core_type
+  (OCaml_410_of_current.copy_core_type
     (Ast_helper_current.Typ.any ~attrs ()))
     .ptyp_attributes
 
 let copy_structure_item item =
-  match OCaml_408_of_current.copy_structure [item] with
+  match OCaml_410_of_current.copy_structure [item] with
   | [item] -> item
   | _ -> assert false
 
 let copy_signature_item item =
-  match OCaml_408_of_current.copy_signature [item] with
+  match OCaml_410_of_current.copy_signature [item] with
   | [item] -> item
   | _ -> assert false
 
@@ -703,10 +703,10 @@ let has_attr_current name attributes =
   has_attr name (copy_attributes attributes)
 
 let copy_derive derive item f =
-  OCaml_current_of_408.copy_structure (derive (copy_structure_item item) f)
+  OCaml_current_of_410.copy_structure (derive (copy_structure_item item) f)
 
 let copy_derive_sig derive item f =
-  OCaml_current_of_408.copy_signature (derive (copy_signature_item item) f)
+  OCaml_current_of_410.copy_signature (derive (copy_signature_item item) f)
 
 let copy_module_type_declaration modtype =
   match copy_structure_item (Ast_helper_current.Str.modtype modtype) with
@@ -765,13 +765,13 @@ let mapper =
       let derived =
         Ast_helper.with_default_loc pstr_loc (fun () ->
           let typ_decls =
-            List.map OCaml_408_of_current.copy_type_declaration typ_decls in
+            List.map OCaml_410_of_current.copy_type_declaration typ_decls in
           copy_derive (derive_type_decl module_nesting typ_decls pstr_loc) item
             (fun deriver -> deriver.type_decl_str))
       in derived @ mapper.Ast_mapper.structure mapper rest
     | { pstr_desc = Pstr_typext typ_ext; pstr_loc } as item :: rest when
           has_attr_current "deriving" typ_ext.ptyext_attributes ->
-      let typ_ext = OCaml_408_of_current.copy_type_extension typ_ext in
+      let typ_ext = OCaml_410_of_current.copy_type_extension typ_ext in
       let derived =
         Ast_helper.with_default_loc pstr_loc (fun () ->
           copy_derive (derive_type_ext module_nesting typ_ext pstr_loc) item
@@ -809,7 +809,7 @@ let mapper =
         List.exists (fun ty -> has_attr_current "deriving" ty.ptype_attributes)
           typ_decls ->
       let typ_decls =
-        List.map OCaml_408_of_current.copy_type_declaration typ_decls in
+        List.map OCaml_410_of_current.copy_type_declaration typ_decls in
       let derived =
         Ast_helper.with_default_loc psig_loc (fun () ->
           copy_derive_sig
@@ -818,7 +818,7 @@ let mapper =
       in derived @ mapper.Ast_mapper.signature mapper rest
     | { psig_desc = Psig_typext typ_ext; psig_loc } as item :: rest when
         has_attr_current "deriving" typ_ext.ptyext_attributes ->
-      let typ_ext = OCaml_408_of_current.copy_type_extension typ_ext in
+      let typ_ext = OCaml_410_of_current.copy_type_extension typ_ext in
       let derived =
         Ast_helper.with_default_loc psig_loc (fun () ->
           copy_derive_sig
