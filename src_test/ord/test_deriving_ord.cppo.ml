@@ -106,7 +106,7 @@ let test_ord_result ctx =
   assert_equal ~printer 1 (compare_res0 (Error ()) (Ok ()))
 
 let test_ord_result_result ctx =
-  let compare_res0 = [%ord: (unit, unit) Result.result] in
+  let compare_res0 = [%ord: (unit, unit) Result.t] in
   let open Result in
   assert_equal ~printer 0 (compare_res0 (Ok ()) (Ok ()));
   assert_equal ~printer (-1) (compare_res0 (Ok ()) (Error ()));

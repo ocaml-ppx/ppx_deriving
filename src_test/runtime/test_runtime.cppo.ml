@@ -19,7 +19,7 @@ let test_hashtbl
   (x : ('a, 'b) Ppx_deriving_runtime.Hashtbl.t)
 
 let test_result_qualified
-  (x : ('a, 'b) Result.result)
+  (x : ('a, 'b) Result.t)
   =
   (x : ('a, 'b) Ppx_deriving_runtime.Result.t)
 

@@ -40,7 +40,7 @@ let rec expr_of_typ ?decl typ =
     | true, [%type: [%t? typ] option] ->
       [%expr function None -> None | Some x -> Some ([%e expr_of_typ ?decl typ] x)]
     | true, ([%type: ([%t? ok_t], [%t? err_t]) result] |
-             [%type: ([%t? ok_t], [%t? err_t]) Result.result]) ->
+             [%type: ([%t? ok_t], [%t? err_t]) Result.t]) ->
       [%expr
         function
         | Result.Ok ok -> Result.Ok ([%e expr_of_typ ?decl ok_t] ok)

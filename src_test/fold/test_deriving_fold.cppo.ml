@@ -28,7 +28,7 @@ let test_result ctxt =
   assert_equal ~printer:string_of_int 1 (f 0 (Ok 1));
   assert_equal ~printer:string_of_int (-1) (f 0 (Error 1))
 
-type ('a, 'b) result_res = ('a, 'b) Result.result [@@deriving fold]
+type ('a, 'b) result_res = ('a, 'b) Result.t [@@deriving fold]
 
 let test_result_result ctxt =
   let f = fold_result_res (+) (-) in

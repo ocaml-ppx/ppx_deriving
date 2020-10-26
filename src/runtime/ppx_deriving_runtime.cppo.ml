@@ -59,14 +59,14 @@ module Printf = Printf
 module Format = Format
 module Buffer = Buffer
 module Result = struct
-  (* the "result" compatibility module defines Result.result,
+  (* the "result" compatibility module defines Result.t,
      not Result.t as the 4.08 stdlib *)
-  type ('a, 'b) t = ('a, 'b) Result.result =
+  type ('a, 'b) t = ('a, 'b) Result.t =
     | Ok of 'a
     | Error of 'b
 
-  (* ... and we also expose Result.result for backward-compatibility *)
-  type ('a, 'b) result = ('a, 'b) Result.result =
+  (* ... and we also expose Result.t for backward-compatibility *)
+  type ('a, 'b) result = ('a, 'b) Result.t =
     | Ok of 'a
     | Error of 'b
 end

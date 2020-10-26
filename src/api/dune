@@ -8,9 +8,7 @@
  (libraries
    compiler-libs.common
    ppxlib
-   result
-   ppx_derivers
-   ocaml-migrate-parsetree))
+   ppx_derivers))
 
 (rule
  (deps ppx_deriving.cppo.ml)

@@ -106,7 +106,7 @@ module Arg : sig
       A conversion function of type ['a conv] converts a raw expression into an
       argument of type ['a]. Or returns [Result.Error "error"] if conversion
       fails. *)
-  type 'a conv = expression -> ('a, string) Result.result
+  type 'a conv = expression -> ('a, string) Result.t
 
   (** [expr] returns the input expression as-is. *)
   val expr : expression conv

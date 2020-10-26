@@ -58,7 +58,7 @@ type 'a btreer = Node of { lft: 'a btree; elt: 'a; rgt: 'a btree } | Leaf
 type 'a ty = 'a * int list
 [@@deriving iter]
 
-type 'a res0 = ('a, char) Result.result [@@deriving iter]
+type 'a res0 = ('a, char) Result.t [@@deriving iter]
 
 let test_iter_res ctxt =
   let has_ok = ref false in
