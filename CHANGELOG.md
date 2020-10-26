@@ -1,11 +1,37 @@
 Changelog
 =========
 
-Future version (4.5)
+Future version (5.0)
 --------------------
 
 * Migrate to ppxlib #206, #210
   (Anton Kochkov, Gabriel Scherer, Thierry Martinez)
+
+4.5
+---
+
+* Add support for OCaml 4.11.
+  - `Ppx_deriving.string_of_{constant,expression}_opt` to destruct
+    `Pconst_string` in a version-independent way
+  #220, #222
+  (Kate Deplaix, Thierry Martinez, review by Gabriel Scherer)
+
+* Stronger type equalities in `Ppx_deriving_runtime` (for instance,
+  `Ppx_deriving_runtime.result` and `Result.result` are now compatible with
+  all OCaml versions)
+  #223, #225
+  (Thierry Martinez, review by Gabriel Scherer)
+
+* `Ppx_deriving_runtime.Option` compatibility module
+  #222
+  (Thierry Martinez, review by Gabriel Scherer)
+
+4.4.1
+-----
+
+* Add support for OCaml 4.10
+  #211
+  (Kate Deplaix, review by Gabriel Scherer)
 
 4.4
 ---
