@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Future version (5.0)
---------------------
+5.0 (26/10/2020)
+----------------
 
 * Migrate to ppxlib #206, #210
   (Anton Kochkov, Gabriel Scherer, Thierry Martinez)
