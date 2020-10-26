@@ -1,12 +1,5 @@
 open Ppxlib
 
-#if OCAML_VERSION < (4, 11, 0)
-#define Pconst_string_patt(s, loc) Pconst_string (s, loc)
-#else
-#define Pconst_string_patt(s, loc) Pconst_string (s, loc, _)
-#endif
-
-open Longident
 open Location
 open Asttypes
 open Ast_helper
@@ -121,7 +114,6 @@ module Ast_convenience = struct
 end
 
 open Ast_convenience
-open Ppx_deriving_runtime
 
 type tyvar = string Location.loc
 
@@ -228,16 +220,10 @@ let create =
 let string_of_core_type typ =
   Format.asprintf "%a" Pprintast.core_type { typ with ptyp_attributes = [] }
 
-type constant =
-  #if OCAML_VERSION >= (4, 03, 0)
-    Parsetree.constant
-  #else
-    Asttypes.constant
-  #endif
-
-let string_of_constant_opt (constant : constant) : string option =
+let string_of_constant_opt (constant : Parsetree.constant) : string option =
   match constant with
-  | Pconst_string_patt(s, _) -> Some s
+  | Pconst_string (s, _) ->
+      Some s
   | _ -> None
 
 let string_of_expression_opt (e : Parsetree.expression) : string option =
@@ -245,21 +231,6 @@ let string_of_expression_opt (e : Parsetree.expression) : string option =
   | { pexp_desc = Pexp_constant constant } ->
       string_of_constant_opt constant
   | _ -> None
-
-#if OCAML_VERSION >= (4, 03, 0)
-  module Const = Ast_helper.Const
-#else
-  module Const = struct
-    let integer ?suffix:_ i = Const_int (int_of_string i)
-    let int ?suffix:_ i = Const_int i
-    let int32 ?suffix:_ i = Const_int (Int32.to_int i)
-    let int64 ?suffix:_ i = Const_int (Int64.to_int i)
-    let nativeint ?suffix:_ i = Const_int (Nativeint.to_int i)
-    let float ?suffix:_ f = Const_float f
-    let char c = Const_char c
-    let string ?quotation_delimiter s = Const_string (s, quotation_delimiter)
-  end
-#endif
 
 module Arg = struct
   type 'a conv = expression -> ('a, string) Result.result
@@ -279,7 +250,9 @@ module Arg = struct
     | _ -> Error "boolean"
 
   let string expr =
-    Option.to_result ~none:"string" (string_of_expression_opt expr)
+    match expr with
+    | { pexp_desc = Pexp_constant (Pconst_string (n, None)) } -> Ok n
+    | _ -> Error "string"
 
   let char = function
     | { pexp_desc = Pexp_constant (Pconst_char c) } -> Ok c

@@ -79,13 +79,6 @@ module Result : sig
     | Ok of 'a
     | Error of 'b
 end
-module Option : sig
-  type 'a t = 'a option
-
-  val get : 'a t -> 'a
-
-  val to_result : none:'e -> 'a option -> ('a, 'e) Result.result
-end
 
 module Option : sig
   type 'a t = 'a option

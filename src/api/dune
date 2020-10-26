@@ -10,8 +10,7 @@
    ppxlib
    result
    ppx_derivers
-   ocaml-migrate-parsetree
-   ppx_deriving.runtime))
+   ocaml-migrate-parsetree))
 
 (rule
  (deps ppx_deriving.cppo.ml)
