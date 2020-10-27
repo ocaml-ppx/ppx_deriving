@@ -1,5 +1,4 @@
 open Ppxlib
-open Location
 open Asttypes
 open Parsetree
 open Ast_helper
@@ -34,7 +33,7 @@ let pattl side labels =
 let pconstrrec name fields =
   pconstr name [precord ~closed:Closed fields]
 
-let core_type_of_decl ~options ~path type_decl =
+let core_type_of_decl ~options ~path:_ type_decl = (* TODO: path not used? *)
   let loc = !Ast_helper.default_loc in
   parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
@@ -67,7 +66,7 @@ and expr_of_typ quoter typ =
   let typ = Ppx_deriving.remove_pervasives ~deriver typ in
   let expr_of_typ = expr_of_typ quoter in
   match attr_equal typ.ptyp_attributes with
-  | Some fn -> Ppx_deriving.quote quoter fn
+  | Some fn -> Ppx_deriving.quote ~quoter fn
   | None ->
     match typ with
     | [%type: _] -> [%expr fun _ _ -> true]
@@ -113,7 +112,7 @@ and expr_of_typ quoter typ =
         [%expr fun (lazy x) (lazy y) -> [%e expr_of_typ typ] x y]
       | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
         let equal_fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "equal") lid)) in
-        let fwd = app (Ppx_deriving.quote quoter equal_fn) (List.map expr_of_typ args) in
+        let fwd = app (Ppx_deriving.quote ~quoter equal_fn) (List.map expr_of_typ args) in
         (* eta-expansion is necessary for recursive groups *)
         [%expr fun x -> [%e fwd] x]
       | _ -> assert false

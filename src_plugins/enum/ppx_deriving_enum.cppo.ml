@@ -1,5 +1,4 @@
 open Ppxlib
-open Location
 open Asttypes
 open Parsetree
 open Ast_helper
@@ -41,12 +40,12 @@ let mappings_of_type type_decl =
     | Ptype_abstract, Some { ptyp_desc = Ptyp_variant (constrs, Closed, None); ptyp_loc } ->
       `Polymorphic,
       List.fold_left (fun (acc, mappings) row_field ->
-          let error_inherit loc =
+          let error_inherit _loc = (* TODO: is loc not used? *)
             raise_errorf ~loc:ptyp_loc
                          "%s cannot be derived for inherited variant cases"
                          deriver
           in
-          let error_arguments loc =
+          let error_arguments _loc = (* TODO: is loc not used? *)
             raise_errorf ~loc:ptyp_loc
                          "%s can be derived only for argumentless constructors"
                          deriver
@@ -78,7 +77,7 @@ let mappings_of_type type_decl =
   mappings |> List.stable_sort (fun (a,_) (b,_) -> Stdlib.compare a b) |> check_dup;
   kind, mappings
 
-let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
+let str_of_type ~options ~path:_ ({ ptype_loc = _loc } as type_decl) = (* TODO: path and loc not used? *)
   parse_options options;
   let kind, mappings = mappings_of_type type_decl in
   let patt name =
@@ -107,7 +106,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
    Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Suffix "of_enum") type_decl))
          (Exp.function_ from_enum_cases)]
 
-let sig_of_type ~options ~path type_decl =
+let sig_of_type ~options ~path:_ type_decl = (* TODO: path not used? *)
   let loc = type_decl.ptype_loc in
   parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in

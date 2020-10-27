@@ -18,13 +18,13 @@ type a  = int array  [@@deriving ord]
 type o  = int option [@@deriving ord]
 type y  = int lazy_t [@@deriving ord]
 
-let test_simple ctxt =
+let test_simple _ctxt =
   assert_equal ~printer  (1) (compare_a1 1 0);
   assert_equal ~printer  (0) (compare_a1 1 1);
   assert_equal ~printer (-1) (compare_a1 1 2)
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving ord]
-let test_variant ctxt =
+let test_variant _ctxt =
   assert_equal ~printer (1) (compare_v (Baz "b") (Baz "a"));
   assert_equal ~printer (1) (compare_v (Bar (1, "")) Foo);
   assert_equal ~printer (1) (compare_v (Baz "") (Bar (1, "")));
@@ -36,7 +36,7 @@ type pv1 = [ `Foo | `Bar of int * string ] [@@deriving ord]
 type pv2 = [ `Baz | pv1 ] [@@deriving ord]
 
 type ty = int * string [@@deriving ord]
-let test_complex ctxt =
+let test_complex _ctxt =
   assert_equal ~printer (0)  (compare_ty (0, "a") (0, "a"));
   assert_equal ~printer (1)  (compare_ty (1, "a") (0, "a"));
   assert_equal ~printer (-1) (compare_ty (0, "a") (1, "a"));
@@ -61,7 +61,7 @@ type file = {
   name : string;
   perm : int     [@compare fun a b -> compare b a];
 } [@@deriving ord]
-let test_custom ctxt =
+let test_custom _ctxt =
   assert_equal ~printer (-1) (compare_file { name = ""; perm = 2 }
                                            { name = ""; perm = 1 });
   assert_equal ~printer (1)  (compare_file { name = ""; perm = 1 }
@@ -69,7 +69,7 @@ let test_custom ctxt =
 
 type 'a pt = { v : 'a } [@@deriving ord]
 
-let test_placeholder ctxt =
+let test_placeholder _ctxt =
   assert_equal ~printer 0 ([%ord: _] 1 2)
 
 type mrec_variant =
@@ -79,7 +79,7 @@ type mrec_variant =
 and mrec_variant_list = mrec_variant list
 [@@deriving ord]
 
-let test_mrec ctxt =
+let test_mrec _ctxt =
   assert_equal ~printer (0)   (compare_mrec_variant_list [MrecFoo "foo"; MrecBar 1;]
                                                          [MrecFoo "foo"; MrecBar 1;]);
   assert_equal ~printer (-1)  (compare_mrec_variant_list [MrecFoo "foo"; MrecBar 1;]
@@ -92,20 +92,20 @@ and be = True | False | And of be * be | IfB of (be, be) if_e
 and ('cond, 'a) if_e = 'cond * 'a * 'a
   [@@deriving ord]
 
-let test_mrec2 ctxt =
+let test_mrec2 _ctxt =
   let ce1 = Bool (IfB (True, False, True)) in
   let ce2 = Bool (IfB (True, False, False)) in
   assert_equal ~printer (0) (compare_e ce1 ce1);
   assert_equal ~printer (-1) (compare_e ce1 ce2);
   assert_equal ~printer (1) (compare_e ce2 ce1)
 
-let test_ord_result ctx =
+let test_ord_result _ctxt =
   let compare_res0 = [%ord: (unit, unit) result] in
   assert_equal ~printer 0 (compare_res0 (Ok ()) (Ok ()));
   assert_equal ~printer (-1) (compare_res0 (Ok ()) (Error ()));
   assert_equal ~printer 1 (compare_res0 (Error ()) (Ok ()))
 
-let test_ord_result_result ctx =
+let test_ord_result_result _ctxt =
   let compare_res0 = [%ord: (unit, unit) Result.t] in
   let open Result in
   assert_equal ~printer 0 (compare_res0 (Ok ()) (Ok ()));
@@ -113,7 +113,7 @@ let test_ord_result_result ctx =
   assert_equal ~printer 1 (compare_res0 (Error ()) (Ok ()))
 
 type r1 = int ref [@@deriving ord]
-let test_ref1 ctxt =
+let test_ref1 _ctxt =
   assert_equal ~printer (-1) (compare_r1 (ref 0) (ref 1));
   assert_equal ~printer (0) (compare_r1 (ref 0) (ref 0));
   assert_equal ~printer (1) (compare_r1 (ref 1) (ref 0))
@@ -121,7 +121,7 @@ let test_ref1 ctxt =
 type r2 = int Pervasives.ref
 [@@ocaml.warning "-3"]
 [@@deriving ord]
-let test_ref2 ctxt =
+let test_ref2 _ctxt =
   assert_equal ~printer (-1) (compare_r2 (ref 0) (ref 1));
   assert_equal ~printer (0) (compare_r2 (ref 0) (ref 0));
   assert_equal ~printer (1) (compare_r2 (ref 1) (ref 0))
@@ -135,7 +135,7 @@ and string =
   | Sfoo of String.t * ((int -> int) [@compare fun _ _ -> 0])
 [@@deriving ord]
 
-let test_std_shadowing ctxt =
+let test_std_shadowing _ctxt =
   let e1 = ESBool (Bfoo (1, (+) 1)) in
   let e2 = ESString (Sfoo ("lalala", (+) 3)) in
   assert_equal ~printer (-1) (compare_es e1 e2);
@@ -147,7 +147,7 @@ type poly_app = float poly_abs
 and 'a poly_abs = 'a
 [@@deriving ord]
 
-let test_poly_app ctxt =
+let test_poly_app _ctxt =
   assert_equal ~printer 0 (compare_poly_app 1.0 1.0);
   assert_equal ~printer (-1) (compare_poly_app 1.0 2.0)
 
@@ -170,7 +170,7 @@ module Warnings = struct
 end
 
 type ab = { a : int; b : int } [@@deriving ord]
-let test_record_order ctxt =
+let test_record_order _ctxt =
   assert_equal ~printer (-1) (compare_ab { a = 1; b = 2; } { a = 2; b = 1; });
   assert_equal ~printer (0) (compare_ab { a = 1; b = 2; } { a = 1; b = 2; });
   assert_equal ~printer (1) (compare_ab { a = 2; b = 2; } { a = 1; b = 2; })

@@ -1,10 +1,9 @@
-open Parsetree
 open OUnit2
 
 let string_of_tyvar tyvar =
   tyvar.Location.txt
 
-let test_free_vars ctxt =
+let test_free_vars _ctxt =
   let loc = !Ast_helper.default_loc in
   let free_vars = Ppx_deriving.free_vars_in_core_type in
   let (!!) li = List.map string_of_tyvar li in

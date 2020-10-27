@@ -37,8 +37,11 @@ end = struct
   type 'a btreer = Noder of { lft: 'a btree; elt: 'a; rgt: 'a btree } | Leafr
   [@@deriving map]
 
+(* TODO: test this *)
+(*
   type 'a ty = 'a * int list
   [@@deriving map]
+*)
 
   (* variants and records with mixtures of poly/nonpoly fields *)
 
@@ -72,7 +75,7 @@ let fmt_flt fmt = Format.fprintf fmt "%f"
 let fmt_int fmt = Format.fprintf fmt "%d"
 let fmt_str fmt = Format.fprintf fmt "%s"
 
-let test_btree ctxt =
+let test_btree _ctxt =
   let btree  = (Node (Node (Leaf, 0, Leaf), 1, Node (Leaf, 2, Leaf))) in
   let btree' = map_btree (fun x -> x + 1) btree in
   assert_equal ~printer:(show_btree fmt_int)
@@ -83,19 +86,19 @@ let test_btree ctxt =
    provide more general type for map signature:
      ('a -> 'x) -> ... -> ('a,...) t -> ('x,...) t *)
 
-let test_var0 ctxt =
+let test_var0 _ctxt =
   assert_equal ~printer:show_var0 (A0 10) (map_var0 (A0 10))
 
-let test_var1 ctxt =
+let test_var1 _ctxt =
   assert_equal ~printer:(show_var1 fmt_int) (A1 1) (map_var1 ((+)1) (A1 0));
   assert_equal ~printer:(show_var1 fmt_str) (A1 "2") (map_var1 string_of_int (A1 2))
 
-let test_var2 ctxt =
+let test_var2 _ctxt =
   assert_equal ~printer:(show_var2 fmt_int) (B2 7) (map_var2 ((+)1) (B2 7));
   assert_equal ~printer:(show_var2 fmt_int) (A2 5) (map_var2 ((+)1) (A2 4));
   assert_equal ~printer:(show_var2 fmt_int) (A2 5) (map_var2 int_of_float (A2 5.))
 
-let test_var3 ctxt =
+let test_var3 _ctxt =
   let show,map = show_var3 fmt_int fmt_str, map_var3 ((+)1) String.uppercase [@warning "-3"] in
   assert_equal ~printer:show (A3 2) (map (A3 1));
   assert_equal ~printer:show (B3 false) (map (B3 false));
@@ -107,18 +110,18 @@ let test_var3 ctxt =
   assert_equal ~printer:show (C3(4., A3 98)) (map (C3(4, A3 'b')));
   assert_equal ~printer:show (C3(5., B3 true)) (map (C3(5, B3 true)))
 
-let test_record0 ctxt =
+let test_record0 _ctxt =
   assert_equal ~printer:show_record0 {a0=10} (map_record0 {a0=10})
 
-let test_record1 ctxt =
+let test_record1 _ctxt =
   assert_equal ~printer:(show_record1 fmt_int) {a1=1} (map_record1 ((+)1) {a1=0});
   assert_equal ~printer:(show_record1 fmt_str) {a1="2"} (map_record1 string_of_int {a1=2})
 
-let test_record2 ctxt =
+let test_record2 _ctxt =
   assert_equal ~printer:(show_record2 fmt_int) {a2=5;b2=7} (map_record2 ((+)1) {a2=4;b2=7});
   assert_equal ~printer:(show_record2 fmt_int) {a2=5;b2=0} (map_record2 int_of_float {a2=5.;b2=0})
 
-let test_record3 ctxt =
+let test_record3 _ctxt =
   let show,map = show_record3 fmt_int fmt_str,
                  map_record3 ((+)1) String.uppercase [@warning "-3"]
   in
@@ -126,7 +129,7 @@ let test_record3 ctxt =
   let show,map = show_record3 fmt_int fmt_flt, map_record3 Char.code float_of_int in
   assert_equal ~printer:show {a3=97;b3=false;c3=4.} (map {a3='a';b3=false;c3=4})
 
-let test_pvar3 ctxt =
+let test_pvar3 _ctxt =
   let show,map = show_pvar3 fmt_str fmt_int fmt_int,
                  map_pvar3 string_of_int Char.code int_of_string
   in
@@ -141,7 +144,7 @@ let test_pvar3 ctxt =
 
 type 'a result0 = ('a, bool) result [@@deriving show,map]
 
-let test_map_result ctxt =
+let test_map_result _ctxt =
   let f = map_result0 succ in
   let printer = show_result0 fmt_int in
   assert_equal ~printer (Ok 10) (f (Ok 9));
@@ -149,7 +152,7 @@ let test_map_result ctxt =
 
 type 'a result_result0 = ('a, bool) Result.t [@@deriving show,map]
 
-let test_map_result_result ctxt =
+let test_map_result_result _ctxt =
   let open Result in
   let f = map_result_result0 succ in
   let printer = show_result_result0 fmt_int in

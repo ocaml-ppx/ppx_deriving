@@ -44,7 +44,7 @@ end = struct
   } [@@deriving show, make]
 end
 
-let test_no_main ctxt =
+let test_no_main _ctxt =
   assert_equal ~printer:M.show_a
                { M.a1 = None; a2 = []; a3 = 42; a4s = 2, []; a5 = 1 }
                (M.make_a ~a4:2 ~a5:1 ());
@@ -52,7 +52,7 @@ let test_no_main ctxt =
                { M.a1 = Some 1; a2 = [2]; a3 = 3; a4s = 4, [5]; a5 = 6 }
                (M.make_a ~a1:1 ~a2:[2] ~a3:3 ~a4:4 ~a4s:[5] ~a5:6 ())
 
-let test_main ctxt =
+let test_main _ctxt =
   assert_equal ~printer:M.show_b
                { M.b1 = None; b2 = []; b3 = 42; b4s = 2, []; b5 = 1 }
                (M.make_b ~b4:2 1);
@@ -60,7 +60,7 @@ let test_main ctxt =
                { M.b1 = Some 1; b2 = [2]; b3 = 3; b4s = 4, [5]; b5 = 6 }
                (M.make_b ~b1:1 ~b2:[2] ~b3:3 ~b4:4 ~b4s:[5] 6)
 
-let test_no_unit ctxt =
+let test_no_unit _ctxt =
   assert_equal ~printer:M.show_c
     { M.c1 = 0; M.c2 = "" }
     (M.make_c ~c1:0 ~c2:"")

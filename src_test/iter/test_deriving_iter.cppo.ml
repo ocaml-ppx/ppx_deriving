@@ -29,13 +29,13 @@ end
 
 open T
 
-let test_btree ctxt =
+let test_btree _ctxt =
   let lst = ref [] in
   iter_btree (fun x -> lst := x :: !lst)
              (Node (Node (Leaf, 0, Leaf), 1, Node (Leaf, 2, Leaf)));
   assert_equal [2;1;0] !lst
 
-let test_record ctxt =
+let test_record _ctxt =
   let lst : string list ref = ref [] in
   lst := [];
   iter_record (fun a -> lst := string_of_int a :: !lst)
@@ -46,7 +46,7 @@ let test_record ctxt =
               (fun b -> lst := Int64.to_string b :: ! lst) {a=3; b=4L};
   assert_equal ["4"; "4"] !lst
 
-let test_reflist ctxt =
+let test_reflist _ctxt =
   let lst = ref [] in
   iter_reflist (fun x -> lst := x :: !lst)
                [ ref 0 ; ref 1 ; ref 2 ] ;
@@ -60,7 +60,7 @@ type 'a ty = 'a * int list
 
 type 'a res0 = ('a, char) Result.t [@@deriving iter]
 
-let test_iter_res ctxt =
+let test_iter_res _ctxt =
   let has_ok = ref false in
   iter_res0 (fun _ -> has_ok := true) (Result.Ok "xxx");
   assert_bool "set ok" !has_ok;

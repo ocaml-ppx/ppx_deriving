@@ -1,6 +1,4 @@
 open Ppxlib
-open Longident
-open Location
 open Asttypes
 open Parsetree
 open Ast_helper
@@ -68,7 +66,7 @@ and expr_of_typ quoter typ =
   let loc = typ.ptyp_loc in
   let expr_of_typ = expr_of_typ quoter in
   match attr_compare typ.ptyp_attributes with
-  | Some fn -> Ppx_deriving.quote quoter fn
+  | Some fn -> Ppx_deriving.quote ~quoter fn
   | None ->
     let typ = Ppx_deriving.remove_pervasives ~deriver typ in
     match typ with
@@ -85,7 +83,7 @@ and expr_of_typ quoter typ =
               | [%type: Nativeint.t] | [%type: float] | [%type: bool]
               | [%type: char] | [%type: string] | [%type: bytes]) ->
         let compare_fn = [%expr fun (a:[%t typ]) b -> Ppx_deriving_runtime.compare a b] in
-        Ppx_deriving.quote quoter compare_fn
+        Ppx_deriving.quote ~quoter compare_fn
       | true, [%type: [%t? typ] ref] ->
         [%expr fun a b -> [%e expr_of_typ typ] !a !b]
       | true, [%type: [%t? typ] list]  ->
@@ -126,7 +124,7 @@ and expr_of_typ quoter typ =
         [%expr fun (lazy x) (lazy y) -> [%e expr_of_typ typ] x y]
       | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
         let compare_fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "compare") lid)) in
-        let fwd = app (Ppx_deriving.quote quoter compare_fn) (List.map expr_of_typ args) in
+        let fwd = app (Ppx_deriving.quote ~quoter compare_fn) (List.map expr_of_typ args) in
         (* eta-expansion is necessary for recursive groups *)
         [%expr fun x -> [%e fwd] x]
       | _ -> assert false
@@ -159,7 +157,7 @@ and expr_of_typ quoter typ =
           match field.prf_desc with
           | Rtag(label, true (*empty*), []) ->
             Exp.case (variant label None) (int i)
-          | Rtag(label, false, [typ]) ->
+          | Rtag(label, false, [_typ]) -> (* TODO: typ not used? *)
             Exp.case (variant label (Some [%pat? _])) (int i)
           | Rinherit({ ptyp_desc = Ptyp_constr (tname, []) }) ->
             Exp.case (Pat.type_ tname) (int i)
@@ -173,7 +171,7 @@ and expr_of_typ quoter typ =
       raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
                    deriver (Ppx_deriving.string_of_core_type typ)
 
-let core_type_of_decl ~options ~path type_decl =
+let core_type_of_decl ~options ~path:_ type_decl = (* TODO: path not used? *)
   parse_options options;
   let loc = type_decl.ptype_loc in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in

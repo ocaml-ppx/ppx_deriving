@@ -1,5 +1,4 @@
 open Ppxlib
-open Location
 open Asttypes
 open Parsetree
 open Ast_helper
@@ -30,14 +29,14 @@ let find_main labels =
       main, label :: labels)
     (None, []) labels
 
-let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
+let str_of_type ~options ~path:_ ({ ptype_loc = loc } as type_decl) = (* TODO: path not used? *)
   parse_options options;
   let quoter = Ppx_deriving.create_quoter () in
   let creator =
     match type_decl.ptype_kind with
     | Ptype_record labels ->
       let fields =
-        labels |> List.map (fun { pld_name = { txt = name; loc } } ->
+        labels |> List.map (fun { pld_name = { txt = name; loc = _loc } } -> (* TODO: loc not used? *)
           name, evar name) in
       let main, labels = find_main labels in
       let fn =
@@ -56,7 +55,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
         | None ->
         if attr_split attrs then
           match pld_type with
-          | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
+          | [%type: [%t? _lhs] * [%t? _rhs] list] when name.[String.length name - 1] = 's' -> (* TODO: lhs and rls not used? *)
             let name' = String.sub name 0 (String.length name - 1) in
             Exp.fun_ (Label.labelled name') None (pvar name')
               (Exp.fun_ (Label.optional name) (Some [%expr []]) (pvar name)
@@ -79,7 +78,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
 let wrap_predef_option typ =
   typ
 
-let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
+let sig_of_type ~options ~path:_ ({ ptype_loc = loc } as type_decl) = (* TODO: path not used? *)
   parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let typ =
@@ -88,7 +87,7 @@ let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       let main, labels = find_main labels in
       let typ =
         match main with
-        | Some { pld_name = { txt = name }; pld_type } ->
+        | Some { pld_name = { txt = _name }; pld_type } -> (* TODO: name not used? *)
           Typ.arrow Label.nolabel pld_type typ
         | None ->
           Typ.arrow Label.nolabel (tconstr "unit" []) typ

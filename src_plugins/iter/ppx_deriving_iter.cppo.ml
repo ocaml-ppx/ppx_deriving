@@ -1,5 +1,4 @@
 open Ppxlib
-open Location
 open Asttypes
 open Parsetree
 open Ast_helper
@@ -85,7 +84,7 @@ and expr_of_label_decl { pld_type; pld_attributes } =
   let attrs = pld_type.ptyp_attributes @ pld_attributes in
   expr_of_typ { pld_type with ptyp_attributes = attrs }
 
-let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
+let str_of_type ~options ~path:_ ({ ptype_loc = loc } as type_decl) = (* TODO: path not used? *)
   parse_options options;
   let iterator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
@@ -111,7 +110,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       Exp.function_
     | Ptype_record labels, _ ->
       let fields =
-        labels |> List.mapi (fun i ({ pld_name = { txt = name }; _ } as pld) ->
+        labels |> List.mapi (fun _i ({ pld_name = { txt = name }; _ } as pld) -> (* TODO: i not used? *)
           [%expr [%e expr_of_label_decl pld]
               [%e Exp.field (evar "x") (mknoloc (Lident name))]])
       in
@@ -126,7 +125,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (pvar (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
          (polymorphize iterator)]
 
-let sig_of_type ~options ~path type_decl =
+let sig_of_type ~options ~path:_ type_decl = (* TODO: path not used? *)
   let loc = !Ast_helper.default_loc in
   parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in

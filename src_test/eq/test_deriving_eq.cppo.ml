@@ -20,20 +20,20 @@ type a  = int array  [@@deriving eq]
 type o  = int option [@@deriving eq]
 type y  = int lazy_t [@@deriving eq]
 
-let test_simple ctxt =
+let test_simple _ctxt =
   assert_equal ~printer true  (equal_a1 1 1);
   assert_equal ~printer false (equal_a1 1 2)
 
-let test_arr ctxt =
+let test_arr _ctxt =
   assert_equal ~printer true (equal_a [||] [||]);
   assert_equal ~printer true (equal_a [|1|] [|1|]);
   assert_equal ~printer false (equal_a [||] [|1|]);
   assert_equal ~printer false (equal_a [|2|] [|1|])
 
-let test_ref1 ctxt =
+let test_ref1 _ctxt =
   assert_equal ~printer true (equal_r1 (ref 0) (ref 0))
 
-let test_ref2 ctxt =
+let test_ref2 _ctxt =
   assert_equal ~printer true (equal_r2 (ref 0) (ref 0))
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving eq]
@@ -62,7 +62,7 @@ type file = {
   name : string;
   perm : int     [@equal (<>)];
 } [@@deriving eq]
-let test_custom ctxt =
+let test_custom _ctxt =
   assert_equal ~printer false (equal_file { name = ""; perm = 1 }
                                           { name = ""; perm = 1 });
   assert_equal ~printer true  (equal_file { name = ""; perm = 1 }
@@ -70,7 +70,7 @@ let test_custom ctxt =
 
 type 'a pt = { v : 'a } [@@deriving eq]
 
-let test_placeholder ctxt =
+let test_placeholder _ctxt =
   assert_equal ~printer true ([%eq: _] 1 2)
 
 
@@ -80,7 +80,7 @@ type mrec_variant =
 
 and mrec_variant_list = mrec_variant list [@@deriving eq]
 
-let test_mrec ctxt =
+let test_mrec _ctxt =
   assert_equal ~printer true  (equal_mrec_variant_list [MrecFoo "foo"; MrecBar 1]
                                                        [MrecFoo "foo"; MrecBar 1]);
   assert_equal ~printer false (equal_mrec_variant_list [MrecFoo "foo"; MrecBar 1]
@@ -91,7 +91,7 @@ and be = True | False | And of be * be | IfB of (be, be) if_e
 and ('cond, 'a) if_e = 'cond * 'a * 'a
   [@@deriving eq]
 
-let test_mut_rec ctxt =
+let test_mut_rec _ctxt =
   let e1 = IfE (And (False, True), Unit, Plus (Unit, Unit)) in
   let e2 = Plus (Unit, Bool False) in
   assert_equal ~printer true (equal_e e1 e1);
@@ -108,7 +108,7 @@ and string =
   | Sfoo of (String.t [@equal (=)]) * ((int -> int) [@equal fun _ _ -> true])
 [@@deriving eq]
 
-let test_std_shadowing ctxt =
+let test_std_shadowing _ctxt =
   let e1 = ESBool (Bfoo (1, (+) 1)) in
   let e2 = ESString (Sfoo ("lalala", (+) 3)) in
   assert_equal ~printer false (equal_es e1 e2);
@@ -120,7 +120,7 @@ type poly_app = float poly_abs
 and 'a poly_abs = 'a
 [@@deriving eq]
 
-let test_poly_app ctxt =
+let test_poly_app _ctxt =
   assert_equal ~printer true (equal_poly_app 1.0 1.0);
   assert_equal ~printer false (equal_poly_app 1.0 2.0)
 
@@ -131,13 +131,13 @@ end
 type 'a std_clash = 'a List.t option
 [@@deriving eq]
 
-let test_result ctxt =
+let test_result _ctxt =
   let eq = [%eq: (string, int) result] in
   assert_equal ~printer true (eq (Ok "ttt") (Ok "ttt"));
   assert_equal ~printer false (eq (Ok "123") (Error 123));
   assert_equal ~printer false (eq (Error 123) (Error 0))
 
-let test_result_result ctxt =
+let test_result_result _ctxt =
   let open Result in
   let eq = [%eq: (string, int) result] in
   assert_equal ~printer true (eq (Ok "ttt") (Ok "ttt"));

@@ -1,6 +1,5 @@
 open Ppxlib
 
-open Location
 open Asttypes
 open Ast_helper
 
@@ -184,23 +183,23 @@ let raise_errorf ?sub ?loc fmt =
   Printf.kprintf raise_msg fmt
 
 let create =
-  let def_ext_str name ~options ~path typ_ext =
+  let def_ext_str name ~options:_ ~path:_ _typ_ext = (* TODO: options, path and typ_ext not used? *)
     raise_errorf "Extensible types in structures not supported by deriver %s" name
   in
-  let def_ext_sig name ~options ~path typ_ext =
+  let def_ext_sig name ~options:_ ~path:_ _typ_ext = (* TODO: options, path and typ_ext not used? *)
     raise_errorf "Extensible types in signatures not supported by deriver %s" name
   in
-  let def_decl_str name ~options ~path typ_decl =
+  let def_decl_str name ~options:_ ~path:_ _typ_decl = (* TODO: options, path and typ_ext not used? *)
     raise_errorf "Type declarations in structures not supported by deriver %s" name
   in
-  let def_decl_sig name ~options ~path typ_decl =
+  let def_decl_sig name ~options:_ ~path:_ _typ_decl = (* TODO: options, path and typ_ext not used? *)
     raise_errorf "Type declarations in signatures not supported by deriver %s" name
   in
-  let def_module_type_decl_str name ~options ~path module_type_decl =
+  let def_module_type_decl_str name ~options:_ ~path:_ _module_type_decl = (* TODO: options, path and module_type_decl not used? *)
     raise_errorf "Module type declarations in structures not supported by \
                   deriver %s" name
   in
-  let def_module_type_decl_sig name ~options ~path module_type_decl =
+  let def_module_type_decl_sig name ~options:_ ~path:_ _module_type_decl = (* TODO: options, path and module_type_decl not used? *)
     raise_errorf "Module type declarations in signatures not supported by \
                   deriver %s" name
   in
@@ -584,7 +583,7 @@ type deriver_options =
 
 let derive path pstr_loc item attributes fn arg =
   let deriving = find_attr "deriving" attributes in
-  let deriver_exprs, loc =
+  let deriver_exprs, _loc = (* TODO: loc not used? *)
     match deriving with
     | Some (PStr [{ pstr_desc = Pstr_eval (
                     { pexp_desc = Pexp_tuple exprs }, []); pstr_loc }]) ->
@@ -662,7 +661,7 @@ let module_from_input_name () =
 
 let pstr_desc_rec_flag pstr =
   match pstr with
-  | Pstr_type(rec_flag, typ_decls) ->
+  | Pstr_type(rec_flag, _typ_decls) -> (* TODO: typ_decls not used? *)
     rec_flag
   | _ -> assert false
 
@@ -698,7 +697,7 @@ class mapper = object (self)
       | PTyp typ -> deriver typ
       | _ -> raise_errorf ~loc "Unrecognized [%%derive.*] syntax"
       end
-    | { pexp_desc = Pexp_extension ({ txt = name; loc }, PTyp typ) } ->
+    | { pexp_desc = Pexp_extension ({ txt = name; loc = _loc }, PTyp typ) } -> (* TODO: loc not used? *)
       begin match lookup_internal_or_external name with
       | Some (Internal { core_type = Some deriver }) ->
         Ast_helper.with_default_loc typ.ptyp_loc (fun () ->
@@ -709,7 +708,7 @@ class mapper = object (self)
 
   method! structure items =
     match items with
-    | { pstr_desc = Pstr_type(_, typ_decls) as pstr_desc ; pstr_loc } :: rest when
+    | { pstr_desc = Pstr_type(_, typ_decls) as pstr_desc ; pstr_loc } :: _rest when (* TODO: rest not used? *)
         List.exists (fun ty -> has_attr "deriving" ty.ptype_attributes) typ_decls
         && pstr_desc_rec_flag pstr_desc = Nonrecursive ->
       raise_errorf ~loc:pstr_loc "The nonrec flag is not supported by ppx_deriving"
@@ -747,7 +746,7 @@ class mapper = object (self)
               with_module name
                 (fun () -> self#module_binding mb))) }
       in derived :: self#structure rest
-    | { pstr_loc } as item :: rest ->
+    | { pstr_loc = _ } as item :: rest -> (* TODO: pstr_loc not used? *)
       let derived = self#structure_item item
       in derived :: self#structure rest
     | [] -> []
@@ -789,7 +788,7 @@ class mapper = object (self)
               with_module name
                 (fun () -> self#module_declaration md))) }
       in derived :: self#signature rest
-    | { psig_loc } as item :: rest ->
+    | { psig_loc = _ } as item :: rest -> (* TODO: psig_loc not used? *)
       let derived = self#signature_item item
       in derived :: self#signature rest
     | [] -> []
