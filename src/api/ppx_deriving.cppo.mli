@@ -79,6 +79,8 @@ val lookup : string -> deriver option
 val raise_errorf : ?sub:Ocaml_common.Location.error list ->
                    ?loc:Location.t -> ('a, unit, string, 'b) format4 -> 'a
 
+(** {2 Coercions} *)
+
 (** [string_of_core_type typ] unparses [typ], omitting any attributes. *)
 val string_of_core_type : Parsetree.core_type -> string
 
@@ -330,9 +332,7 @@ val strong_type_of_type: core_type -> core_type
 (** The mapper for the currently loaded deriving plugins. It is useful for
     recursively processing expression-valued attributes. *)
 
-module Ast_mapper = Migrate_parsetree.OCaml_current.Ast.Ast_mapper
-
-val mapper : Ast_mapper.mapper
+class mapper : Ast_traverse.map
 
 (** {2 Miscellanea} *)
 
