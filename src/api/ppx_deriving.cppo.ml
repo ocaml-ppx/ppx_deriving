@@ -222,7 +222,7 @@ let string_of_core_type typ =
 
 let string_of_constant_opt (constant : Parsetree.constant) : string option =
   match constant with
-  | Pconst_string (s, _) ->
+  | Pconst_string (s, _, _) ->
       Some s
   | _ -> None
 
@@ -251,7 +251,7 @@ module Arg = struct
 
   let string expr =
     match expr with
-    | { pexp_desc = Pexp_constant (Pconst_string (n, None)) } -> Ok n
+    | { pexp_desc = Pexp_constant (Pconst_string (n, _, None)) } -> Ok n
     | _ -> Error "string"
 
   let char = function
