@@ -1,3 +1,15 @@
+5.3 (30/10/2020)
+----------------
+
+* Update to ppxlib 0.18.0 #239
+  (Kate Deplaix)
+
+* Remove unused dependencies (ocaml-migrate-parsetree and ocamlfind/findlib) #241
+  (Kate Deplaix)
+
+* Upgrade testsuite from ounit to ounit2 #241
+  (Kate Deplaix)
+
 5.2 (27/10/2020)
 ----------------
 
