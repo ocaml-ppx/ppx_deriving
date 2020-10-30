@@ -5,5 +5,5 @@
 
 (test
  (name test_api)
- (libraries oUnit compiler-libs.common ppx_deriving.api)
+ (libraries ounit2 compiler-libs.common ppx_deriving.api)
  (preprocess (pps ppxlib.metaquot)))
