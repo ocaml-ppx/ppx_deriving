@@ -1,3 +1,9 @@
+5.2 (27/10/2020)
+----------------
+
+* Update to ppxlib 0.16.0 #237
+  (Thierry Martinez, Gabriel Scherer, Kate Deplaix)
+
 5.1 (26/10/2020)
 ----------------
 
