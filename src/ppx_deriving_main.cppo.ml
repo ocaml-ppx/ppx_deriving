@@ -73,18 +73,20 @@ let mapper argv =
     match s with
     | [] -> []
     | hd :: tl ->
-      match hd with
-      | [%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
-          [%expr "ppx_deriving"] :: elems) }]]] ->
-        elems |>
-        List.map (fun elem ->
-            match elem with
-            | { pexp_desc = Pexp_constant (Pconst_string (file, None))} ->
-              file
-            | _ -> assert false) |>
-        add_plugins;
-        Ppxlib.Driver.map_structure tl
-      | _ -> Ppxlib.Driver.map_structure s
+        match
+          hd
+        with
+        | ([%stri [@@@findlib.ppxopt [%e? { pexp_desc = Pexp_tuple (
+            [%expr "ppx_deriving"] :: elems) }]]]) ->
+            elems |>
+            List.map (fun elem ->
+              match elem with
+              | { pexp_desc = Pexp_constant (Pconst_string (file, None))} ->
+                  file
+              | _ -> assert false) |>
+            add_plugins;
+            Ppxlib.Driver.map_structure tl
+        | _ -> Ppxlib.Driver.map_structure s
   in
   let structure _ st =
     Current_ast.of_ocaml Structure st
