@@ -51,7 +51,7 @@ let get_plugins () =
       | { pexp_desc = Pexp_tuple exprs } ->
         exprs |> List.map (fun expr ->
           match expr with
-          | { pexp_desc = Pexp_constant (Pconst_string (file, None)) } -> file
+          | { pexp_desc = Pexp_constant (Pconst_string (file, _, None)) } -> file
           | _ -> assert false)
       | _ -> assert false
 
@@ -62,8 +62,7 @@ let add_plugins plugins =
   let loaded  = loaded @ plugins in
   Ast_mapper.set_cookie "ppx_deriving"
     (To_current.copy_expression
-       (Exp.tuple (List.map (fun file ->
-          Exp.constant (Pconst_string (file, None))) loaded)))
+       (Exp.tuple (List.map (Ast_builder.Default.estring ~loc:Location.none) loaded)))
 
 let mapper argv =
   get_plugins () |> List.iter load_plugin;
@@ -81,7 +80,7 @@ let mapper argv =
             elems |>
             List.map (fun elem ->
               match elem with
-              | { pexp_desc = Pexp_constant (Pconst_string (file, None))} ->
+              | { pexp_desc = Pexp_constant (Pconst_string (file, _, None))} ->
                   file
               | _ -> assert false) |>
             add_plugins;
