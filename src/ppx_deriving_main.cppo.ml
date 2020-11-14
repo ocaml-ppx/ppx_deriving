@@ -92,7 +92,12 @@ let mapper argv =
     |> structure
     |> Current_ast.to_ocaml Structure
   in
-  { Ast_mapper.default_mapper with structure }
+  let signature _ si =
+    Current_ast.of_ocaml Signature si
+    |> Ppxlib.Driver.map_signature
+    |> Current_ast.to_ocaml Signature
+  in
+  { Ast_mapper.default_mapper with structure; signature }
 
 let () =
   Ast_mapper.register "ppx_deriving" mapper
