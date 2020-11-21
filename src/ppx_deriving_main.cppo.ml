@@ -6,12 +6,10 @@ open Ast_helper
 module Ast_mapper = Ocaml_common.Ast_mapper
 
 module From_current =
-  Migrate_parsetree.Convert (Migrate_parsetree.OCaml_current)
-    (Migrate_parsetree.OCaml_410)
+  Ppxlib_ast.Selected_ast.Of_ocaml
 
 module To_current =
-  Migrate_parsetree.Convert (Migrate_parsetree.OCaml_410)
-    (Migrate_parsetree.OCaml_current)
+  Ppxlib_ast.Selected_ast.To_ocaml
 
 let raise_errorf = Ppx_deriving.raise_errorf
 
@@ -74,7 +72,7 @@ let mapper argv =
     match From_current.copy_structure [item] with
     | [item] -> item
     | _ -> failwith "Ppx_deriving_main.copy_structure_item" in
-  let module Current_ast = Migrate_parsetree.OCaml_current.Ast in
+  let module Current_ast = Ppxlib_ast.Selected_ast in
   let omp_mapper = Migrate_parsetree.Driver.run_as_ast_mapper [] in
   let structure mapper s =
     match s with
