@@ -5,7 +5,7 @@
 
 (executable
  (name ppx_deriving_main)
- (libraries ppx_deriving_api compiler-libs.common)
+ (libraries ppx_deriving_api findlib.dynload compiler-libs.common)
  (link_flags :standard -linkall)
  (preprocess (pps ppxlib.metaquot)))
 
