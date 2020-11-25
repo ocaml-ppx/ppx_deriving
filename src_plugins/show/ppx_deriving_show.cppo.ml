@@ -1,5 +1,4 @@
 open Ppxlib
-open Location
 open Asttypes
 open Parsetree
 open Ast_helper
@@ -50,7 +49,7 @@ let pconstrrec name fields = pconstr name [precord ~closed:Closed fields]
 
 let wrap_printer quoter printer =
   let loc = !Ast_helper.default_loc in
-  Ppx_deriving.quote quoter
+  Ppx_deriving.quote ~quoter
     [%expr (let fprintf = Ppx_deriving_runtime.Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
 
 let pp_type_of_decl ~options ~path type_decl =
@@ -158,7 +157,7 @@ let rec expr_of_typ quoter typ =
           | Some printer -> wrap_printer quoter printer
           | None ->
             let printer = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid)) in
-            Ppx_deriving.quote quoter printer
+            Ppx_deriving.quote ~quoter printer
         in
         app printer (args_pp @ [[%expr fmt]])
       | _ -> assert false

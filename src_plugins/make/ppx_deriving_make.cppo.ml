@@ -1,5 +1,4 @@
 open Ppxlib
-open Location
 open Asttypes
 open Parsetree
 open Ast_helper
