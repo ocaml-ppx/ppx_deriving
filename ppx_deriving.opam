@@ -18,7 +18,6 @@ depends: [
   "dune" {>= "1.6.3"}
   "cppo" {build}
   "ocamlfind"
-  "ppx_derivers"
   "ppxlib" {>= "0.20.0"}
   "result"
   "ounit2" {with-test}
