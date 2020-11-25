@@ -817,5 +817,5 @@ let hash_variant s =
    driver. *)
 let () =
   Ppxlib.Driver.register_transformation "ppx_deriving"
-    ~preprocess_impl:map_structure
-    ~preprocess_intf:map_signature
+    ~impl:map_structure
+    ~intf:map_signature
