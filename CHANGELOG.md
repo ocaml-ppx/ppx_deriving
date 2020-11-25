@@ -1,20 +1,17 @@
-5.3 (30/10/2020)
+5.2 (25/11/2020)
 ----------------
 
-* Update to ppxlib 0.18.0 #239
+* Update to ppxlib 0.20.0
+  #237 #239 #243 #245
+  (Kate Deplaix, Jérémie Dimino, Thierry Martinez, Gabriel Scherer)
+
+* Upgrade testsuite from ounit to ounit2
+  #241
   (Kate Deplaix)
 
-* Remove unused dependencies (ocaml-migrate-parsetree and ocamlfind/findlib) #241
+* (almost) use the set of standard flags from dune
+  #246
   (Kate Deplaix)
-
-* Upgrade testsuite from ounit to ounit2 #241
-  (Kate Deplaix)
-
-5.2 (27/10/2020)
-----------------
-
-* Update to ppxlib 0.16.0 #237
-  (Thierry Martinez, Gabriel Scherer, Kate Deplaix)
 
 5.1 (26/10/2020)
 ----------------
