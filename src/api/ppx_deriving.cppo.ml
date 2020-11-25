@@ -1,6 +1,5 @@
 open Ppxlib
 
-open Location
 open Asttypes
 open Ast_helper
 

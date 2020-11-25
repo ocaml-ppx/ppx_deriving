@@ -48,12 +48,12 @@ let test_variant ctxt =
   assert_equal ~printer "(Test_deriving_show.Baz \"foo\")"      (show_v (Baz "foo"))
 
 type rv = RFoo | RBar of { x: int; y: string } | RBaz of { z: string } [@@deriving show]
-let test_variant_record ctxt =
+let test_rv_record ctxt =
   assert_equal ~printer "Test_deriving_show.RFoo"
                         (show_rv RFoo);
   assert_equal ~printer "Test_deriving_show.RBar {x = 1; y = \"foo\"}"
                         (show_rv (RBar {x=1; y="foo"}));
-  assert_equal ~printer "(Test_deriving_show.RBaz {z = \"foo\"}"
+  assert_equal ~printer "Test_deriving_show.RBaz {z = \"foo\"}"
                         (show_rv (RBaz {z="foo"}))
 
 type vn = Foo of int option [@@deriving show]
@@ -248,6 +248,7 @@ let test_paths_printer ctxt =
 let suite = "Test deriving(show)" >::: [
     "test_alias"           >:: test_alias;
     "test_variant"         >:: test_variant;
+    "test_rv_record"       >:: test_rv_record;
     "test_variant_nest"    >:: test_variant_nest;
     "test_tuple"           >:: test_tuple;
     "test_poly"            >:: test_poly;

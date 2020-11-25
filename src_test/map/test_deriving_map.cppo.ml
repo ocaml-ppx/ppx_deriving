@@ -8,6 +8,9 @@ module T : sig
   type 'a btreer = Noder of { lft: 'a btree; elt: 'a; rgt: 'a btree } | Leafr
   [@@deriving map]
 
+  type 'a ty = 'a * int list
+  [@@deriving map]
+
   type var0 = A0 of int [@@deriving map,show]
 
   type 'a var1 = A1 of 'a [@@deriving map,show]

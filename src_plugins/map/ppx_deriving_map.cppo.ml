@@ -1,5 +1,4 @@
 open Ppxlib
-open Location
 open Asttypes
 open Parsetree
 open Ast_helper
@@ -70,7 +69,7 @@ let rec expr_of_typ ?decl typ =
                    (exp_variant label (Some [%expr [%e expr_of_typ ?decl typ] x]))
         | Rinherit({ ptyp_desc = Ptyp_constr (tname, _) } as typ) -> begin
           match decl with
-          | None -> 
+          | None ->
             raise_errorf "inheritance of polymorphic variants not supported"
           | Some(d) ->
             Exp.case [%pat? [%p Pat.type_ tname] as x]

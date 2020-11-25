@@ -1,5 +1,5 @@
 (env
  (_
-  (flags -w -9)))
+  (flags :standard -w -27-9))) ; TODO: Use the full standard flags
 
 (copy_files# src_plugins/compat_macros.cppo)

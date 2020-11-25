@@ -1,4 +1,3 @@
-open Parsetree
 open OUnit2
 
 let string_of_tyvar tyvar =
