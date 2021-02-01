@@ -17,7 +17,7 @@ module Ast_convenience = struct
     mknoloc s
 
   let lid_of_string s =
-    mknoloc (Lident s)
+    mknoloc (Longident.parse s)
 
   let unit () =
     let loc = !Ast_helper.default_loc in
