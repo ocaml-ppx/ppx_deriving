@@ -2,6 +2,8 @@
     modules operating on them, so that ppx_deriving plugins operate
     in a well-defined environment. *)
 
+[@@@ocaml.deprecated "The ppx_deriving API is deprecated in favour of ppxlib"]
+
 (** {2 Predefined types} *)
 type nonrec int = int
 type nonrec char = char
