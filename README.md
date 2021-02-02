@@ -1,7 +1,7 @@
 [@@deriving]
 ============
 
-_deriving_ is a library simplifying type-driven code generation on OCaml >=4.02.
+_deriving_ is a library simplifying type-driven code generation on OCaml.
 
 _deriving_ includes a set of useful plugins: [show][], [eq][], [ord][eq], [enum][], [iter][], [map][iter], [fold][iter], [make][], [yojson][], [protobuf][].
 
@@ -15,7 +15,7 @@ Sponsored by [Evil Martians](http://evilmartians.com).
 [yojson]: https://github.com/ocaml-ppx/ppx_deriving_yojson#usage
 [protobuf]: https://github.com/ocaml-ppx/ppx_deriving_protobuf#usage
 
-**Note:** since _deriving_ was released by whitequark in 2014, the OCaml ppx ecosystem has changed a lot. For new projects, we recommend using [ppxlib](https://github.com/ocaml-ppx/ppxlib) directly. The module [Ppxlib.Deriving](https://ocaml-ppx.github.io/ppxlib/ppxlib/Ppxlib/Deriving/index.html) provide functionality similar to _deriving_, better integrated with ppxlib, and offers a nicer API in some places. _deriving_ is still maintained to keep existing plugins working as well as possible.
+**Note:** since _deriving_ was released by whitequark in 2014, the OCaml ppx ecosystem has changed a lot. For new projects wishing to create a new deriving plugin, we recommend using [ppxlib](https://github.com/ocaml-ppx/ppxlib) directly. The module [Ppxlib.Deriving](https://ocaml-ppx.github.io/ppxlib/ppxlib/Ppxlib/Deriving/index.html) provide functionality similar to _deriving_, better integrated with ppxlib, and offers a nicer API in some places. _deriving_ is still maintained to keep existing plugins working as well as possible. Although note that the above deprecation note only covers the API and not the plugins (e.g. `ppx_deriving.show`, `ppx_deriving.eq`, ...).
 
 Installation
 ------------
