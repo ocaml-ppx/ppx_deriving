@@ -1,3 +1,16 @@
+5.2.1 (02/02/2021)
+------------------
+
+* Allow Ast_convenience's functions to be given a full path ident (e.g. M.ident)
+  #248
+  (Kate Deplaix)
+
+* Add a deprecation notice of the API in the README.
+  The next step of the deprecation is going to be in the form of a
+  [@@@ocaml.deprecated ...] alert on the API module and the reimplementation of
+  the individual plugins using the ppxlib API.
+  (Kate Deplaix and Gabriel Scherer)
+
 5.2 (25/11/2020)
 ----------------
 
