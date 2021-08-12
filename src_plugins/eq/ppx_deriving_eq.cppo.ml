@@ -66,10 +66,7 @@ and expr_of_typ quoter typ =
   let typ = Ppx_deriving.remove_pervasives ~deriver typ in
   let expr_of_typ = expr_of_typ quoter in
   match attr_equal typ.ptyp_attributes with
-  | Some fn ->
-    let fwd = Ppx_deriving.quote ~quoter fn in
-    (* eta-expansion is necessary for recursive groups *)
-    [%expr fun x -> [%e fwd] x]
+  | Some fn -> Ppx_deriving.quote ~quoter fn (* eta-expanded if outermost *)
   | None ->
     match typ with
     | [%type: _] -> [%expr fun _ _ -> true]
@@ -115,9 +112,7 @@ and expr_of_typ quoter typ =
         [%expr fun (lazy x) (lazy y) -> [%e expr_of_typ typ] x y]
       | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
         let equal_fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "equal") lid)) in
-        let fwd = app (Ppx_deriving.quote ~quoter equal_fn) (List.map expr_of_typ args) in
-        (* eta-expansion is necessary for recursive groups *)
-        [%expr fun x -> [%e fwd] x]
+        app (Ppx_deriving.quote ~quoter equal_fn) (List.map expr_of_typ args) (* eta-expanded if outermost *)
       | _ -> assert false
       end
     | { ptyp_desc = Ptyp_tuple typs } ->
@@ -192,6 +187,10 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       raise_errorf ~loc "%s cannot be derived for open types" deriver
   in
   let polymorphize = Ppx_deriving.poly_fun_of_type_decl type_decl in
+  let eta_expand expr = match expr with
+    | { pexp_desc = Pexp_fun _; _ } -> expr
+    | _ -> [%expr fun x -> [%e expr] x] (* eta-expansion is necessary for recursive groups *)
+  in
   let out_type =
     Ppx_deriving.strong_type_of_type @@
       core_type_of_decl  ~options ~path type_decl in
@@ -199,7 +198,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "equal") type_decl) in
   [Vb.mk ~attrs:[Ppx_deriving.attr_warning [%expr "-39"]]
          (Pat.constraint_ eq_var out_type)
-         (Ppx_deriving.sanitize ~quoter (polymorphize comparator))]
+         (Ppx_deriving.sanitize ~quoter (eta_expand (polymorphize comparator)))]
 
 let () =
   Ppx_deriving.(register (create deriver
