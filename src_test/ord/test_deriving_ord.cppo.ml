@@ -151,6 +151,10 @@ let test_poly_app ctxt =
   assert_equal ~printer 0 (compare_poly_app 1.0 1.0);
   assert_equal ~printer (-1) (compare_poly_app 1.0 2.0)
 
+type poly_app_custom = float poly_abs_custom [@compare compare_poly_abs_custom Stdlib.compare]
+and 'a poly_abs_custom = 'a
+[@@deriving ord]
+
 module List = struct
   type 'a t = [`Cons of 'a | `Nil]
   [@@deriving ord]
