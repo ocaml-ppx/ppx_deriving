@@ -66,7 +66,10 @@ and expr_of_typ quoter typ =
   let typ = Ppx_deriving.remove_pervasives ~deriver typ in
   let expr_of_typ = expr_of_typ quoter in
   match attr_equal typ.ptyp_attributes with
-  | Some fn -> Ppx_deriving.quote ~quoter fn
+  | Some fn ->
+    let fwd = Ppx_deriving.quote ~quoter fn in
+    (* eta-expansion is necessary for recursive groups *)
+    [%expr fun x -> [%e fwd] x]
   | None ->
     match typ with
     | [%type: _] -> [%expr fun _ _ -> true]
