@@ -124,6 +124,10 @@ let test_poly_app ctxt =
   assert_equal ~printer true (equal_poly_app 1.0 1.0);
   assert_equal ~printer false (equal_poly_app 1.0 2.0)
 
+type poly_app_custom = float poly_abs_custom [@equal equal_poly_abs_custom (=)]
+and 'a poly_abs_custom = 'a
+[@@deriving eq]
+
 module List = struct
   type 'a t = [`Cons of 'a | `Nil]
   [@@deriving eq]
