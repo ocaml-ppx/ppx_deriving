@@ -319,9 +319,15 @@ let create_quoter () = { next_id = 0; bindings = [] }
 let quote ~quoter expr =
   let loc = !Ast_helper.default_loc in
   let name = "__" ^ string_of_int quoter.next_id in
-  quoter.bindings <- (Vb.mk (pvar name) [%expr fun () -> [%e expr]]) :: quoter.bindings;
+  let (binding_body, quoted_expr) = match expr with
+    | { pexp_desc = Pexp_ident _; _ } ->
+      (expr, evar name)
+    | _ ->
+      ([%expr fun () -> [%e expr]], [%expr [%e evar name] ()])
+  in
+  quoter.bindings <- (Vb.mk (pvar name) binding_body) :: quoter.bindings;
   quoter.next_id <- quoter.next_id + 1;
-  [%expr [%e evar name] ()]
+  quoted_expr
 
 let sanitize ?(module_=Lident "Ppx_deriving_runtime") ?(quoter=create_quoter ()) expr =
   let body =
