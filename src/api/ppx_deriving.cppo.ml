@@ -320,6 +320,8 @@ let quote ~quoter expr =
   let loc = !Ast_helper.default_loc in
   let name = "__" ^ string_of_int quoter.next_id in
   let (binding_body, quoted_expr) = match expr with
+    (* Optimize identifier quoting by avoiding closure.
+       See https://github.com/ocaml-ppx/ppx_deriving/pull/252. *)
     | { pexp_desc = Pexp_ident _; _ } ->
       (expr, evar name)
     | _ ->
