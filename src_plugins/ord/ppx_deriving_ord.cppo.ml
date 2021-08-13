@@ -67,7 +67,7 @@ and expr_of_typ quoter typ =
   let loc = typ.ptyp_loc in
   let expr_of_typ = expr_of_typ quoter in
   match attr_compare typ.ptyp_attributes with
-  | Some fn -> Ppx_deriving.quote ~quoter fn (* eta-expanded if outermost *)
+  | Some fn -> Ppx_deriving.quote ~quoter fn
   | None ->
     let typ = Ppx_deriving.remove_pervasives ~deriver typ in
     match typ with
@@ -125,7 +125,7 @@ and expr_of_typ quoter typ =
         [%expr fun (lazy x) (lazy y) -> [%e expr_of_typ typ] x y]
       | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
         let compare_fn = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "compare") lid)) in
-        app (Ppx_deriving.quote ~quoter compare_fn) (List.map expr_of_typ args) (* eta-expanded if outermost *)
+        app (Ppx_deriving.quote ~quoter compare_fn) (List.map expr_of_typ args)
       | _ -> assert false
       end
     | { ptyp_desc = Ptyp_tuple typs } ->
@@ -223,9 +223,12 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       raise_errorf ~loc "%s cannot be derived for open types" deriver
   in
   let polymorphize = Ppx_deriving.poly_fun_of_type_decl type_decl in
-  let eta_expand expr = match expr with
+  let eta_expand expr =
+    (* Ensure expr is statically constructive by eta-expanding non-funs.
+       See https://github.com/ocaml-ppx/ppx_deriving/pull/252. *)
+    match expr with
     | { pexp_desc = Pexp_fun _; _ } -> expr
-    | _ -> [%expr fun x -> [%e expr] x] (* eta-expansion is necessary for recursive groups *)
+    | _ -> [%expr fun x -> [%e expr] x]
   in
   let out_type =
     Ppx_deriving.strong_type_of_type @@
