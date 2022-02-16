@@ -6,7 +6,7 @@ let test_ref_included
 let test_ref_qualified
   (x : 'a ref)
   =
-  (x : 'a Ppx_deriving_runtime.Pervasives.ref[@ocaml.warning "-3"])
+  (x : 'a Ppx_deriving_runtime.Stdlib.ref)
 
 let test_backtrace
   (x : Printexc.raw_backtrace)

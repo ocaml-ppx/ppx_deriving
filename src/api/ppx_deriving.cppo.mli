@@ -184,7 +184,7 @@ val create_quoter : unit -> quoter
 val quote : quoter:quoter -> expression -> expression
 
 (** [sanitize module_ quoter expr] wraps [expr] in a way that ensures that the
-    contents of [module_] and {!Pervasives}, as well as the identifiers in
+    contents of [module_] and {!Stdlib}, as well as the identifiers in
     expressions returned by [quote] are in scope, and returns the wrapped
     expression. [module_] defaults to {!Ppx_deriving_runtime} if it's not
     provided*)
@@ -236,7 +236,7 @@ val attr_warning: expression -> attribute
 val free_vars_in_core_type : core_type -> tyvar list
 
 (** [remove_pervasives ~deriver typ] removes the leading "Pervasives."
-    module name in longidents.
+    and "Stdlib." module name in longidents.
     Type expressions marked with [\[\@nobuiltin\]] are ignored.
 
     The name of the deriving plugin should be passed as [deriver]; it is used

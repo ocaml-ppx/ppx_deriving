@@ -99,7 +99,7 @@ let test_var2 ctxt =
   assert_equal ~printer:(show_var2 fmt_int) (A2 5) (map_var2 int_of_float (A2 5.))
 
 let test_var3 ctxt =
-  let show,map = show_var3 fmt_int fmt_str, map_var3 ((+)1) String.uppercase [@warning "-3"] in
+  let show,map = show_var3 fmt_int fmt_str, map_var3 ((+)1) String.uppercase_ascii in
   assert_equal ~printer:show (A3 2) (map (A3 1));
   assert_equal ~printer:show (B3 false) (map (B3 false));
   assert_equal ~printer:show (C3("ABC", A3 3)) (map (C3("abc", A3 2)));
@@ -123,7 +123,7 @@ let test_record2 ctxt =
 
 let test_record3 ctxt =
   let show,map = show_record3 fmt_int fmt_str,
-                 map_record3 ((+)1) String.uppercase [@warning "-3"]
+                 map_record3 ((+)1) String.uppercase_ascii
   in
   assert_equal ~printer:show {a3=5;b3=false;c3="ABC"} (map {a3=4;b3=false;c3="abc"});
   let show,map = show_record3 fmt_int fmt_flt, map_record3 Char.code float_of_int in

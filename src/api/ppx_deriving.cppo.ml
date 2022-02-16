@@ -180,7 +180,7 @@ let raise_errorf ?sub ?loc fmt =
 #endif
     let err = Location.error ?sub ?loc str in
     raise (Location.Error err) in
-  Printf.kprintf raise_msg fmt
+  Printf.ksprintf raise_msg fmt
 
 let create =
   let def_ext_str name ~options ~path typ_ext =
