@@ -179,6 +179,13 @@ let test_record_order ctxt =
   assert_equal ~printer (0) (compare_ab { a = 1; b = 2; } { a = 1; b = 2; });
   assert_equal ~printer (1) (compare_ab { a = 2; b = 2; } { a = 1; b = 2; })
 
+module ResultOverride = struct
+  type t =
+    | Ok
+    | Error
+  [@@deriving ord]
+end
+
 let suite = "Test deriving(ord)" >::: [
     "test_simple"        >:: test_simple;
     "test_variant"       >:: test_variant;

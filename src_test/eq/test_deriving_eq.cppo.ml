@@ -148,6 +148,13 @@ let test_result_result ctxt =
   assert_equal ~printer false (eq (Ok "123") (Error 123));
   assert_equal ~printer false (eq (Error 123) (Error 0))
 
+module ResultOverride = struct
+  type t =
+    | Ok
+    | Error
+  [@@deriving eq]
+end
+
 let suite = "Test deriving(eq)" >::: [
     "test_simple"        >:: test_simple;
     "test_array"         >:: test_arr;
