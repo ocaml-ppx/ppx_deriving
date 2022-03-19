@@ -131,6 +131,8 @@ and 'a poly_abs_custom = 'a
 module List = struct
   type 'a t = [`Cons of 'a | `Nil]
   [@@deriving eq]
+  type 'a u = Cons of 'a | Nil
+  [@@deriving eq]
 end
 type 'a std_clash = 'a List.t option
 [@@deriving eq]
