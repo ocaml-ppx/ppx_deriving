@@ -194,7 +194,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
      conflicts with a Stdlib type from Ppx_deriving_runtime (e.g. bool in test).
      In that case we must refer to the type being declared, not the one opened by Ppx_deriving_runtime. *)
   let helper_type =
-    Type.mk ~loc ~attrs:[Ppx_deriving.attr_warning [%expr "-unused-type-declaration"]]
+    Type.mk ~loc
       ~params:type_decl.ptype_params
       ~manifest:(Ppx_deriving.core_type_of_type_decl type_decl)
       (mkloc "t" loc)
@@ -258,7 +258,12 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   let out_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "compare") type_decl) in
   let comparator_with_helper =
-    [%expr let module Ppx_deriving_ord_helper = struct [%%i Str.type_ Nonrecursive [helper_type]] end in
+    [%expr let module Ppx_deriving_ord_helper =
+           struct
+             [@@@warning "-unused-type-declaration"]
+             [%%i Str.type_ Nonrecursive [helper_type]]
+           end
+           in
            [%e Ppx_deriving.sanitize ~quoter (eta_expand (polymorphize comparator))]]
   in
   [Vb.mk ~attrs:[Ppx_deriving.attr_warning [%expr "-39"]]
