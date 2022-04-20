@@ -90,7 +90,7 @@ The `[%derive.x:]` syntax can be shortened to `[%x:]`, given that the deriver `x
 
 ### Working with existing types
 
-At first, it may look like _deriving_ requires complete control of the type declaration. However, a lesser-known OCaml feature allows to derive functions for any existing type. Using `Pervasives.fpclass` as an example, _show_ can be derived as follows:
+At first, it may look like _deriving_ requires complete control of the type declaration. However, a lesser-known OCaml feature allows to derive functions for any existing type. Using `Stdlib.fpclass` as an example, _show_ can be derived as follows:
 
 ``` ocaml
 # module M = struct
@@ -113,7 +113,7 @@ module M :
 - : string = "FP_normal"
 ```
 
-The module is used to demonstrate that `show_myfpclass` really accepts `Pervasives.fpclass`, and not just `M.myfpclass`.
+The module is used to demonstrate that `show_myfpclass` really accepts `Stdlib.fpclass`, and not just `M.myfpclass`.
 
 To avoid the need to repeat the type definition, it is possible to use [ppx_import](https://github.com/ocaml-ppx/ppx_import#usage) to automatically pull in the type definition. Attributes can be attached using its `[@with]` replacement feature.
 
@@ -184,7 +184,7 @@ This code will create printers which return the string `X.C`, `X` is a module pa
 Plugins: eq and ord
 -------------------
 
-_eq_ derives a function comparing values by semantic equality; structural or physical depending on context. _ord_ derives a function defining a total order for values, returning a negative value if lower, `0` if equal or a positive value if greater. They're similar to `Pervasives.(=)` and `Pervasives.compare`, but are faster, allow to customize the comparison rules, and never raise at runtime. _eq_ and _ord_ are short-circuiting.
+_eq_ derives a function comparing values by semantic equality; structural or physical depending on context. _ord_ derives a function defining a total order for values, returning a negative value if lower, `0` if equal or a positive value if greater. They're similar to `Stdlib.(=)` and `Stdlib.compare`, but are faster, allow to customize the comparison rules, and never raise at runtime. _eq_ and _ord_ are short-circuiting.
 
 ``` ocaml
 # type t = [ `A | `B of int ] [@@deriving eq, ord];;

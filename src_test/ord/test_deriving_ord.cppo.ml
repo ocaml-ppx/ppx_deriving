@@ -118,8 +118,7 @@ let test_ref1 ctxt =
   assert_equal ~printer (0) (compare_r1 (ref 0) (ref 0));
   assert_equal ~printer (1) (compare_r1 (ref 1) (ref 0))
 
-type r2 = int Pervasives.ref
-[@@ocaml.warning "-3"]
+type r2 = int Stdlib.ref
 [@@deriving ord]
 let test_ref2 ctxt =
   assert_equal ~printer (-1) (compare_r2 (ref 0) (ref 1));

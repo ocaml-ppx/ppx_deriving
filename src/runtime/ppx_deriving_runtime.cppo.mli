@@ -27,6 +27,8 @@ include module type of struct
   include Stdlib
 end
 
+module Stdlib = Stdlib
+
 module Result : sig
   type ('a, 'b) t = ('a, 'b) result =
     | Ok of 'a
