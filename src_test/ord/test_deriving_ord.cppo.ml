@@ -157,6 +157,8 @@ and 'a poly_abs_custom = 'a
 module List = struct
   type 'a t = [`Cons of 'a | `Nil]
   [@@deriving ord]
+  type 'a u = Cons of 'a | Nil
+  [@@deriving ord]
 end
 type 'a std_clash = 'a List.t option
 [@@deriving ord]
@@ -177,6 +179,13 @@ let test_record_order ctxt =
   assert_equal ~printer (-1) (compare_ab { a = 1; b = 2; } { a = 2; b = 1; });
   assert_equal ~printer (0) (compare_ab { a = 1; b = 2; } { a = 1; b = 2; });
   assert_equal ~printer (1) (compare_ab { a = 2; b = 2; } { a = 1; b = 2; })
+
+module ResultOverride = struct
+  type t =
+    | Ok
+    | Error
+  [@@deriving ord]
+end
 
 let suite = "Test deriving(ord)" >::: [
     "test_simple"        >:: test_simple;

@@ -35,10 +35,14 @@ let reduce_compare l =
   | [] -> [%expr 0]
   | x :: xs -> List.fold_left compare_reduce x xs
 
-let wildcard_case int_cases =
+let wildcard_case ?typ int_cases =
   let loc = !Ast_helper.default_loc in
+  let typ = match typ with
+    | Some typ -> typ
+    | None -> [%type: _] (* don't constrain *)
+  in
   Exp.case [%pat? _] [%expr
-    let to_int = [%e Exp.function_ int_cases] in
+    let to_int (x: [%t typ]) = [%e Exp.match_ [%expr x] int_cases] in
     Ppx_deriving_runtime.compare (to_int lhs) (to_int rhs)]
 
 let pattn side typs =
@@ -185,6 +189,24 @@ let sig_of_type ~options ~path type_decl =
 let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   parse_options options;
   let quoter = Ppx_deriving.create_quoter () in
+  (* Capture type in helper module outside Ppx_deriving_runtime wrapper (added by sanitize).
+     Required for to_int constraint in variant type wildcard_case if the type name
+     conflicts with a Stdlib type from Ppx_deriving_runtime (e.g. bool in test).
+     In that case we must refer to the type being declared, not the one opened by Ppx_deriving_runtime. *)
+  let helper_type =
+    Type.mk ~loc
+      ~params:type_decl.ptype_params
+      ~manifest:(Ppx_deriving.core_type_of_type_decl type_decl)
+      (mkloc "t" loc)
+  in
+  let helper_typ =
+    let name = mkloc (Longident.parse "Ppx_deriving_ord_helper.t") loc in
+    let params = match helper_type.ptype_params with
+      | [] -> []
+      | _ :: _ -> [Typ.any ()] (* match all params with single wildcard *)
+    in
+    Typ.constr name params
+  in
   let comparator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest -> expr_of_typ quoter manifest
@@ -208,7 +230,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
           )
       in
       [%expr fun lhs rhs ->
-        [%e Exp.match_ [%expr lhs, rhs] (cases @ [wildcard_case int_cases])]]
+        [%e Exp.match_ [%expr lhs, rhs] (cases @ [wildcard_case ~typ:helper_typ int_cases])]]
     | Ptype_record labels, _ ->
       let exprs =
         labels |> List.map (fun ({ pld_name = { txt = name }; _ } as pld) ->
@@ -235,9 +257,18 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       core_type_of_decl ~options ~path type_decl in
   let out_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "compare") type_decl) in
+  let comparator_with_helper =
+    [%expr let module Ppx_deriving_ord_helper =
+           struct
+             [@@@warning "-unused-type-declaration"]
+             [%%i Str.type_ Nonrecursive [helper_type]]
+           end
+           in
+           [%e Ppx_deriving.sanitize ~quoter (eta_expand (polymorphize comparator))]]
+  in
   [Vb.mk ~attrs:[Ppx_deriving.attr_warning [%expr "-39"]]
          (Pat.constraint_ out_var out_type)
-         (Ppx_deriving.sanitize ~quoter (eta_expand (polymorphize comparator)))]
+         comparator_with_helper]
 
 let () =
   Ppx_deriving.(register (create deriver

@@ -131,6 +131,8 @@ and 'a poly_abs_custom = 'a
 module List = struct
   type 'a t = [`Cons of 'a | `Nil]
   [@@deriving eq]
+  type 'a u = Cons of 'a | Nil
+  [@@deriving eq]
 end
 type 'a std_clash = 'a List.t option
 [@@deriving eq]
@@ -147,6 +149,13 @@ let test_result_result ctxt =
   assert_equal ~printer true (eq (Ok "ttt") (Ok "ttt"));
   assert_equal ~printer false (eq (Ok "123") (Error 123));
   assert_equal ~printer false (eq (Error 123) (Error 0))
+
+module ResultOverride = struct
+  type t =
+    | Ok
+    | Error
+  [@@deriving eq]
+end
 
 let suite = "Test deriving(eq)" >::: [
     "test_simple"        >:: test_simple;
