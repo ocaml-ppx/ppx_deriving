@@ -309,39 +309,24 @@ let attr_warning expr =
     attr_loc = loc;
   }
 
-type quoter = {
-  mutable next_id : int;
-  mutable bindings : value_binding list;
-}
+type quoter = Quoter.t
 
-let create_quoter () = { next_id = 0; bindings = [] }
+let create_quoter () = Quoter.create ()
 
 let quote ~quoter expr =
-  let loc = !Ast_helper.default_loc in
-  let name = "__" ^ string_of_int quoter.next_id in
-  let (binding_body, quoted_expr) = match expr with
-    (* Optimize identifier quoting by avoiding closure.
-       See https://github.com/ocaml-ppx/ppx_deriving/pull/252. *)
-    | { pexp_desc = Pexp_ident _; _ } ->
-      (expr, evar name)
-    | _ ->
-      ([%expr fun () -> [%e expr]], [%expr [%e evar name] ()])
-  in
-  quoter.bindings <- (Vb.mk (pvar name) binding_body) :: quoter.bindings;
-  quoter.next_id <- quoter.next_id + 1;
-  quoted_expr
+  Quoter.quote quoter expr
 
 let sanitize ?(module_=Lident "Ppx_deriving_runtime") ?(quoter=create_quoter ()) expr =
+  let loc = !Ast_helper.default_loc in
   let body =
-    let loc = !Ast_helper.default_loc in
     let attrs = [attr_warning [%expr "-A"]] in
     let modname = { txt = module_; loc } in
     Exp.open_ ~loc ~attrs
       (Opn.mk ~loc ~attrs ~override:Override (Mod.ident ~loc ~attrs modname))
       expr in
-  match quoter.bindings with
-  | [] -> body
-  | bindings -> Exp.let_ Nonrecursive bindings body
+  let sanitized = Quoter.sanitize quoter body in
+  (* ppxlib quoter uses Recursive, ppx_deriving's used Nonrecursive - silence warning *)
+  { sanitized with pexp_attributes = attr_warning [%expr "-39"] :: sanitized.pexp_attributes}
 
 let with_quoter fn a =
   let quoter = create_quoter () in
