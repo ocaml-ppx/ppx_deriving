@@ -11,11 +11,6 @@ module Stdlib = Pervasives
 let deriver = "enum"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let parse_options options =
-  options |> List.iter (fun (name, expr) ->
-    match name with
-    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
-
 let attr_value attrs =
   Ppx_deriving.(attrs |> attr ~deriver "value" |> Arg.(get_attr ~deriver int))
 
@@ -77,8 +72,7 @@ let mappings_of_type type_decl =
   mappings |> List.stable_sort (fun (a,_) (b,_) -> Stdlib.compare a b) |> check_dup;
   kind, mappings
 
-let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
-  parse_options options;
+let str_of_type ({ ptype_loc = loc } as type_decl) =
   let kind, mappings = mappings_of_type type_decl in
   let patt name =
     match kind with
@@ -106,9 +100,8 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
    Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Suffix "of_enum") type_decl))
          (Exp.function_ from_enum_cases)]
 
-let sig_of_type ~options ~path type_decl =
+let sig_of_type type_decl =
   let loc = type_decl.ptype_loc in
-  parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "min") type_decl))
              [%type: Ppx_deriving_runtime.int]);
@@ -119,12 +112,11 @@ let sig_of_type ~options ~path type_decl =
    Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Suffix "of_enum") type_decl))
              [%type: Ppx_deriving_runtime.int -> [%t typ] Ppx_deriving_runtime.option])]
 
-(* TODO: remove always [] ~options argument *)
-let impl_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
-  [Str.value Nonrecursive (List.concat (List.map (str_of_type ~options:[] ~path) type_decls))])
+let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  [Str.value Nonrecursive (List.concat (List.map str_of_type type_decls))])
 
-let intf_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
-  List.concat (List.map (sig_of_type ~options:[] ~path) type_decls))
+let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  List.concat (List.map sig_of_type type_decls))
 
 let deriving: Deriving.t =
   Deriving.add

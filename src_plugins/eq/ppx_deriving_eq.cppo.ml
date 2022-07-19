@@ -7,11 +7,6 @@ open Ppx_deriving.Ast_convenience
 let deriver = "eq"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let parse_options options =
-  options |> List.iter (fun (name, expr) ->
-    match name with
-    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
-
 let attr_nobuiltin attrs =
   Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
 
@@ -33,19 +28,17 @@ let pattl side labels =
 let pconstrrec name fields =
   pconstr name [precord ~closed:Closed fields]
 
-let core_type_of_decl ~options ~path type_decl =
+let core_type_of_decl type_decl =
   let loc = !Ast_helper.default_loc in
-  parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
     (fun var -> [%type: [%t var] -> [%t var] -> Ppx_deriving_runtime.bool])
     type_decl
     [%type: [%t typ] -> [%t typ] -> Ppx_deriving_runtime.bool]
 
-let sig_of_type ~options ~path type_decl =
-  parse_options options;
+let sig_of_type type_decl =
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "equal") type_decl))
-             (core_type_of_decl ~options ~path type_decl))]
+             (core_type_of_decl type_decl))]
 
 let rec exprn quoter typs =
   typs |> List.mapi (fun i typ ->
@@ -146,8 +139,7 @@ and expr_of_typ quoter typ =
       raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
                    deriver (Ppx_deriving.string_of_core_type typ)
 
-let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
-  parse_options options;
+let str_of_type ({ ptype_loc = loc } as type_decl) =
   let quoter = Ppx_deriving.create_quoter () in
   let comparator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
@@ -196,19 +188,18 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   in
   let out_type =
     Ppx_deriving.strong_type_of_type @@
-      core_type_of_decl  ~options ~path type_decl in
+      core_type_of_decl type_decl in
   let eq_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "equal") type_decl) in
   [Vb.mk ~attrs:[Ppx_deriving.attr_warning [%expr "-39"]]
          (Pat.constraint_ eq_var out_type)
          (Ppx_deriving.sanitize ~quoter (eta_expand (polymorphize comparator)))]
 
-(* TODO: remove always [] ~options argument *)
-let impl_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
-  [Str.value Recursive (List.concat (List.map (str_of_type ~options:[] ~path) type_decls))])
+let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
 
-let intf_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
-  List.concat (List.map (sig_of_type ~options:[] ~path) type_decls))
+let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  List.concat (List.map sig_of_type type_decls))
 
 let deriving: Deriving.t =
   Deriving.add

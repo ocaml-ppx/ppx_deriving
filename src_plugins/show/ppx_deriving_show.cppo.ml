@@ -7,26 +7,15 @@ open Ppx_deriving.Ast_convenience
 let deriver = "show"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-type options = { with_path : bool }
-
 (* The option [with_path] controls whether a full path should be displayed
    as part of data constructor names and record field names. (In the case
    of record fields, it is displayed only as part of the name of the first
    field.) By default, this option is [true], which means that full paths
    are shown. *)
 
-(* TODO: remove show_opts *)
-let expand_path show_opts ~with_path ~path name =
+let expand_path ~with_path ~path name =
   let path = if with_path then path else [] in
   Ppx_deriving.expand_path ~path name
-
-let parse_options options =
-  let with_path = ref true in
-  options |> List.iter (fun (name, expr) ->
-    match name with
-    | "with_path" -> with_path := Ppx_deriving.Arg.(get_expr ~deriver bool) expr
-    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name);
-  { with_path = !with_path }
 
 let attr_nobuiltin attrs =
   Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
@@ -53,30 +42,27 @@ let wrap_printer quoter printer =
   Ppx_deriving.quote ~quoter
     [%expr (let fprintf = Ppx_deriving_runtime.Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
 
-let pp_type_of_decl ~options ~path type_decl =
+let pp_type_of_decl type_decl =
   let loc = type_decl.ptype_loc in
-  let _ = parse_options options in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
     (fun var -> [%type: Ppx_deriving_runtime.Format.formatter -> [%t var] -> Ppx_deriving_runtime.unit])
     type_decl
     [%type: Ppx_deriving_runtime.Format.formatter -> [%t typ] -> Ppx_deriving_runtime.unit]
 
-let show_type_of_decl ~options ~path type_decl =
+let show_type_of_decl type_decl =
   let loc = type_decl.ptype_loc in
-  let _ = parse_options options in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
     (fun var -> [%type: Ppx_deriving_runtime.Format.formatter -> [%t var] -> Ppx_deriving_runtime.unit])
     type_decl
     [%type: [%t typ] -> Ppx_deriving_runtime.string]
 
-let sig_of_type ~options ~path type_decl =
-  let _ = parse_options options in
+let sig_of_type type_decl =
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl))
-              (pp_type_of_decl ~options ~path type_decl));
+              (pp_type_of_decl type_decl));
    Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl))
-              (show_type_of_decl ~options ~path type_decl))]
+              (show_type_of_decl type_decl))]
 
 let rec expr_of_typ quoter typ =
   let loc = typ.ptyp_loc in
@@ -203,8 +189,7 @@ and expr_of_label_decl quoter { pld_type; pld_attributes } =
   let attrs = pld_type.ptyp_attributes @ pld_attributes in
   expr_of_typ quoter { pld_type with ptyp_attributes = attrs }
 
-let str_of_type ~options ~with_path ~path ({ ptype_loc = loc } as type_decl) =
-  let show_opts = parse_options options in
+let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
   let quoter = Ppx_deriving.create_quoter () in
   let path = Ppx_deriving.path_of_type_decl ~path type_decl in
   let prettyprinter =
@@ -215,7 +200,7 @@ let str_of_type ~options ~with_path ~path ({ ptype_loc = loc } as type_decl) =
       let cases =
         constrs |> List.map (fun { pcd_name = { txt = name' }; pcd_args; pcd_attributes } ->
           let constr_name =
-            expand_path show_opts ~with_path ~path name'
+            expand_path ~with_path ~path name'
           in
 
           match attr_printer pcd_attributes, pcd_args with
@@ -282,7 +267,7 @@ let str_of_type ~options ~with_path ~path ({ ptype_loc = loc } as type_decl) =
     | Ptype_record labels, _ ->
       let fields =
         labels |> List.mapi (fun i ({ pld_name = { txt = name }; _} as pld) ->
-          let field_name = if i = 0 then expand_path show_opts ~with_path ~path name else name in
+          let field_name = if i = 0 then expand_path ~with_path ~path name else name in
           [%expr
             Ppx_deriving_runtime.Format.fprintf fmt "@[%s =@ " [%e str field_name];
             [%e expr_of_label_decl quoter pld]
@@ -305,10 +290,10 @@ let str_of_type ~options ~with_path ~path ({ ptype_loc = loc } as type_decl) =
   let stringprinter = [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" [%e pp_poly_apply] x] in
   let polymorphize  = Ppx_deriving.poly_fun_of_type_decl type_decl in
   let pp_type =
-    Ppx_deriving.strong_type_of_type @@ pp_type_of_decl ~options ~path type_decl in
+    Ppx_deriving.strong_type_of_type @@ pp_type_of_decl type_decl in
   let show_type =
     Ppx_deriving.strong_type_of_type @@
-      show_type_of_decl ~options ~path type_decl in
+      show_type_of_decl type_decl in
   let pp_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl) in
   let show_var =
@@ -327,7 +312,6 @@ let ebool: _ Ast_pattern.t -> _ Ast_pattern.t =
 let args () = Deriving.Args.(empty +> arg "with_path" (ebool __))
 (* TODO: add arg_default to ppxlib? *)
 
-(* TODO: remove always [] ~options argument *)
 let impl_generator = Deriving.Generator.V2.make (args ()) (fun ~ctxt (_, type_decls) with_path ->
   let path =
     (* based on https://github.com/thierry-martinez/ppx_show/blob/db00365470bcbf602d931c1bfd155be459379c5c/src/ppx_show.ml#L384-L387 *)
@@ -340,10 +324,10 @@ let impl_generator = Deriving.Generator.V2.make (args ()) (fun ~ctxt (_, type_de
     | Some with_path -> with_path
     | None -> true (* true by default *)
   in
-  [Str.value Recursive (List.concat (List.map (str_of_type ~options:[] ~with_path ~path) type_decls))])
+  [Str.value Recursive (List.concat (List.map (str_of_type ~with_path ~path) type_decls))])
 
-let intf_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
-  List.concat (List.map (sig_of_type ~options:[] ~path) type_decls))
+let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  List.concat (List.map sig_of_type type_decls))
 
 let deriving: Deriving.t =
   Deriving.add

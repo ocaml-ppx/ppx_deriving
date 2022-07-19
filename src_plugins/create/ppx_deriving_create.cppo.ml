@@ -7,11 +7,6 @@ open Ppx_deriving.Ast_convenience
 let deriver = "create"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let parse_options options =
-  options |> List.iter (fun (name, expr) ->
-    match name with
-    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
-
 let attr_default attrs =
   Ppx_deriving.(attrs |> attr ~deriver "default" |> Arg.(get_attr ~deriver expr))
 
@@ -29,8 +24,7 @@ let find_main labels =
       main, label :: labels)
     (None, []) labels
 
-let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
-  parse_options options;
+let str_of_type ({ ptype_loc = loc } as type_decl) =
   let quoter = Ppx_deriving.create_quoter () in
   let creator =
     match type_decl.ptype_kind with
@@ -78,8 +72,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
 let wrap_predef_option typ =
   typ
 
-let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
-  parse_options options;
+let sig_of_type ({ ptype_loc = loc } as type_decl) =
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let typ =
     match type_decl.ptype_kind with
@@ -118,12 +111,11 @@ let sig_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   in
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl)) typ)]
 
-(* TODO: remove always [] ~options argument *)
-let impl_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
-  [Str.value Nonrecursive (List.concat (List.map (str_of_type ~options:[] ~path) type_decls))])
+let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  [Str.value Nonrecursive (List.concat (List.map str_of_type type_decls))])
 
-let intf_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
-  List.concat (List.map (sig_of_type ~options:[] ~path) type_decls))
+let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  List.concat (List.map sig_of_type type_decls))
 
 let deriving: Deriving.t =
   Deriving.add

@@ -7,11 +7,6 @@ open Ppx_deriving.Ast_convenience
 let deriver = "map"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let parse_options options =
-  options |> List.iter (fun (name, expr) ->
-    match name with
-    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
-
 let attr_nobuiltin attrs =
   Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
 
@@ -91,8 +86,7 @@ and expr_of_label_decl ?decl { pld_type; pld_attributes } =
   let attrs = pld_type.ptyp_attributes @ pld_attributes in
   expr_of_typ ?decl { pld_type with ptyp_attributes = attrs }
 
-let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
-  parse_options options;
+let str_of_type ({ ptype_loc = loc } as type_decl) =
   let mapper =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest -> expr_of_typ ~decl:type_decl manifest
@@ -130,9 +124,8 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (pvar (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
          (polymorphize mapper)]
 
-let sig_of_type ~options ~path type_decl =
+let sig_of_type type_decl =
   let loc = type_decl.ptype_loc in
-  parse_options options;
   let typ_arg, var_arg, bound = Ppx_deriving.instantiate []    type_decl in
   let typ_ret, var_ret, _     = Ppx_deriving.instantiate bound type_decl in
   let arrow = Typ.arrow Label.nolabel in
@@ -141,12 +134,11 @@ let sig_of_type ~options ~path type_decl =
   let typ = List.fold_right arrow poly_fns (arrow typ_arg typ_ret) in
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl)) typ)]
 
-(* TODO: remove always [] ~options argument *)
-let impl_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
-  [Str.value Recursive (List.concat (List.map (str_of_type ~options:[] ~path) type_decls))])
+let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
 
-let intf_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
-  List.concat (List.map (sig_of_type ~options:[] ~path) type_decls))
+let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  List.concat (List.map sig_of_type type_decls))
 
 let deriving: Deriving.t =
   Deriving.add
