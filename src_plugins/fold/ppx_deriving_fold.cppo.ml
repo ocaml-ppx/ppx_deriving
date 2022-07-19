@@ -7,8 +7,8 @@ open Ppx_deriving.Ast_convenience
 let deriver = "fold"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let attr_nobuiltin attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
+let ct_attr_nobuiltin = Attribute.declare "deriving.fold.nobuiltin" Attribute.Context.core_type
+  Ast_pattern.(pstr nil) ()
 
 let argn = Printf.sprintf "a%d"
 let argl = Printf.sprintf "a%s"
@@ -28,7 +28,10 @@ let rec expr_of_typ typ =
   match typ with
   | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun acc _ -> acc]
   | { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
-    let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
+    let builtin = match Attribute.get ct_attr_nobuiltin typ with
+      | Some () -> false
+      | None -> true
+    in
     begin match builtin, typ with
     | true, [%type: [%t? typ] ref] -> [%expr fun acc x -> [%e expr_of_typ typ] acc !x]
     | true, [%type: [%t? typ] list] ->

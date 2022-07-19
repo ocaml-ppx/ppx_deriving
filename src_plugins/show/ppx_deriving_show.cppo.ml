@@ -17,17 +17,19 @@ let expand_path ~with_path ~path name =
   let path = if with_path then path else [] in
   Ppx_deriving.expand_path ~path name
 
-let attr_nobuiltin attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
+let ct_attr_nobuiltin = Attribute.declare "deriving.show.nobuiltin" Attribute.Context.core_type
+  Ast_pattern.(pstr nil) ()
 
-let attr_printer attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "printer" |> Arg.(get_attr ~deriver expr))
+let attr_printer context = Attribute.declare "deriving.show.printer" context
+  Ast_pattern.(single_expr_payload __) (fun e -> e)
+let ct_attr_printer = attr_printer Attribute.Context.core_type
+let constr_attr_printer = attr_printer Attribute.Context.constructor_declaration
 
-let attr_polyprinter attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "polyprinter" |> Arg.(get_attr ~deriver expr))
+let ct_attr_polyprinter = Attribute.declare "deriving.show.polyprinter" Attribute.Context.core_type
+  Ast_pattern.(single_expr_payload __) (fun e -> e)
 
-let attr_opaque attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "opaque" |> Arg.get_flag ~deriver)
+let ct_attr_opaque = Attribute.declare "deriving.show.opaque" Attribute.Context.core_type
+  Ast_pattern.(pstr nil) ()
 
 let argn = Printf.sprintf "a%d"
 let argl = Printf.sprintf "a%s"
@@ -67,10 +69,14 @@ let sig_of_type type_decl =
 let rec expr_of_typ quoter typ =
   let loc = typ.ptyp_loc in
   let expr_of_typ = expr_of_typ quoter in
-  match attr_printer typ.ptyp_attributes with
+  match Attribute.get ct_attr_printer typ with
   | Some printer -> [%expr [%e wrap_printer quoter printer] fmt]
   | None ->
-  if attr_opaque typ.ptyp_attributes then
+  let opaque = match Attribute.get ct_attr_opaque typ with
+    | Some () -> true
+    | None -> false
+  in
+  if opaque then
     [%expr fun _ -> Ppx_deriving_runtime.Format.pp_print_string fmt "<opaque>"]
   else
     let format x = [%expr Ppx_deriving_runtime.Format.fprintf fmt [%e str x]] in
@@ -88,7 +94,10 @@ let rec expr_of_typ quoter typ =
     | { ptyp_desc = Ptyp_arrow _ } ->
       [%expr fun _ -> Ppx_deriving_runtime.Format.pp_print_string fmt "<fun>"]
     | { ptyp_desc = Ptyp_constr _ } ->
-      let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
+      let builtin = match Attribute.get ct_attr_nobuiltin typ with
+        | Some () -> false
+        | None -> true
+      in
       begin match builtin, typ with
       | true, [%type: unit]        -> [%expr fun () -> Ppx_deriving_runtime.Format.pp_print_string fmt "()"]
       | true, [%type: int]         -> format "%d"
@@ -140,7 +149,7 @@ let rec expr_of_typ quoter typ =
       | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
         let args_pp = List.map (fun typ -> [%expr fun fmt -> [%e expr_of_typ typ]]) args in
         let printer =
-          match attr_polyprinter typ.ptyp_attributes with
+          match Attribute.get ct_attr_polyprinter typ with
           | Some printer -> wrap_printer quoter printer
           | None ->
             let printer = Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "pp") lid)) in
@@ -198,12 +207,12 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
       [%expr fun fmt -> [%e expr_of_typ quoter manifest]]
     | Ptype_variant constrs, _ ->
       let cases =
-        constrs |> List.map (fun { pcd_name = { txt = name' }; pcd_args; pcd_attributes } ->
+        constrs |> List.map (fun ({ pcd_name = { txt = name' }; pcd_args; pcd_attributes } as constr) ->
           let constr_name =
             expand_path ~with_path ~path name'
           in
 
-          match attr_printer pcd_attributes, pcd_args with
+          match Attribute.get constr_attr_printer constr, pcd_args with
           | Some printer, Pcstr_tuple(args) ->
             let rec range from_idx to_idx =
               if from_idx = to_idx

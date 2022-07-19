@@ -7,11 +7,11 @@ open Ppx_deriving.Ast_convenience
 let deriver = "eq"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let attr_nobuiltin attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
+let ct_attr_nobuiltin = Attribute.declare "deriving.eq.nobuiltin" Attribute.Context.core_type
+  Ast_pattern.(pstr nil) ()
 
-let attr_equal attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "equal" |> Arg.(get_attr ~deriver expr))
+let ct_attr_equal = Attribute.declare "deriving.eq.equal" Attribute.Context.core_type
+  Ast_pattern.(single_expr_payload __) (fun e -> e)
 
 let argn kind =
   Printf.sprintf (match kind with `lhs -> "lhs%d" | `rhs -> "rhs%d")
@@ -58,13 +58,16 @@ and expr_of_typ quoter typ =
   let loc = !Ast_helper.default_loc in
   let typ = Ppx_deriving.remove_pervasives ~deriver typ in
   let expr_of_typ = expr_of_typ quoter in
-  match attr_equal typ.ptyp_attributes with
+  match Attribute.get ct_attr_equal typ with
   | Some fn -> Ppx_deriving.quote ~quoter fn
   | None ->
     match typ with
     | [%type: _] -> [%expr fun _ _ -> true]
     | { ptyp_desc = Ptyp_constr _ } ->
-      let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
+      let builtin = match Attribute.get ct_attr_nobuiltin typ with
+        | Some () -> false
+        | None -> true
+      in
       begin match builtin, typ with
       | true, [%type: unit] ->
         [%expr fun (_:unit) (_:unit) -> true]

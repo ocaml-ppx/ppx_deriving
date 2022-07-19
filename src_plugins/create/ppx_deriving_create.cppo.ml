@@ -7,16 +7,33 @@ open Ppx_deriving.Ast_convenience
 let deriver = "create"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let attr_default attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "default" |> Arg.(get_attr ~deriver expr))
+let attr_default context = Attribute.declare "deriving.create.default" context
+  Ast_pattern.(single_expr_payload __) (fun e -> e)
+let ct_attr_default = attr_default Attribute.Context.core_type
+let label_attr_default = attr_default Attribute.Context.label_declaration
 
-let attr_split attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "split" |> Arg.get_flag ~deriver)
+let attr_split context = Attribute.declare "deriving.create.split" context
+  Ast_pattern.(pstr nil) ()
+let ct_attr_split = attr_split Attribute.Context.core_type
+let label_attr_split = attr_split Attribute.Context.label_declaration
+
+let attr_main context = Attribute.declare "deriving.create.main" context
+  Ast_pattern.(pstr nil) ()
+let ct_attr_main = attr_main Attribute.Context.core_type
+let label_attr_main = attr_main Attribute.Context.label_declaration
+
+let attribute_get2 attr1 x1 attr2 x2 =
+  match Attribute.get attr1 x1, Attribute.get attr2 x2 with
+  | Some _ as y, _ -> y
+  | None, y -> y
 
 let find_main labels =
   List.fold_left (fun (main, labels) ({ pld_type; pld_loc; pld_attributes } as label) ->
-    if Ppx_deriving.(pld_type.ptyp_attributes @ pld_attributes |>
-                     attr ~deriver "main" |> Arg.get_flag ~deriver) then
+    let is_main = match attribute_get2 ct_attr_main pld_type label_attr_main label with
+      | Some () -> true
+      | None -> false
+    in
+    if is_main then
       match main with
       | Some _ -> raise_errorf ~loc:pld_loc "Duplicate [@deriving.%s.main] annotation" deriver
       | None -> Some label, labels
@@ -40,14 +57,17 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
         | None ->
           Exp.fun_ Label.nolabel None (punit ()) (record fields)
       in
-      List.fold_left (fun accum { pld_name = { txt = name }; pld_type; pld_attributes } ->
-        let attrs = pld_attributes @ pld_type.ptyp_attributes in
-        let pld_type = Ppx_deriving.remove_pervasives ~deriver pld_type in
-        match attr_default attrs with
+      List.fold_left (fun accum ({ pld_name = { txt = name }; pld_type; pld_attributes } as label) ->
+        match attribute_get2 label_attr_default label ct_attr_default pld_type with
         | Some default -> Exp.fun_ (Label.optional name) (Some (Ppx_deriving.quote ~quoter default))
                                    (pvar name) accum
         | None ->
-        if attr_split attrs then
+        let split = match attribute_get2 label_attr_split label ct_attr_split pld_type with
+          | Some () -> true
+          | None -> false
+        in
+        let pld_type = Ppx_deriving.remove_pervasives ~deriver pld_type in
+        if split then
           match pld_type with
           | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
             let name' = String.sub name 0 (String.length name - 1) in
@@ -85,13 +105,16 @@ let sig_of_type ({ ptype_loc = loc } as type_decl) =
         | None ->
           Typ.arrow Label.nolabel (tconstr "unit" []) typ
       in
-      List.fold_left (fun accum { pld_name = { txt = name; loc }; pld_type; pld_attributes } ->
-        let attrs = pld_type.ptyp_attributes @ pld_attributes in
-        let pld_type = Ppx_deriving.remove_pervasives ~deriver pld_type in
-        match attr_default attrs with
+      List.fold_left (fun accum ({ pld_name = { txt = name; loc }; pld_type; pld_attributes } as label) ->
+        match attribute_get2 ct_attr_default pld_type label_attr_default label with
         | Some _ -> Typ.arrow (Label.optional name) (wrap_predef_option pld_type) accum
         | None ->
-        if attr_split attrs then
+        let split = match attribute_get2 ct_attr_split pld_type label_attr_split label with
+          | Some () -> true
+          | None -> false
+        in
+        let pld_type = Ppx_deriving.remove_pervasives ~deriver pld_type in
+        if split then
           match pld_type with
           | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
             let name' = String.sub name 0 (String.length name - 1) in
