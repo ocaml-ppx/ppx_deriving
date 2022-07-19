@@ -1,8 +1,8 @@
 open OUnit2
 
 let test_inline ctxt =
-  let sort = List.sort [%ord: int * int] in (* TODO: support derive.ord again *)
-  assert_equal ~printer:[%show: (int * int) list] (* TODO: support derive.show again *)
+  let sort = List.sort [%derive.ord: int * int] in
+  assert_equal ~printer:[%derive.show: (int * int) list]
                [(1,1);(2,0);(3,5)] (sort [(2,0);(3,5);(1,1)])
 
 let test_inline_shorthand ctxt =

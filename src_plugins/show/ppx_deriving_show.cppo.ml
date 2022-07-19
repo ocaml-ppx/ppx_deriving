@@ -341,7 +341,17 @@ let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decl
 let deriving: Deriving.t =
   Deriving.add
     deriver
-    ~extension:(fun ~loc ~path:_ -> (Ppx_deriving.with_quoter (fun quoter typ ->
-      [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ quoter typ]) x])))
     ~str_type_decl:impl_generator
     ~sig_type_decl:intf_generator
+
+(* custom extension such that "derive"-prefixed also works *)
+let derive_extension =
+  Extension.V3.declare "derive.show" Extension.Context.expression
+    Ast_pattern.(ptyp __) (fun ~ctxt ->
+      let loc = Expansion_context.Extension.extension_point_loc ctxt in
+      Ppx_deriving.with_quoter (fun quoter typ ->
+        [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ quoter typ]) x]))
+let derive_transformation =
+  Driver.register_transformation
+    deriver
+    ~rules:[Context_free.Rule.extension derive_extension]
