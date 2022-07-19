@@ -15,8 +15,9 @@ type options = { with_path : bool }
    field.) By default, this option is [true], which means that full paths
    are shown. *)
 
-let expand_path show_opts ~path name =
-  let path = if show_opts.with_path then path else [] in
+(* TODO: remove show_opts *)
+let expand_path show_opts ~with_path ~path name =
+  let path = if with_path then path else [] in
   Ppx_deriving.expand_path ~path name
 
 let parse_options options =
@@ -202,7 +203,7 @@ and expr_of_label_decl quoter { pld_type; pld_attributes } =
   let attrs = pld_type.ptyp_attributes @ pld_attributes in
   expr_of_typ quoter { pld_type with ptyp_attributes = attrs }
 
-let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
+let str_of_type ~options ~with_path ~path ({ ptype_loc = loc } as type_decl) =
   let show_opts = parse_options options in
   let quoter = Ppx_deriving.create_quoter () in
   let path = Ppx_deriving.path_of_type_decl ~path type_decl in
@@ -214,7 +215,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
       let cases =
         constrs |> List.map (fun { pcd_name = { txt = name' }; pcd_args; pcd_attributes } ->
           let constr_name =
-            expand_path show_opts ~path name'
+            expand_path show_opts ~with_path ~path name'
           in
 
           match attr_printer pcd_attributes, pcd_args with
@@ -281,7 +282,7 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
     | Ptype_record labels, _ ->
       let fields =
         labels |> List.mapi (fun i ({ pld_name = { txt = name }; _} as pld) ->
-          let field_name = if i = 0 then expand_path show_opts ~path name else name in
+          let field_name = if i = 0 then expand_path show_opts ~with_path ~path name else name in
           [%expr
             Ppx_deriving_runtime.Format.fprintf fmt "@[%s =@ " [%e str field_name];
             [%e expr_of_label_decl quoter pld]
@@ -317,14 +318,33 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (Ppx_deriving.sanitize ~quoter (polymorphize prettyprinter));
    Vb.mk ~attrs:[no_warn_32] (Pat.constraint_ show_var show_type) (polymorphize stringprinter);]
 
+(* TODO: add to ppxlib? *)
+let ebool: _ Ast_pattern.t -> _ Ast_pattern.t =
+  Ast_pattern.map1 ~f:(fun e ->
+    match Ppx_deriving.Arg.bool e with
+    | Ok b -> b
+    | Error _ -> failwith "not bool")
+let args () = Deriving.Args.(empty +> arg "with_path" (ebool __))
+(* TODO: add arg_default to ppxlib? *)
+
 (* TODO: remove always [] ~options argument *)
-let impl_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
-  [Str.value Recursive (List.concat (List.map (str_of_type ~options:[] ~path:[path]) type_decls))]) (* TODO: path is list? *)
+let impl_generator = Deriving.Generator.V2.make (args ()) (fun ~ctxt (_, type_decls) with_path ->
+  let path =
+    (* based on https://github.com/thierry-martinez/ppx_show/blob/db00365470bcbf602d931c1bfd155be459379c5c/src/ppx_show.ml#L384-L387 *)
+    let code_path = Ppxlib.Expansion_context.Deriver.code_path ctxt in
+    (* main_module_name contains ".cppo" due to #line directives? *)
+    (* Ppxlib.Code_path.(main_module_name code_path :: submodule_path code_path) *)
+    Ppxlib.Code_path.(Ppx_deriving.module_from_input_name () @ submodule_path code_path)
+  in
+  let with_path = match with_path with
+    | Some with_path -> with_path
+    | None -> true (* true by default *)
+  in
+  [Str.value Recursive (List.concat (List.map (str_of_type ~options:[] ~with_path ~path) type_decls))])
 
 let intf_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
   List.concat (List.map (sig_of_type ~options:[] ~path) type_decls))
 
-(* TODO: Args *)
 let deriving: Deriving.t =
   Deriving.add
     deriver
