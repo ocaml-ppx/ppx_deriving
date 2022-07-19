@@ -203,12 +203,16 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (Pat.constraint_ eq_var out_type)
          (Ppx_deriving.sanitize ~quoter (eta_expand (polymorphize comparator)))]
 
-let () =
-  Ppx_deriving.(register (create deriver
-    ~core_type: (Ppx_deriving.with_quoter expr_of_typ)
-    ~type_decl_str: (fun ~options ~path type_decls ->
-       [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
-    ~type_decl_sig: (fun ~options ~path type_decls ->
-       List.concat (List.map (sig_of_type ~options ~path) type_decls))
-    ()
-  ))
+(* TODO: remove always [] ~options argument *)
+let impl_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
+  [Str.value Recursive (List.concat (List.map (str_of_type ~options:[] ~path) type_decls))])
+
+let intf_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
+  List.concat (List.map (sig_of_type ~options:[] ~path) type_decls))
+
+let deriving: Deriving.t =
+  Deriving.add
+    deriver
+    ~extension:(fun ~loc:_ ~path:_ -> Ppx_deriving.with_quoter expr_of_typ)
+    ~str_type_decl:impl_generator
+    ~sig_type_decl:intf_generator

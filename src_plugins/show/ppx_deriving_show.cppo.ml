@@ -317,14 +317,18 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (Ppx_deriving.sanitize ~quoter (polymorphize prettyprinter));
    Vb.mk ~attrs:[no_warn_32] (Pat.constraint_ show_var show_type) (polymorphize stringprinter);]
 
-let () =
-  let loc = !Ast_helper.default_loc in
-  Ppx_deriving.(register (create deriver
-    ~core_type: (Ppx_deriving.with_quoter (fun quoter typ ->
-      [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ quoter typ]) x]))
-    ~type_decl_str: (fun ~options ~path type_decls ->
-      [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
-    ~type_decl_sig: (fun ~options ~path type_decls ->
-      List.concat (List.map (sig_of_type ~options ~path) type_decls))
-    ()
-  ))
+(* TODO: remove always [] ~options argument *)
+let impl_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
+  [Str.value Recursive (List.concat (List.map (str_of_type ~options:[] ~path:[path]) type_decls))]) (* TODO: path is list? *)
+
+let intf_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
+  List.concat (List.map (sig_of_type ~options:[] ~path) type_decls))
+
+(* TODO: Args *)
+let deriving: Deriving.t =
+  Deriving.add
+    deriver
+    ~extension:(fun ~loc ~path:_ -> (Ppx_deriving.with_quoter (fun quoter typ ->
+      [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ quoter typ]) x])))
+    ~str_type_decl:impl_generator
+    ~sig_type_decl:intf_generator

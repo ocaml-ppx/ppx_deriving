@@ -119,11 +119,15 @@ let sig_of_type ~options ~path type_decl =
    Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Suffix "of_enum") type_decl))
              [%type: Ppx_deriving_runtime.int -> [%t typ] Ppx_deriving_runtime.option])]
 
-let () =
-  Ppx_deriving.(register (create deriver
-    ~type_decl_str: (fun ~options ~path type_decls ->
-       [Str.value Nonrecursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
-    ~type_decl_sig: (fun ~options ~path type_decls ->
-       List.concat (List.map (sig_of_type ~options ~path) type_decls))
-    ()
-  ))
+(* TODO: remove always [] ~options argument *)
+let impl_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
+  [Str.value Nonrecursive (List.concat (List.map (str_of_type ~options:[] ~path) type_decls))])
+
+let intf_generator = Deriving.Generator.make_noarg (fun ~loc:_ ~path (_, type_decls) ->
+  List.concat (List.map (sig_of_type ~options:[] ~path) type_decls))
+
+let deriving: Deriving.t =
+  Deriving.add
+    deriver
+    ~str_type_decl:impl_generator
+    ~sig_type_decl:intf_generator
