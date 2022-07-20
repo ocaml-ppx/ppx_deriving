@@ -323,11 +323,21 @@ let args () = Deriving.Args.(empty +> arg "with_path" (ebool __))
 
 let impl_generator = Deriving.Generator.V2.make (args ()) (fun ~ctxt (_, type_decls) with_path ->
   let path =
-    (* based on https://github.com/thierry-martinez/ppx_show/blob/db00365470bcbf602d931c1bfd155be459379c5c/src/ppx_show.ml#L384-L387 *)
-    let code_path = Ppxlib.Expansion_context.Deriver.code_path ctxt in
-    (* main_module_name contains ".cppo" due to #line directives? *)
-    (* Ppxlib.Code_path.(main_module_name code_path :: submodule_path code_path) *)
-    Ppxlib.Code_path.(Ppx_deriving.module_from_input_name () @ submodule_path code_path)
+    let code_path = Expansion_context.Deriver.code_path ctxt in
+    (* Cannot use main_module_name from code_path because that contains .cppo suffix (via line directives), so it's actually not the module name. *)
+    (* Ppx_deriving.module_from_input_name ported to ppxlib. *)
+    let main_module_path = match Expansion_context.Deriver.input_name ctxt with
+      | ""
+      | "_none_" -> []
+      | input_name ->
+        match Filename.chop_suffix input_name ".ml" with
+        | exception _ ->
+          (* see https://github.com/ocaml-ppx/ppx_deriving/pull/196 *)
+          []
+        | path ->
+          [String.capitalize_ascii (Filename.basename path)]
+    in
+    main_module_path @ Code_path.submodule_path code_path
   in
   let with_path = match with_path with
     | Some with_path -> with_path

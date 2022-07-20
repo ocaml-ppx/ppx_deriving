@@ -390,5 +390,3 @@ module Ast_convenience : sig
     val optional : string -> arg_label
   end
 end
-
-val module_from_input_name: unit -> label list
