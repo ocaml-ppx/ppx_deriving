@@ -173,20 +173,31 @@ let rec expr_of_typ quoter typ =
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
       let cases =
         fields |> List.map (fun field ->
-          match field.prf_desc with
-          | Rtag(label, true (*empty*), []) ->
+          match attr_printer field.prf_attributes, field.prf_desc with
+          | None, Rtag(label, true (*empty*), []) ->
             let label = label.txt in
             Exp.case (Pat.variant label None)
                      [%expr Ppx_deriving_runtime.Format.pp_print_string fmt [%e str ("`" ^ label)]]
-          | Rtag(label, false, [typ]) ->
+          | Some printer, Rtag(label, true (*empty*), []) ->
+            let label = label.txt in
+            Exp.case (Pat.variant label None)
+                     [%expr [%e printer] fmt ()]
+          | None, Rtag(label, false, [typ]) ->
             let label = label.txt in
             Exp.case (Pat.variant label (Some [%pat? x]))
                      [%expr Ppx_deriving_runtime.Format.fprintf fmt [%e str ("`" ^ label ^ " (@[<hov>")];
                             [%e expr_of_typ typ] x;
                             Ppx_deriving_runtime.Format.fprintf fmt "@])"]
-          | Rinherit({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
+          | Some printer, Rtag(label, false, [typ]) ->
+            let label = label.txt in
+            Exp.case (Pat.variant label (Some [%pat? x]))
+                     [%expr [%e printer] fmt x]
+          | None, Rinherit({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case [%pat? [%p Pat.type_ tname] as x]
                      [%expr [%e expr_of_typ typ] x]
+          | Some printer, Rinherit({ ptyp_desc = Ptyp_constr (tname, _) }) ->
+            Exp.case [%pat? [%p Pat.type_ tname] as x]
+                     [%expr [%e printer] fmt x]
           | _ ->
             raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
                          deriver (Ppx_deriving.string_of_core_type typ))

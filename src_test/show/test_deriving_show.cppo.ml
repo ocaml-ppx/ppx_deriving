@@ -234,6 +234,17 @@ let test_variant_printer ctxt =
   assert_equal ~printer
     "fourth: 8 4" (show_variant_printer (Fourth(8,4)))
 
+type polyvar_printer = [
+  | `First [@printer fun fmt _ -> Format.pp_print_string fmt "first"]
+  | `Second of int [@printer fun fmt i -> Format.fprintf fmt "second: %d" i]
+] [@@deriving show]
+
+let test_polyvar_printer ctxt =
+  assert_equal ~printer
+    "first" (show_polyvar_printer `First);
+  assert_equal ~printer
+    "second: 42" (show_polyvar_printer (`Second 42));
+
 type no_full    = NoFull   of int [@@deriving show { with_path = false }]
 type with_full  = WithFull of int [@@deriving show { with_path = true  }]
 module WithFull = struct
@@ -265,6 +276,7 @@ let suite = "Test deriving(show)" >::: [
     "test_std_shadowing"   >:: test_std_shadowing;
     "test_poly_app"        >:: test_poly_app;
     "test_variant_printer" >:: test_variant_printer;
+    "test_polyvar_printer" >:: test_polyvar_printer;
     "test_paths"           >:: test_paths_printer;
     "test_result"          >:: test_result;
     "test_result_result"   >:: test_result_result;
