@@ -314,10 +314,10 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
 
 (* TODO: add to ppxlib? *)
 let ebool: _ Ast_pattern.t -> _ Ast_pattern.t =
-  Ast_pattern.map1 ~f:(function
+  Ast_pattern.map1' ~f:(fun loc -> function
     | [%expr true] -> true
     | [%expr false] -> false
-    | _ -> failwith "not bool")
+    | _ -> Location.raise_errorf ~loc "with_path should be a boolean")
 let args () = Deriving.Args.(empty +> arg "with_path" (ebool __))
 (* TODO: add arg_default to ppxlib? *)
 
