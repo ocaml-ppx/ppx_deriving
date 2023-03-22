@@ -309,12 +309,12 @@ let attr_warning expr =
     attr_loc = loc;
   }
 
-type quoter = Quoter.t
+type quoter = Expansion_helpers.Quoter.t
 
-let create_quoter () = Quoter.create ()
+let create_quoter () = Expansion_helpers.Quoter.create ()
 
 let quote ~quoter expr =
-  Quoter.quote quoter expr
+  Expansion_helpers.Quoter.quote quoter expr
 
 let sanitize ?(module_=Lident "Ppx_deriving_runtime") ?(quoter=create_quoter ()) expr =
   let loc = !Ast_helper.default_loc in
@@ -324,7 +324,7 @@ let sanitize ?(module_=Lident "Ppx_deriving_runtime") ?(quoter=create_quoter ())
     Exp.open_ ~loc ~attrs
       (Opn.mk ~loc ~attrs ~override:Override (Mod.ident ~loc ~attrs modname))
       expr in
-  let sanitized = Quoter.sanitize quoter body in
+  let sanitized = Expansion_helpers.Quoter.sanitize quoter body in
   (* ppxlib quoter uses Recursive, ppx_deriving's used Nonrecursive - silence warning *)
   { sanitized with pexp_attributes = attr_warning [%expr "-39"] :: sanitized.pexp_attributes}
 
