@@ -44,7 +44,6 @@ type deriver = {
 
 (** [register deriver] registers [deriver] according to its [name] field. *)
 val register : deriver -> unit
-[@@deprecated]
 
 (** [add_register_hook hook] adds [hook] to be executed whenever a new deriver
     is registered. *)
@@ -72,7 +71,6 @@ val create :
                            path:string list ->
                            module_type_declaration -> signature) ->
   unit -> deriver
-[@@deprecated]
 
 (** [lookup name] looks up a deriver called [name]. *)
 val lookup : string -> deriver option
@@ -171,7 +169,6 @@ let deriver = "index"
       in error messages. *)
   val get_expr : deriver:string -> 'a conv -> expression -> 'a
 end
-[@@deprecated]
 
 (** {2 Hygiene} *)
 
@@ -230,7 +227,6 @@ val mangle_lid : ?fixpoint:string ->
     or [\[\@deriver.attr\]] if any attribute with name starting with [\@deriver] exists,
     or [\[\@attr\]] otherwise. *)
 val attr : deriver:string -> string -> attributes -> attribute option
-[@@deprecated]
 
 (** [attr_warning expr] builds the attribute [\@ocaml.warning expr] *)
 val attr_warning: expression -> attribute
