@@ -9,7 +9,7 @@ let test_inline_shorthand ctxt =
   assert_equal ~printer:(fun x -> x)
                "[(1, 1); (2, 0)]" ([%show: (int * int) list] [(1,1); (2,0)])
 
-(* TODO: how did this work and why did it break now? *)
+(* TODO: optional is incompatible with ppxlib derivers: https://github.com/ocaml-ppx/ppx_deriving/issues/247 *)
 (* type optional_deriver = string
 [@@deriving missing { optional = true }] *)
 
