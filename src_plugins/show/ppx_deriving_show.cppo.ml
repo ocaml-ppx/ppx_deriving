@@ -318,10 +318,10 @@ let ebool: _ Ast_pattern.t -> _ Ast_pattern.t =
     | [%expr true] -> true
     | [%expr false] -> false
     | _ -> Location.raise_errorf ~loc "with_path should be a boolean")
-let args () = Deriving.Args.(empty +> arg "with_path" (ebool __))
+let args = Deriving.Args.(empty +> arg "with_path" (ebool __))
 (* TODO: add arg_default to ppxlib? *)
 
-let impl_generator = Deriving.Generator.V2.make (args ()) (fun ~ctxt (_, type_decls) with_path ->
+let impl_generator = Deriving.Generator.V2.make args (fun ~ctxt (_, type_decls) with_path ->
   let path =
     let code_path = Expansion_context.Deriver.code_path ctxt in
     (* Cannot use main_module_name from code_path because that contains .cppo suffix (via line directives), so it's actually not the module name. *)
