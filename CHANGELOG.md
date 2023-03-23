@@ -1,6 +1,10 @@
 (unreleased)
 ------------
 
+* Port standard plugins to ppxlib registration and attributes
+  #263
+  (Simmo Saan)
+
 * Introduce `Ppx_deriving_runtime.Stdlib` with OCaml >= 4.07. This module
   already exists in OCaml < 4.07 but was missing otherwise.
 
