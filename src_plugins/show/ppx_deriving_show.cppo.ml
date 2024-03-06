@@ -312,13 +312,7 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
          (Ppx_deriving.sanitize ~quoter (polymorphize prettyprinter));
    Vb.mk ~attrs:[no_warn_32] (Pat.constraint_ show_var show_type) (polymorphize stringprinter);]
 
-(* TODO: add to ppxlib? *)
-let ebool: _ Ast_pattern.t -> _ Ast_pattern.t =
-  Ast_pattern.map1' ~f:(fun loc -> function
-    | [%expr true] -> true
-    | [%expr false] -> false
-    | _ -> Location.raise_errorf ~loc "with_path should be a boolean")
-let args = Deriving.Args.(empty +> arg "with_path" (ebool __))
+let args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
 (* TODO: add arg_default to ppxlib? *)
 
 let impl_generator = Deriving.Generator.V2.make args (fun ~ctxt (_, type_decls) with_path ->
