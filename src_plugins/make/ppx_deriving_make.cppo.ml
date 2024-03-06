@@ -12,13 +12,11 @@ let attr_default context = Attribute.declare "deriving.make.default" context
 let ct_attr_default = attr_default Attribute.Context.core_type
 let label_attr_default = attr_default Attribute.Context.label_declaration
 
-let attr_split context = Attribute.declare "deriving.make.split" context
-  Ast_pattern.(pstr nil) ()
+let attr_split context = Attribute.declare_flag "deriving.make.split" context
 let ct_attr_split = attr_split Attribute.Context.core_type
 let label_attr_split = attr_split Attribute.Context.label_declaration
 
-let attr_main context = Attribute.declare "deriving.make.main" context
-  Ast_pattern.(pstr nil) ()
+let attr_main context = Attribute.declare_flag "deriving.make.main" context
 let ct_attr_main = attr_main Attribute.Context.core_type
 let label_attr_main = attr_main Attribute.Context.label_declaration
 

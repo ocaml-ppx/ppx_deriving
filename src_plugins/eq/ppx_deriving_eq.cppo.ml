@@ -7,8 +7,7 @@ open Ppx_deriving.Ast_convenience
 let deriver = "eq"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let ct_attr_nobuiltin = Attribute.declare "deriving.eq.nobuiltin" Attribute.Context.core_type
-  Ast_pattern.(pstr nil) ()
+let ct_attr_nobuiltin = Attribute.declare_flag "deriving.eq.nobuiltin" Attribute.Context.core_type
 
 let ct_attr_equal = Attribute.declare "deriving.eq.equal" Attribute.Context.core_type
   Ast_pattern.(single_expr_payload __) (fun e -> e)

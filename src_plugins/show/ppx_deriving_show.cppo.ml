@@ -17,8 +17,7 @@ let expand_path ~with_path ~path name =
   let path = if with_path then path else [] in
   Ppx_deriving.expand_path ~path name
 
-let ct_attr_nobuiltin = Attribute.declare "deriving.show.nobuiltin" Attribute.Context.core_type
-  Ast_pattern.(pstr nil) ()
+let ct_attr_nobuiltin = Attribute.declare_flag "deriving.show.nobuiltin" Attribute.Context.core_type
 
 let attr_printer context = Attribute.declare "deriving.show.printer" context
   Ast_pattern.(single_expr_payload __) (fun e -> e)
@@ -28,8 +27,7 @@ let constr_attr_printer = attr_printer Attribute.Context.constructor_declaration
 let ct_attr_polyprinter = Attribute.declare "deriving.show.polyprinter" Attribute.Context.core_type
   Ast_pattern.(single_expr_payload __) (fun e -> e)
 
-let ct_attr_opaque = Attribute.declare "deriving.show.opaque" Attribute.Context.core_type
-  Ast_pattern.(pstr nil) ()
+let ct_attr_opaque = Attribute.declare_flag "deriving.show.opaque" Attribute.Context.core_type
 
 let argn = Printf.sprintf "a%d"
 let argl = Printf.sprintf "a%s"

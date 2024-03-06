@@ -8,8 +8,7 @@ open Ppx_deriving.Ast_convenience
 let deriver = "ord"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let ct_attr_nobuiltin = Attribute.declare "deriving.ord.nobuiltin" Attribute.Context.core_type
-  Ast_pattern.(pstr nil) ()
+let ct_attr_nobuiltin = Attribute.declare_flag "deriving.ord.nobuiltin" Attribute.Context.core_type
 
 let ct_attr_compare = Attribute.declare "deriving.ord.compare" Attribute.Context.core_type
   Ast_pattern.(single_expr_payload __) (fun e -> e)
