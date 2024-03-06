@@ -70,10 +70,7 @@ let rec expr_of_typ quoter typ =
   match Attribute.get ct_attr_printer typ with
   | Some printer -> [%expr [%e wrap_printer quoter printer] fmt]
   | None ->
-  let opaque = match Attribute.get ct_attr_opaque typ with
-    | Some () -> true
-    | None -> false
-  in
+  let opaque = Attribute.has_flag ct_attr_opaque typ in
   if opaque then
     [%expr fun _ -> Ppx_deriving_runtime.Format.pp_print_string fmt "<opaque>"]
   else
@@ -92,10 +89,7 @@ let rec expr_of_typ quoter typ =
     | { ptyp_desc = Ptyp_arrow _ } ->
       [%expr fun _ -> Ppx_deriving_runtime.Format.pp_print_string fmt "<fun>"]
     | { ptyp_desc = Ptyp_constr _ } ->
-      let builtin = match Attribute.get ct_attr_nobuiltin typ with
-        | Some () -> false
-        | None -> true
-      in
+      let builtin = not (Attribute.has_flag ct_attr_nobuiltin typ) in
       begin match builtin, typ with
       | true, [%type: unit]        -> [%expr fun () -> Ppx_deriving_runtime.Format.pp_print_string fmt "()"]
       | true, [%type: int]         -> format "%d"

@@ -67,10 +67,7 @@ and expr_of_typ quoter typ =
     match typ with
     | [%type: _] -> [%expr fun _ _ -> 0]
     | { ptyp_desc = Ptyp_constr _ } ->
-      let builtin = match Attribute.get ct_attr_nobuiltin typ with
-        | Some () -> false
-        | None -> true
-      in
+      let builtin = not (Attribute.has_flag ct_attr_nobuiltin typ) in
       begin match builtin, typ with
       | true, [%type: _] ->
         [%expr fun _ _ -> 0]

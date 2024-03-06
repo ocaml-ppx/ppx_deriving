@@ -24,10 +24,7 @@ let rec expr_of_typ ?decl typ =
   match typ with
   | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun x -> x]
   | { ptyp_desc = Ptyp_constr _ } ->
-    let builtin = match Attribute.get ct_attr_nobuiltin typ with
-      | Some () -> false
-      | None -> true
-    in
+    let builtin = not (Attribute.has_flag ct_attr_nobuiltin typ) in
     begin match builtin, typ with
     | true, [%type: [%t? typ] list] ->
       [%expr Ppx_deriving_runtime.List.map [%e expr_of_typ ?decl typ]]
