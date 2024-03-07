@@ -142,7 +142,6 @@ let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decl
 let deriving: Deriving.t =
   Deriving.add
     deriver
-    ~extension:(fun ~loc:_ ~path:_ -> expr_of_typ ?decl:None)
     ~str_type_decl:impl_generator
     ~sig_type_decl:intf_generator
 
