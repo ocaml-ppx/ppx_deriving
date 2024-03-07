@@ -7,13 +7,7 @@ open Ppx_deriving.Ast_convenience
 let deriver = "iter"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let parse_options options =
-  options |> List.iter (fun (name, expr) ->
-    match name with
-    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
-
-let attr_nobuiltin attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
+let ct_attr_nobuiltin = Attribute.declare_flag "deriving.iter.nobuiltin" Attribute.Context.core_type
 
 let argn = Printf.sprintf "a%d"
 let argl = Printf.sprintf "a%s"
@@ -29,7 +23,7 @@ let rec expr_of_typ typ =
   match typ with
   | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun _ -> ()]
   | { ptyp_desc = Ptyp_constr _ } ->
-    let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
+    let builtin = not (Attribute.has_flag ct_attr_nobuiltin typ) in
     begin match builtin, typ with
     | true, [%type: [%t? typ] ref] ->
       [%expr fun x -> [%e expr_of_typ typ] !x]
@@ -84,8 +78,7 @@ and expr_of_label_decl { pld_type; pld_attributes } =
   let attrs = pld_type.ptyp_attributes @ pld_attributes in
   expr_of_typ { pld_type with ptyp_attributes = attrs }
 
-let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
-  parse_options options;
+let str_of_type ({ ptype_loc = loc } as type_decl) =
   let iterator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest -> expr_of_typ manifest
@@ -125,21 +118,32 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
          (pvar (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
          (polymorphize iterator)]
 
-let sig_of_type ~options ~path type_decl =
+let sig_of_type type_decl =
   let loc = !Ast_helper.default_loc in
-  parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
                         (fun var -> [%type: [%t var] -> Ppx_deriving_runtime.unit]) type_decl in
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
               (polymorphize [%type: [%t typ] -> Ppx_deriving_runtime.unit]))]
 
-let () =
-  Ppx_deriving.(register (create deriver
-    ~core_type: expr_of_typ
-    ~type_decl_str: (fun ~options ~path type_decls ->
-      [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
-    ~type_decl_sig: (fun ~options ~path type_decls ->
-      List.concat (List.map (sig_of_type ~options ~path) type_decls))
-    ()
-  ))
+let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
+
+let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  List.concat (List.map sig_of_type type_decls))
+
+let deriving: Deriving.t =
+  Deriving.add
+    deriver
+    ~str_type_decl:impl_generator
+    ~sig_type_decl:intf_generator
+
+
+(* custom extension such that "derive"-prefixed also works *)
+let derive_extension =
+  Extension.V3.declare "derive.iter" Extension.Context.expression
+    Ast_pattern.(ptyp __) (fun ~ctxt:_ -> expr_of_typ)
+let derive_transformation =
+  Driver.register_transformation
+    deriver
+    ~rules:[Context_free.Rule.extension derive_extension]

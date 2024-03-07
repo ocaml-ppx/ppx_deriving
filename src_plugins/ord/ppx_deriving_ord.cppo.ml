@@ -8,16 +8,10 @@ open Ppx_deriving.Ast_convenience
 let deriver = "ord"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let parse_options options =
-  options |> List.iter (fun (name, expr) ->
-    match name with
-    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
+let ct_attr_nobuiltin = Attribute.declare_flag "deriving.ord.nobuiltin" Attribute.Context.core_type
 
-let attr_nobuiltin attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "nobuiltin" |> Arg.get_flag ~deriver)
-
-let attr_compare attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "compare" |> Arg.(get_attr ~deriver expr))
+let ct_attr_compare = Attribute.declare "deriving.ord.compare" Attribute.Context.core_type
+  Ast_pattern.(single_expr_payload __) (fun e -> e)
 
 let argn kind =
   Printf.sprintf (match kind with `lhs -> "lhs%d" | `rhs -> "rhs%d")
@@ -66,14 +60,14 @@ and expr_of_label_decl quoter { pld_type; pld_attributes } =
 and expr_of_typ quoter typ =
   let loc = typ.ptyp_loc in
   let expr_of_typ = expr_of_typ quoter in
-  match attr_compare typ.ptyp_attributes with
+  match Attribute.get ct_attr_compare typ with
   | Some fn -> Ppx_deriving.quote ~quoter fn
   | None ->
     let typ = Ppx_deriving.remove_pervasives ~deriver typ in
     match typ with
     | [%type: _] -> [%expr fun _ _ -> 0]
     | { ptyp_desc = Ptyp_constr _ } ->
-      let builtin = not (attr_nobuiltin typ.ptyp_attributes) in
+      let builtin = not (Attribute.has_flag ct_attr_nobuiltin typ) in
       begin match builtin, typ with
       | true, [%type: _] ->
         [%expr fun _ _ -> 0]
@@ -170,20 +164,18 @@ and expr_of_typ quoter typ =
       raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
                    deriver (Ppx_deriving.string_of_core_type typ)
 
-let core_type_of_decl ~options ~path type_decl =
-  parse_options options;
+let core_type_of_decl type_decl =
   let loc = type_decl.ptype_loc in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
           (fun var -> [%type: [%t var] -> [%t var] -> Ppx_deriving_runtime.int]) type_decl in
   (polymorphize [%type: [%t typ] -> [%t typ] -> Ppx_deriving_runtime.int])
 
-let sig_of_type ~options ~path type_decl =
+let sig_of_type type_decl =
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "compare") type_decl))
-             (core_type_of_decl ~options ~path type_decl))]
+             (core_type_of_decl type_decl))]
 
-let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
-  parse_options options;
+let str_of_type ({ ptype_loc = loc } as type_decl) =
   let quoter = Ppx_deriving.create_quoter () in
   let comparator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
@@ -232,19 +224,30 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
   in
   let out_type =
     Ppx_deriving.strong_type_of_type @@
-      core_type_of_decl ~options ~path type_decl in
+      core_type_of_decl type_decl in
   let out_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "compare") type_decl) in
   [Vb.mk ~attrs:[Ppx_deriving.attr_warning [%expr "-39"]]
          (Pat.constraint_ out_var out_type)
          (Ppx_deriving.sanitize ~quoter (eta_expand (polymorphize comparator)))]
 
-let () =
-  Ppx_deriving.(register (create deriver
-    ~core_type: (Ppx_deriving.with_quoter expr_of_typ)
-    ~type_decl_str: (fun ~options ~path type_decls ->
-      [Str.value Recursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
-    ~type_decl_sig: (fun ~options ~path type_decls ->
-      List.concat (List.map (sig_of_type ~options ~path) type_decls))
-    ()
-  ))
+let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
+
+let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  List.concat (List.map sig_of_type type_decls))
+
+let deriving: Deriving.t =
+  Deriving.add
+    deriver
+    ~str_type_decl:impl_generator
+    ~sig_type_decl:intf_generator
+
+(* custom extension such that "derive"-prefixed also works *)
+let derive_extension =
+  Extension.V3.declare "derive.ord" Extension.Context.expression
+    Ast_pattern.(ptyp __) (fun ~ctxt:_ -> Ppx_deriving.with_quoter expr_of_typ)
+let derive_transformation =
+  Driver.register_transformation
+    deriver
+    ~rules:[Context_free.Rule.extension derive_extension]

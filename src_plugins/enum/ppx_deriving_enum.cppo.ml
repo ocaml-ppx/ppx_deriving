@@ -11,18 +11,15 @@ module Stdlib = Pervasives
 let deriver = "enum"
 let raise_errorf = Ppx_deriving.raise_errorf
 
-let parse_options options =
-  options |> List.iter (fun (name, expr) ->
-    match name with
-    | _ -> raise_errorf ~loc:expr.pexp_loc "%s does not support option %s" deriver name)
-
-let attr_value attrs =
-  Ppx_deriving.(attrs |> attr ~deriver "value" |> Arg.(get_attr ~deriver int))
+let attr_value context = Attribute.declare "deriving.enum.value" context
+  Ast_pattern.(single_expr_payload (eint __)) (fun i -> i)
+let constr_attr_value = attr_value Attribute.Context.constructor_declaration
+let rtag_attr_value = attr_value Attribute.Context.rtag
 
 let mappings_of_type type_decl =
-  let map acc mappings attrs constr_name =
+  let map acc mappings attr_value x constr_name =
     let value =
-      match attr_value attrs with
+      match Attribute.get attr_value x with
       | Some idx -> idx | None -> acc
     in
     (value + 1, (value, constr_name) :: mappings)
@@ -31,11 +28,11 @@ let mappings_of_type type_decl =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_variant constrs, _ ->
       `Regular,
-      List.fold_left (fun (acc, mappings) { pcd_name; pcd_args; pcd_attributes; pcd_loc } ->
+      List.fold_left (fun (acc, mappings) ({ pcd_name; pcd_args; pcd_attributes; pcd_loc } as constr) ->
           if pcd_args <> Pcstr_tuple([]) then
             raise_errorf ~loc:pcd_loc
                          "%s can be derived only for argumentless constructors" deriver;
-          map acc mappings pcd_attributes pcd_name)
+          map acc mappings constr_attr_value constr pcd_name)
         (0, []) constrs
     | Ptype_abstract, Some { ptyp_desc = Ptyp_variant (constrs, Closed, None); ptyp_loc } ->
       `Polymorphic,
@@ -51,11 +48,10 @@ let mappings_of_type type_decl =
                          deriver
           in
           let loc = row_field.prf_loc in
-          let attrs = row_field.prf_attributes in
           match row_field.prf_desc with
           | Rinherit _ -> error_inherit loc
           | Rtag (name, true, []) ->
-            map acc mappings attrs name
+            map acc mappings rtag_attr_value row_field name
           | Rtag _ -> error_arguments loc
 )
         (0, []) constrs
@@ -77,8 +73,7 @@ let mappings_of_type type_decl =
   mappings |> List.stable_sort (fun (a,_) (b,_) -> Stdlib.compare a b) |> check_dup;
   kind, mappings
 
-let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
-  parse_options options;
+let str_of_type ({ ptype_loc = loc } as type_decl) =
   let kind, mappings = mappings_of_type type_decl in
   let patt name =
     match kind with
@@ -106,9 +101,8 @@ let str_of_type ~options ~path ({ ptype_loc = loc } as type_decl) =
    Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Suffix "of_enum") type_decl))
          (Exp.function_ from_enum_cases)]
 
-let sig_of_type ~options ~path type_decl =
+let sig_of_type type_decl =
   let loc = type_decl.ptype_loc in
-  parse_options options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "min") type_decl))
              [%type: Ppx_deriving_runtime.int]);
@@ -119,11 +113,14 @@ let sig_of_type ~options ~path type_decl =
    Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Suffix "of_enum") type_decl))
              [%type: Ppx_deriving_runtime.int -> [%t typ] Ppx_deriving_runtime.option])]
 
-let () =
-  Ppx_deriving.(register (create deriver
-    ~type_decl_str: (fun ~options ~path type_decls ->
-       [Str.value Nonrecursive (List.concat (List.map (str_of_type ~options ~path) type_decls))])
-    ~type_decl_sig: (fun ~options ~path type_decls ->
-       List.concat (List.map (sig_of_type ~options ~path) type_decls))
-    ()
-  ))
+let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  [Str.value Nonrecursive (List.concat (List.map str_of_type type_decls))])
+
+let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  List.concat (List.map sig_of_type type_decls))
+
+let deriving: Deriving.t =
+  Deriving.add
+    deriver
+    ~str_type_decl:impl_generator
+    ~sig_type_decl:intf_generator
