@@ -27,8 +27,7 @@ let attribute_get2 attr1 x1 attr2 x2 =
 
 let find_main labels =
   List.fold_left (fun (main, labels) ({ pld_type; pld_loc; pld_attributes } as label) ->
-    let is_main = Attribute.has_flag ct_attr_main pld_type || Attribute.has_flag label_attr_main label in
-    if is_main then
+    if Attribute.has_flag ct_attr_main pld_type || Attribute.has_flag label_attr_main label then
       match main with
       | Some _ -> raise_errorf ~loc:pld_loc "Duplicate [@deriving.%s.main] annotation" deriver
       | None -> Some label, labels
@@ -57,9 +56,8 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
         | Some default -> Exp.fun_ (Label.optional name) (Some (Ppx_deriving.quote ~quoter default))
                                    (pvar name) accum
         | None ->
-        let split = Attribute.has_flag label_attr_split label || Attribute.has_flag ct_attr_split pld_type in
         let pld_type = Ppx_deriving.remove_pervasives ~deriver pld_type in
-        if split then
+        if Attribute.has_flag label_attr_split label || Attribute.has_flag ct_attr_split pld_type then
           match pld_type with
           | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
             let name' = String.sub name 0 (String.length name - 1) in
@@ -101,9 +99,8 @@ let sig_of_type ({ ptype_loc = loc } as type_decl) =
         match attribute_get2 ct_attr_default pld_type label_attr_default label with
         | Some _ -> Typ.arrow (Label.optional name) (wrap_predef_option pld_type) accum
         | None ->
-        let split = Attribute.has_flag ct_attr_split pld_type || Attribute.has_flag label_attr_split label in
         let pld_type = Ppx_deriving.remove_pervasives ~deriver pld_type in
-        if split then
+        if Attribute.has_flag ct_attr_split pld_type || Attribute.has_flag label_attr_split label then
           match pld_type with
           | [%type: [%t? lhs] * [%t? rhs] list] when name.[String.length name - 1] = 's' ->
             let name' = String.sub name 0 (String.length name - 1) in

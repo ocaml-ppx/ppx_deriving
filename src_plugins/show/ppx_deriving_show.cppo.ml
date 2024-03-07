@@ -70,8 +70,7 @@ let rec expr_of_typ quoter typ =
   match Attribute.get ct_attr_printer typ with
   | Some printer -> [%expr [%e wrap_printer quoter printer] fmt]
   | None ->
-  let opaque = Attribute.has_flag ct_attr_opaque typ in
-  if opaque then
+  if Attribute.has_flag ct_attr_opaque typ then
     [%expr fun _ -> Ppx_deriving_runtime.Format.pp_print_string fmt "<opaque>"]
   else
     let format x = [%expr Ppx_deriving_runtime.Format.fprintf fmt [%e str x]] in
