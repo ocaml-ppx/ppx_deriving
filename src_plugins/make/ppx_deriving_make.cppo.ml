@@ -9,8 +9,7 @@ let raise_errorf = Ppx_deriving.raise_errorf
 
 let attr_default context = Attribute.declare "deriving.make.default" context
   Ast_pattern.(single_expr_payload __) (fun e -> e)
-let ct_attr_default = attr_default Attribute.Context.core_type
-let label_attr_default = attr_default Attribute.Context.label_declaration
+let attr_default = (attr_default Attribute.Context.label_declaration, attr_default Attribute.Context.core_type)
 
 let attr_split context = Attribute.declare_flag "deriving.make.split" context
 let ct_attr_split = attr_split Attribute.Context.core_type
@@ -20,10 +19,10 @@ let attr_main context = Attribute.declare_flag "deriving.make.main" context
 let ct_attr_main = attr_main Attribute.Context.core_type
 let label_attr_main = attr_main Attribute.Context.label_declaration
 
-let attribute_get2 attr1 x1 attr2 x2 =
-  match Attribute.get attr1 x1, Attribute.get attr2 x2 with
-  | Some _ as y, _ -> y
-  | None, y -> y
+let get_label_attribute (label_attr, ct_attr) label =
+  match Attribute.get label_attr label with
+  | Some _ as v -> v
+  | None -> Attribute.get ct_attr label.pld_type
 
 let find_main labels =
   List.fold_left (fun (main, labels) ({ pld_type; pld_loc; pld_attributes } as label) ->
@@ -37,7 +36,7 @@ let find_main labels =
 
 
 let is_optional ({ pld_name = { txt = name }; pld_type; pld_attributes } as label) =
-  match attribute_get2 label_attr_default label ct_attr_default pld_type with
+  match get_label_attribute attr_default label with
   | Some _ -> true
   | None ->
     Attribute.has_flag label_attr_split label || Attribute.has_flag ct_attr_split pld_type ||
@@ -66,7 +65,7 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
           record fields
       in
       List.fold_left (fun accum ({ pld_name = { txt = name }; pld_type; pld_attributes } as label) ->
-        match attribute_get2 label_attr_default label ct_attr_default pld_type with
+        match get_label_attribute attr_default label with
         | Some default -> Exp.fun_ (Label.optional name) (Some (Ppx_deriving.quote ~quoter default))
                                    (pvar name) accum
         | None ->
@@ -111,7 +110,7 @@ let sig_of_type ({ ptype_loc = loc } as type_decl) =
         | None -> typ
       in
       List.fold_left (fun accum ({ pld_name = { txt = name; loc }; pld_type; pld_attributes } as label) ->
-        match attribute_get2 ct_attr_default pld_type label_attr_default label with
+        match get_label_attribute attr_default label with
         | Some _ -> Typ.arrow (Label.optional name) (wrap_predef_option pld_type) accum
         | None ->
         let pld_type = Ppx_deriving.remove_pervasives ~deriver pld_type in
