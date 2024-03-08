@@ -71,7 +71,7 @@ let rec expr_of_typ typ =
           raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
                        deriver (Ppx_deriving.string_of_core_type typ))
     in
-    Exp.function_ cases
+    [%expr fun acc -> [%e Exp.function_ cases]]
   | { ptyp_desc = Ptyp_var name } -> evar ("poly_"^name)
   | { ptyp_desc = Ptyp_alias (typ, name) } ->
     [%expr fun acc x -> [%e evar ("poly_"^name)] ([%e expr_of_typ typ] acc x) x]
