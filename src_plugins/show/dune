@@ -1,8 +1,3 @@
-(rule
- (targets ppx_deriving_show.ml)
- (action (run %{bin:cppo} -V OCAML:%{ocaml_version}
-              %{dep:ppx_deriving_show.cppo.ml} -o %{targets})))
-
 (library
  (name ppx_deriving_show)
  (public_name ppx_deriving.show)

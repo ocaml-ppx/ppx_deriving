@@ -4,10 +4,6 @@ open Parsetree
 open Ast_helper
 open Ppx_deriving.Ast_convenience
 
-#if OCAML_VERSION < (4, 08, 0)
-module Stdlib = Pervasives
-#endif
-
 let deriver = "enum"
 let raise_errorf = Ppx_deriving.raise_errorf
 
@@ -70,7 +66,7 @@ let mappings_of_type type_decl =
     | _ :: rest -> check_dup rest
     | [] -> ()
   in
-  mappings |> List.stable_sort (fun (a,_) (b,_) -> Stdlib.compare a b) |> check_dup;
+  mappings |> List.stable_sort (fun (a,_) (b,_) -> compare a b) |> check_dup;
   kind, mappings
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =

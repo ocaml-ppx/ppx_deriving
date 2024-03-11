@@ -1,7 +1,3 @@
-(rule
- (targets ppx_deriving_iter.ml)
- (action (run %{bin:cppo} -V OCAML:%{ocaml_version} %{dep:ppx_deriving_iter.cppo.ml} -o %{targets})))
-
 (library
  (name ppx_deriving_iter)
  (public_name ppx_deriving.iter)
