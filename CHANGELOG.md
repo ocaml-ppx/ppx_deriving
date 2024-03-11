@@ -5,8 +5,18 @@
   #263
   (Simmo Saan)
 
-* Introduce `Ppx_deriving_runtime.Stdlib` with OCaml >= 4.07. This module
-  already exists in OCaml < 4.07 but was missing otherwise.
+* Optimize forwarding in eq and ord plugins
+  #252
+  (Simmo Saan)
+
+* Delegate quoter to ppxlib
+  #263
+  (Simmo Saan)
+
+* Introduce `Ppx_deriving_runtime.Stdlib` with OCaml >= 4.07.
+  This module already exists in OCaml < 4.07 but was missing otherwise.
+  #258
+  (Kate Deplaix)
 
 5.2.1 (02/02/2021)
 ------------------
