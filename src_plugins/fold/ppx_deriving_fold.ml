@@ -145,12 +145,3 @@ let deriving: Deriving.t =
     deriver
     ~str_type_decl:impl_generator
     ~sig_type_decl:intf_generator
-
-(* custom extension such that "derive"-prefixed also works *)
-let derive_extension =
-  Extension.V3.declare "derive.fold" Extension.Context.expression
-    Ast_pattern.(ptyp __) (fun ~ctxt:_ -> expr_of_typ)
-let derive_transformation =
-  Driver.register_transformation
-    deriver
-    ~rules:[Context_free.Rule.extension derive_extension]
