@@ -104,37 +104,37 @@ module Arg : sig
   (** A type of conversion functions.
 
       A conversion function of type ['a conv] converts a raw expression into an
-      argument of type ['a]. Or returns [Result.Error "error"] if conversion
+      argument of type ['a]. Or returns [Error "error"] if conversion
       fails. *)
-  type 'a conv = expression -> ('a, string) Result.result
+  type 'a conv = expression -> ('a, string) result
 
   (** [expr] returns the input expression as-is. *)
   val expr : expression conv
 
   (** [bool expr] extracts a boolean constant from [expr], or returns
-      [Result.Error "boolean"] if [expr] does not contain a boolean literal. *)
+      [Error "boolean"] if [expr] does not contain a boolean literal. *)
   val bool : bool conv
 
   (** [int expr] extracts an integer constant from [expr], or returns
-      [Result.Error "integer"] if [expr] does not contain an integer literal. *)
+      [Error "integer"] if [expr] does not contain an integer literal. *)
   val int : int conv
 
   (** [string expr] extracts a string constant from [expr], or returns
-      [Result.Error "string"] if [expr] does not contain a string literal. *)
+      [Error "string"] if [expr] does not contain a string literal. *)
   val string : string conv
 
   (** [char expr] extracts a char constant from [expr], or returns
-      [Result.Error "char"] if [expr] does not contain a char literal. *)
+      [Error "char"] if [expr] does not contain a char literal. *)
   val char : char conv
 
   (** [enum values expr] extracts a polymorphic variant constant from [expr],
-      or returns [Result.Error "one of: `a, `b, ..."] if [expr] does not
+      or returns [Error "one of: `a, `b, ..."] if [expr] does not
       contain a polymorphic variant constructor included in [values]. *)
   val enum : string list -> string conv
 
   (** [list f expr] extracts a list constant from [expr] and maps every element
-      through [f], or returns [Result.Error "list:..."] where [...] is the
-      error returned by [f], or returns [Result.Error "list"] if [expr] does
+      through [f], or returns [Error "list:..."] where [...] is the
+      error returned by [f], or returns [Error "list"] if [expr] does
       not contain a list. *)
   val list : 'a conv -> 'a list conv
 

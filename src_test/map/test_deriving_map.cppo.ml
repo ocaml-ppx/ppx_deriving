@@ -150,10 +150,9 @@ let test_map_result ctxt =
   assert_equal ~printer (Ok 10) (f (Ok 9));
   assert_equal ~printer (Error true) (f (Error true))
 
-type 'a result_result0 = ('a, bool) Result.result [@@deriving show,map]
+type 'a result_result0 = ('a, bool) result [@@deriving show,map]
 
 let test_map_result_result ctxt =
-  let open Result in
   let f = map_result_result0 succ in
   let printer = show_result_result0 fmt_int in
   assert_equal ~printer (Ok 10) (f (Ok 9));

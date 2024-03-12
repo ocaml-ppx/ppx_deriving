@@ -122,14 +122,14 @@ let rec expr_of_typ quoter typ =
             [%e expr_of_typ typ] x;
             Ppx_deriving_runtime.Format.pp_print_string fmt ")"]
       | true, ([%type: ([%t? ok_t], [%t? err_t]) result] |
-               [%type: ([%t? ok_t], [%t? err_t]) Result.result]) ->
+               [%type: ([%t? ok_t], [%t? err_t]) result]) ->
         [%expr
           function
-          | Result.Ok ok ->
+          | Ok ok ->
             Ppx_deriving_runtime.Format.pp_print_string fmt "(Ok ";
             [%e expr_of_typ ok_t] ok;
             Ppx_deriving_runtime.Format.pp_print_string fmt ")"
-          | Result.Error e ->
+          | Error e ->
             Ppx_deriving_runtime.Format.pp_print_string fmt "(Error ";
             [%e expr_of_typ err_t] e;
             Ppx_deriving_runtime.Format.pp_print_string fmt ")"]

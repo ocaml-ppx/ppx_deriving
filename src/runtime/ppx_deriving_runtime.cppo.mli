@@ -28,18 +28,6 @@ include module type of struct
 end
 
 module Stdlib = Stdlib
-
-module Result : sig
-  type ('a, 'b) t = ('a, 'b) result =
-    | Ok of 'a
-    | Error of 'b
-
-  (* we also expose Result.result for backward-compatibility
-     with the Result package! *)
-  type ('a, 'b) result = ('a, 'b) t =
-    | Ok of 'a
-    | Error of 'b
-end
 #else
 module Pervasives = Pervasives
 
@@ -70,17 +58,6 @@ module Weak = Weak
 module Printf = Printf
 module Format = Format
 module Buffer = Buffer
-
-module Result : sig
-  type ('a, 'b) t = ('a, 'b) Result.result =
-    | Ok of 'a
-    | Error of 'b
-
-  (* we also expose Result.result for backward-compatibility *)
-  type ('a, 'b) result = ('a, 'b) Result.result =
-    | Ok of 'a
-    | Error of 'b
-end
 
 module Option : sig
   type 'a t = 'a option

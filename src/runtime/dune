@@ -2,8 +2,7 @@
  (name ppx_deriving_runtime)
  (public_name ppx_deriving.runtime)
  (wrapped false)
- (synopsis "Type-driven code generation")
- (libraries result))
+ (synopsis "Type-driven code generation"))
 
 (rule
  (deps ppx_deriving_runtime.cppo.ml)

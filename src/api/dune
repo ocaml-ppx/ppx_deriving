@@ -5,11 +5,7 @@
  (preprocess (pps ppxlib.metaquot))
  (wrapped false)
  (ppx_runtime_libraries ppx_deriving_runtime)
- (libraries
-   compiler-libs.common
-   ppxlib
-   result
-   ppx_derivers))
+ (libraries compiler-libs.common ppxlib ppx_derivers))
 
 (rule
  (deps ppx_deriving.cppo.ml)

@@ -33,11 +33,11 @@ let rec expr_of_typ ?decl typ =
     | true, [%type: [%t? typ] option] ->
       [%expr function None -> None | Some x -> Some ([%e expr_of_typ ?decl typ] x)]
     | true, ([%type: ([%t? ok_t], [%t? err_t]) result] |
-             [%type: ([%t? ok_t], [%t? err_t]) Result.result]) ->
+             [%type: ([%t? ok_t], [%t? err_t]) result]) ->
       [%expr
         function
-        | Result.Ok ok -> Result.Ok ([%e expr_of_typ ?decl ok_t] ok)
-        | Result.Error err -> Result.Error ([%e expr_of_typ ?decl err_t] err)]
+        | Ok ok -> Ok ([%e expr_of_typ ?decl ok_t] ok)
+        | Error err -> Error ([%e expr_of_typ ?decl err_t] err)]
     | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
       app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix deriver) lid)))
           (List.map (expr_of_typ ?decl) args)
