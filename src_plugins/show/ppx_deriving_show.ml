@@ -330,7 +330,7 @@ let impl_generator = Deriving.Generator.V2.make args (fun ~ctxt (_, type_decls) 
   in
   [Str.value Recursive (List.concat (List.map (str_of_type ~with_path ~path) type_decls))])
 
-let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+let intf_generator = Deriving.Generator.V2.make args (fun ~ctxt:_ (_, type_decls) _with_path ->
   List.concat (List.map sig_of_type type_decls))
 
 let deriving: Deriving.t =
