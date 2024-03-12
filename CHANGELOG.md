@@ -1,5 +1,5 @@
-5.3.0 (12/03/2024)
-------------------
+unreleased
+----------
 
 * Port standard plugins to ppxlib registration and attributes
   #263
