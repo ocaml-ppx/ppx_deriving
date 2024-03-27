@@ -1,6 +1,11 @@
 unreleased
 ----------
 
+* Remove `[%derive.iter ...]`, `[%derive.map ...]` and `[%derive.fold ...]`
+  extensions
+  #278
+  (Simmo Saan)
+
 * Port standard plugins to ppxlib registration and attributes
   #263
   (Simmo Saan)
