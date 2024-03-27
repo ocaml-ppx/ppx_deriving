@@ -94,7 +94,7 @@ and expr_of_typ quoter typ =
           | Some a, Some b -> [%e expr_of_typ typ] a b
           | _ -> false]
       | true, ([%type: ([%t? ok_t], [%t? err_t]) result] |
-               [%type: ([%t? ok_t], [%t? err_t]) result]) ->
+               [%type: ([%t? ok_t], [%t? err_t]) Result.result]) ->
         [%expr fun x y ->
           match x, y with
           | Ok a, Ok b -> [%e expr_of_typ ok_t] a b

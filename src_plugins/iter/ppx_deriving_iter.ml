@@ -33,7 +33,8 @@ let rec expr_of_typ typ =
       [%expr Ppx_deriving_runtime.Array.iter [%e expr_of_typ typ]]
     | true, [%type: [%t? typ] option] ->
       [%expr function None -> () | Some x -> [%e expr_of_typ typ] x]
-    | true, [%type: ([%t? ok_t], [%t? err_t]) result] ->
+    | true, [%type: ([%t? ok_t], [%t? err_t]) result]
+    | true, [%type: ([%t? ok_t], [%t? err_t]) Result.result] ->
       [%expr
         function
         | Ok ok -> ignore ([%e expr_of_typ ok_t] ok)
