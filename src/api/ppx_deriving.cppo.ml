@@ -232,9 +232,8 @@ let string_of_expression_opt (e : Parsetree.expression) : string option =
   | _ -> None
 
 module Arg = struct
-  type 'a conv = expression -> ('a, string) Result.result
+  type 'a conv = expression -> ('a, string) result
 
-  open Result
   let expr expr = Ok expr
 
   let int expr =

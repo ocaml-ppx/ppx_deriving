@@ -142,7 +142,6 @@ let test_result ctxt =
   assert_equal ~printer false (eq (Error 123) (Error 0))
 
 let test_result_result ctxt =
-  let open Result in
   let eq = [%eq: (string, int) result] in
   assert_equal ~printer true (eq (Ok "ttt") (Ok "ttt"));
   assert_equal ~printer false (eq (Ok "123") (Error 123));

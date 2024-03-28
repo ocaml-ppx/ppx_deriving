@@ -172,12 +172,11 @@ let test_result ctxt =
   assert_equal ~printer "(Test_deriving_show.I_has (Error \"err\"))"
     (show_i_has_result (I_has (Error "err")))
 
-type i_has_result_result = I_has of (bool, string) Result.result [@@deriving show]
+type i_has_result_result = I_has of (bool, string) result [@@deriving show]
 
 let test_result_result ctxt =
-  let open Result in
   assert_equal ~printer "(Ok 100)"
-    ([%show: (int, bool) result] (Result.Ok 100));
+    ([%show: (int, bool) result] (Ok 100));
   assert_equal ~printer "(Test_deriving_show.I_has (Ok true))"
     (show_i_has_result_result (I_has (Ok true)));
   assert_equal ~printer "(Test_deriving_show.I_has (Error \"err\"))"

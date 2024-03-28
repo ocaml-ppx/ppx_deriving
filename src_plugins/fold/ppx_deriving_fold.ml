@@ -40,8 +40,8 @@ let rec expr_of_typ typ =
              [%type: ([%t? ok_t], [%t? err_t]) Result.result]) ->
       [%expr
         fun acc -> function
-        | Result.Ok ok -> [%e expr_of_typ ok_t] acc ok
-        | Result.Error err -> [%e expr_of_typ err_t] acc err]
+        | Ok ok -> [%e expr_of_typ ok_t] acc ok
+        | Error err -> [%e expr_of_typ err_t] acc err]
     | _, { ptyp_desc = Ptyp_constr ({ txt = lid }, args) } ->
       app (Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix deriver) lid)))
           (List.map expr_of_typ args)
