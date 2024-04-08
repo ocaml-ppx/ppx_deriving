@@ -287,6 +287,10 @@ val make_record :
   record
 ```
 
+To use _make_ with a set of mutually recursive type definitions, simply attach a
+single `[@@deriving make]` attribute and it will derive a `make_*` function for
+each record type in the set.
+
 The deriving runtime
 --------------------
 

@@ -101,16 +101,16 @@ let str_of_record_type ~quoter ~loc labels =
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
   let quoter = Ppx_deriving.create_quoter () in
-  let creator =
-    match type_decl.ptype_kind with
-    | Ptype_record labels -> str_of_record_type ~quoter ~loc labels
-    | _ ->
-      Ast_builder.Default.pexp_extension ~loc
-        (Location.error_extensionf ~loc
-           "%s can be derived only for record types" deriver)
-  in
-  [Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
-     (Ppx_deriving.sanitize ~quoter creator)]
+  match type_decl.ptype_kind with
+  | Ptype_record labels ->
+    let creator = str_of_record_type ~quoter ~loc labels in
+    Ok
+      (Vb.mk (pvar (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl))
+         (Ppx_deriving.sanitize ~quoter creator))
+  | _ ->
+    Error
+      (Location.error_extensionf ~loc
+         "%s can be derived only for record types" deriver)
 
 let wrap_predef_option typ =
   typ
@@ -160,21 +160,53 @@ let sig_of_record_type ~loc ~typ labels =
 
 let sig_of_type ({ ptype_loc = loc } as type_decl) =
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
-  let typ =
-    match type_decl.ptype_kind with
-    | Ptype_record labels -> sig_of_record_type ~loc ~typ labels
-    | _ ->
-      Ast_builder.Default.ptyp_extension ~loc
-        (Location.error_extensionf ~loc
-           "%s can only be derived for record types" deriver)
+  match type_decl.ptype_kind with
+  | Ptype_record labels ->
+    let typ = sig_of_record_type ~loc ~typ labels in
+    let val_name = Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl in
+    Ok (Sig.value (Val.mk (mknoloc val_name) typ))
+  | _ ->
+    Error
+      (Location.error_extensionf ~loc
+         "%s can only be derived for record types" deriver)
+
+(* Ppxlib does not keep track of which type the attribute was attached to
+   in a set of type declarations and does not provide a nice and reliable
+   way to manually check it.
+   Until we have something better, we have to assume that the
+   [[@@deriving make]] attribute was meant for the whole set and properly
+   placed. That means that if there is at least one type declaration in the
+   set for which we can derive make, we will ignore errors from the rest. *)
+
+let partition_result l =
+  let errors, oks =
+    List.fold_left
+      (fun (errors, oks) res ->
+         match res with
+         | Ok x -> (errors, x :: oks)
+         | Error e -> (e :: errors, oks))
+      ([], [])
+      l
   in
-  [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl)) typ)]
+  List.rev errors, List.rev oks
 
-let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
-  [Str.value Nonrecursive (List.concat (List.map str_of_type type_decls))])
+let impl_generator =
+  Deriving.Generator.V2.make_noarg (fun ~ctxt (_, type_decls) ->
+      match partition_result (List.map str_of_type type_decls) with
+      | _, (_::_ as vbs) -> [Str.value Nonrecursive vbs]
+      | errors, [] ->
+        let loc = Expansion_context.Deriver.derived_item_loc ctxt in
+        List.map (fun ext -> Ast_builder.Default.pstr_extension ~loc ext [])
+          errors)
 
-let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
-  List.concat (List.map sig_of_type type_decls))
+let intf_generator =
+  Deriving.Generator.V2.make_noarg (fun ~ctxt (_, type_decls) ->
+      match partition_result (List.map sig_of_type type_decls) with
+      | _, (_::_ as vds) -> vds
+      | errors, [] ->
+        let loc = Expansion_context.Deriver.derived_item_loc ctxt in
+        List.map (fun ext -> Ast_builder.Default.psig_extension ~loc ext [])
+          errors)
 
 let deriving: Deriving.t =
   Deriving.add
