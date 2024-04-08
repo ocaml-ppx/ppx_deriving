@@ -78,7 +78,7 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
               (Exp.fun_ (Label.optional name) (Some [%expr []]) (pvar name)
                 [%expr let [%p pvar name] = [%e evar name'], [%e evar name] in [%e accum]])
           | _ -> raise_errorf ~loc "[@deriving.%s.split] annotation requires a type of form \
-                                    'a * 'b list and label name ending with `s'" deriver
+                                    'a * 'a list and label name ending with `s'" deriver
         else
           match pld_type with
           | [%type: [%t? _] list] ->
@@ -121,7 +121,7 @@ let sig_of_type ({ ptype_loc = loc } as type_decl) =
             Typ.arrow (Label.labelled name') lhs
               (Typ.arrow (Label.optional name) (wrap_predef_option [%type: [%t rhs] list]) accum)
           | _ -> raise_errorf ~loc "[@deriving.%s.split] annotation requires a type of form \
-                                    'a * 'b list and label name ending with `s'" deriver
+                                    'a * 'a list and label name ending with `s'" deriver
         else
           match pld_type with
           | [%type: [%t? _] list] ->
