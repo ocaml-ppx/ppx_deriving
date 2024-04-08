@@ -1,6 +1,11 @@
 unreleased
 ----------
 
+* Embed errors instead of raising exceptions when generating code
+  with `ppx_deriving.make`
+  #<PR_NUMBER>
+  (@NathanReb)
+
 * Remove `[%derive.iter ...]`, `[%derive.map ...]` and `[%derive.fold ...]`
   extensions
   #278
