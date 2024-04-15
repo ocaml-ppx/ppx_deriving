@@ -3,12 +3,12 @@ unreleased
 
 * Fix a bug in `[@@deriving make]` that caused errors when it was used on a set
   of type declarations containing at least one non record type.
-  #<PR_NUMBER>
+  #281
   (@NathanReb)
 
 * Embed errors instead of raising exceptions when generating code
   with `ppx_deriving.make`
-  #<PR_NUMBER>
+  #281
   (@NathanReb)
 
 * Remove `[%derive.iter ...]`, `[%derive.map ...]` and `[%derive.fold ...]`
