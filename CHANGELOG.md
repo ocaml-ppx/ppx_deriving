@@ -1,5 +1,5 @@
-unreleased
-----------
+6.0.0 (15/04/2024)
+------------------
 
 * Fix a bug in `[@@deriving make]` that caused errors when it was used on a set
   of type declarations containing at least one non record type.
