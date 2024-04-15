@@ -21,6 +21,14 @@ module M : sig
     c1 : int;
     c2 : string
   } [@@deriving show, make]
+
+  type principle_recursive_type =
+    { prt1 : int
+    ; prt2 : secondary_recursive_type
+    } [@@deriving show, make]
+
+  and secondary_recursive_type = string
+  [@@deriving show]
 end = struct
   type a = {
     a1  : int option;
@@ -42,6 +50,18 @@ end = struct
     c1 : int;
     c2 : string
   } [@@deriving show, make]
+
+  (*  Generate make for a record that is part of a mutually recursive type declaration.
+      Generation should succeed, and not try to generate `make` for non-annotated types.
+
+      Regression test for https://github.com/ocaml-ppx/ppx_deriving/issues/272 *)
+  type principle_recursive_type =
+    { prt1 : int
+    ; prt2 : secondary_recursive_type
+    } [@@deriving show, make]
+
+  and secondary_recursive_type = string
+  [@@deriving show]
 end
 
 let test_no_main ctxt =
@@ -65,10 +85,16 @@ let test_no_unit ctxt =
     { M.c1 = 0; M.c2 = "" }
     (M.make_c ~c1:0 ~c2:"")
 
+let test_recursive_types ctxt =
+  assert_equal ~printer:M.show_principle_recursive_type
+    { M.prt1 = 0; M.prt2 = "" }
+    (M.make_principle_recursive_type ~prt1:0 ~prt2:"")
+
 let suite = "Test deriving(make)" >::: [
     "test_no_main" >:: test_no_main;
     "test_main"    >:: test_main;
-    "test_no_unit" >:: test_no_unit
+    "test_no_unit" >:: test_no_unit;
+    "test_recursive_types" >:: test_recursive_types;
   ]
 
 let _ = run_test_tt_main suite
