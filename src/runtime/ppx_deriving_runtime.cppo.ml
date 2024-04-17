@@ -24,6 +24,15 @@ module Stdlib = Stdlib
 
 include Stdlib
 
+module Result = struct
+  type ('a, 'b) t = ('a, 'b) result =
+    | Ok of 'a
+    | Error of 'b
+
+  type ('a, 'b) result = ('a, 'b) t =
+    | Ok of 'a
+    | Error of 'b
+end
 #else
 module Pervasives = Pervasives
 module Stdlib = Pervasives
@@ -49,6 +58,15 @@ module Weak = Weak
 module Printf = Printf
 module Format = Format
 module Buffer = Buffer
+module Result = struct
+  type ('a, 'b) t = ('a, 'b) result =
+    | Ok of 'a
+    | Error of 'b
+
+  type nonrec ('a, 'b) result = ('a, 'b) result =
+    | Ok of 'a
+    | Error of 'b
+end
 module Option = struct
   type 'a t = 'a option
 
