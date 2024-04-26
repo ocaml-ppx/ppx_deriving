@@ -64,6 +64,23 @@ end = struct
   [@@deriving show]
 end
 
+(* This module is here to test that the ordering of the arguments
+   match the order of the record fields declarations. *)
+module M2 : sig
+  type t =
+    { first : int
+    ; second : int
+    }
+
+  val make : first: int -> second: int -> t
+end = struct
+  type t =
+    { first : int
+    ; second : int
+    }
+  [@@deriving make]
+end
+
 let test_no_main ctxt =
   assert_equal ~printer:M.show_a
                { M.a1 = None; a2 = []; a3 = 42; a4s = 2, []; a5 = 1 }
