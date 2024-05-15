@@ -97,7 +97,9 @@ let str_of_record_type ~quoter ~loc labels =
       | None ->
         record fields
     in
-    List.fold_left (add_str_label_arg ~quoter ~loc) fn labels
+    (* The labels list must be reversed here so that the arguments are in the
+       same order as the record fields. *)
+    List.fold_left (add_str_label_arg ~quoter ~loc) fn (List.rev labels)
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
   let quoter = Ppx_deriving.create_quoter () in
@@ -156,7 +158,9 @@ let sig_of_record_type ~loc ~typ labels =
       | None when has_option -> Typ.arrow Label.nolabel (tconstr "unit" []) typ
       | None -> typ
     in
-    List.fold_left add_sig_label_arg typ labels
+    (* The labels list must be reversed here so that the arguments are in the
+       same order as the record fields. *)
+    List.fold_left add_sig_label_arg typ (List.rev labels)
 
 let sig_of_type ({ ptype_loc = loc } as type_decl) =
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in

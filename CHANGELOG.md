@@ -1,3 +1,10 @@
+unreleased
+----------
+
+* Fix ordering of derived `make`'s arguments
+  #285
+  (@NathanReb)
+
 6.0.1 (17/04/2024)
 ------------------
 
