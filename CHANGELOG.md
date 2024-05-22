@@ -5,8 +5,8 @@ unreleased
   #285
   (@NathanReb)
 
-6.0.1 (17/04/2024)
-------------------
+6.0.1 (17/04/2024) (aborted, not on opam)
+-----------------------------------------
 
 * Fix the unintentional removal of `Ppx_deriving_runtime.Result` in #279
   #282
