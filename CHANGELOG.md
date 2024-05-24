@@ -1,5 +1,5 @@
-unreleased
-----------
+6.0.2
+-----
 
 * Fix ordering of derived `make`'s arguments
   #285
