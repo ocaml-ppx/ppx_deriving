@@ -1,3 +1,10 @@
+unreleased
+----------
+
+* Add show @printer support for polymorphic variants
+  #286
+  (Simmo Saan and Guillaume Huysmans)
+
 6.0.2
 -----
 
