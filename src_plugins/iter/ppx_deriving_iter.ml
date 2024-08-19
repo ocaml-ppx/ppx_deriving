@@ -70,7 +70,7 @@ let rec expr_of_typ typ =
     Exp.function_ cases
   | { ptyp_desc = Ptyp_var name } -> [%expr ([%e evar ("poly_"^name)] : [%t Typ.var name] -> unit)]
   | { ptyp_desc = Ptyp_alias (typ, name) } ->
-    [%expr fun x -> [%e evar ("poly_"^name)] x; [%e expr_of_typ typ] x]
+    [%expr fun x -> [%e evar ("poly_"^name.txt)] x; [%e expr_of_typ typ] x]
   | { ptyp_loc } ->
     raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
                  deriver (Ppx_deriving.string_of_core_type typ)
