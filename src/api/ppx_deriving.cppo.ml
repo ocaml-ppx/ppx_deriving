@@ -174,8 +174,18 @@ let raise_errorf ?sub ?loc fmt =
 #if OCAML_VERSION >= (4, 08, 0)
     let sub =
       let msg_of_error err =
+#if OCAML_VERSION >= (5, 3, 0)
+        let loc = err.Location.main.loc in
+        let print_report fmt x =
+          Ocaml_common.Format_doc.deprecated_printer
+            (fun fmt -> Location.print_report fmt x) fmt
+        in
+        Location.msg ~loc "%a" print_report err
+#else
         { txt = (fun fmt -> Location.print_report fmt err);
-          loc = err.Location.main.loc } in
+          loc = err.Location.main.loc }
+#endif
+      in
       Option.map (List.map msg_of_error) sub in
 #endif
     let err = Location.error ?sub ?loc str in
