@@ -1,5 +1,5 @@
-unreleased
-----------
+6.0.3
+-----
 
 * Add OCaml 5.3 support
   #288
