@@ -1,6 +1,10 @@
 unreleased
 ----------
 
+* Add OCaml 5.3 support
+  #288
+  (@kit-ty-kate)
+
 6.0.2
 -----
 
