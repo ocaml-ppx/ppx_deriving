@@ -341,8 +341,14 @@ let deriving: Deriving.t =
     ~str_type_decl:impl_generator
     ~sig_type_decl:intf_generator
 
-(* custom extension such that "derive"-prefixed also works *)
-let derive_extension =
+(* custom extensions such that "derive"-prefixed also works *)
+let derive_pp_extension =
+  Extension.V3.declare "derive.pp" Extension.Context.expression
+    Ast_pattern.(ptyp __) (fun ~ctxt ->
+      let loc = Expansion_context.Extension.extension_point_loc ctxt in
+      Ppx_deriving.with_quoter (fun quoter typ ->
+        [%expr fun fmt -> [%e expr_of_typ quoter typ]]))
+let derive_show_extension =
   Extension.V3.declare "derive.show" Extension.Context.expression
     Ast_pattern.(ptyp __) (fun ~ctxt ->
       let loc = Expansion_context.Extension.extension_point_loc ctxt in
@@ -351,4 +357,7 @@ let derive_extension =
 let derive_transformation =
   Driver.register_transformation
     deriver
-    ~rules:[Context_free.Rule.extension derive_extension]
+    ~rules:[
+      Context_free.Rule.extension derive_pp_extension;
+      Context_free.Rule.extension derive_show_extension;
+    ]
