@@ -49,34 +49,34 @@ let fresh_type_maker type_decl =
     bound := newvar :: !bound;
     Typ.var newvar
 
-let pp_type_of_decl ?(unusable_param_pos=[]) type_decl =
+let pp_type_of_decl ?(refined_param_pos=[]) type_decl =
   let loc = type_decl.ptype_loc in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let fresh_type = fresh_type_maker type_decl in
   Ppx_deriving.poly_arrow_of_type_decl_idx
     (fun pos var ->
-      let var_or_any = if List.mem pos unusable_param_pos then fresh_type () else var in
+      let var_or_any = if List.mem pos refined_param_pos then fresh_type () else var in
       [%type: Ppx_deriving_runtime.Format.formatter -> [%t var_or_any ] -> Ppx_deriving_runtime.unit])
     type_decl
     [%type: Ppx_deriving_runtime.Format.formatter -> [%t typ] -> Ppx_deriving_runtime.unit]
 
-let pp_type_of_decl_newtype ?(unusable_param_pos=[]) type_decl =
+let pp_type_of_decl_newtype ?(refined_param_pos=[]) type_decl =
   let loc = type_decl.ptype_loc in
   let typ = Ppx_deriving.core_type_of_type_decl_with_newtype type_decl in
   Ppx_deriving.newtype_arrow_of_type_decl
     (fun pos lty -> 
-      let lty_or_any = if List.mem pos unusable_param_pos then Typ.any () else lty in
+      let lty_or_any = if List.mem pos refined_param_pos then Typ.any () else lty in
       [%type: Ppx_deriving_runtime.Format.formatter -> [%t lty_or_any] -> Ppx_deriving_runtime.unit])
     type_decl
     [%type: Ppx_deriving_runtime.Format.formatter -> [%t typ] -> Ppx_deriving_runtime.unit]
 
-let show_type_of_decl ?(unusable_param_pos=[]) type_decl =
+let show_type_of_decl ?(refined_param_pos=[]) type_decl =
   let loc = type_decl.ptype_loc in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let fresh_type = fresh_type_maker type_decl in
   Ppx_deriving.poly_arrow_of_type_decl_idx
     (fun pos var ->
-      let var_or_any = if List.mem pos unusable_param_pos then fresh_type () else var in
+      let var_or_any = if List.mem pos refined_param_pos then fresh_type () else var in
       [%type: Ppx_deriving_runtime.Format.formatter -> [%t var_or_any] -> Ppx_deriving_runtime.unit])
     type_decl
     [%type: [%t typ] -> Ppx_deriving_runtime.string]
@@ -206,6 +206,9 @@ let rec expr_of_typ ~effective_variables quoter typ =
         if List.mem name effective_variables then
           [%expr [%e evar ("poly_"^name)] fmt]
         else
+          (* We assume some 'calling convention' here: for type variables not appear in the declaration, 
+             we supply a 'degenerate' pretty printer which is never called, as we deem them 'refined' to 
+             a concrete type at some point. *)
           [%expr (fun ()(*never type here*) -> failwith "impossible")]
     | { ptyp_desc = Ptyp_alias (typ, _) } -> expr_of_typ typ
     | { ptyp_loc } ->
@@ -230,15 +233,37 @@ let refined_param_pos_of_type_decl type_decl =
     | _ -> [] 
   in
   let type_variables = Ppx_deriving.type_param_names_of_type_decl type_decl in
-  constrs |> List.fold_left (fun acc -> function 
-  | {pcd_res = Some {ptyp_desc=Ptyp_constr(_, args); _} } -> 
-    let args = args |> List.mapi (fun idx x -> (idx,x)) in
-    let refined_idxs = args |> List.filter_map (function 
-      | (_idx, {ptyp_desc=Ptyp_var var}) when List.mem var type_variables -> (*not refined*)None 
-      | (idx, _) -> (*refined*)Some idx) 
-    in
-    refined_idxs @ acc
-  | _ -> acc) []
+  constrs |> List.filter_map (function 
+    | {pcd_res = Some {ptyp_desc=Ptyp_constr(_, args); _} } -> (* constructor has the return type (pcd_res) *)
+      let arg_idxs = args |> List.mapi (fun idx x -> (idx,x)) in
+      (* compute indices for refined type parameters *)
+      let refined_idxs = arg_idxs |> List.filter_map (function 
+        | (_idx, {ptyp_desc=Ptyp_var var}) when List.mem var type_variables -> 
+          (* The type parameter is a variable. It is likely that the constructor does not refine the variable.
+             However, there are cases that even if the constructor does not refine the type parameter,
+             the constructor's argument type does. In that case, the type parameter should be considered refined as well.
+             To express that the type parameter is refined, the programmer can change the type parameter in the return type
+             to a type that is not same as the one in the declaration.
+             For example, 
+               type 'a term = Var : string * 'a typ -> 'a term | ...
+             Here, when the programmer knows that the parameter 'a in type 'a type is refined, there should be a way to express that.
+             To express that, the programmer change the return type of the constructor to be different from the declaration, say 'v,
+               type 'a term = Var : string * 'v typ -> 'v term | ...
+             So that poly_a is never called to print the type.
+
+             Note that, there are cases that the constructor itself does not refine the paramter but its declaration is GADT-ish:
+             existential variables.
+             If one needs existential type variables while a type parameter is not refined, the programmer would keep using 
+             the same variable name as in the declaration, for example:
+               type 'state transition = Print : 'v term * 'state -> 'state transition | ...
+             to express that 'state is non-refined type parameter (thus poly_state is actually called) while the constructor
+             is GADT-ish.
+           *)
+          None
+        | (idx, _) -> (*refined*) Some idx) 
+      in
+      Some refined_idxs
+    | _ -> None) |> List.concat
 
 
 let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
@@ -342,20 +367,20 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
                         (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl)) in
   let stringprinter = [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" [%e pp_poly_apply] x] in
   let polymorphize  = Ppx_deriving.poly_fun_of_type_decl type_decl in
-  let unusable_param_pos = refined_param_pos_of_type_decl type_decl in
+  let refined_param_pos = refined_param_pos_of_type_decl type_decl in
   let prettyprinter = polymorphize prettyprinter in
   let prettyprinter =
     if is_gadt type_decl then
       Ppx_deriving.newtype_of_type_decl type_decl
-        @@ Exp.constraint_ prettyprinter (pp_type_of_decl_newtype ~unusable_param_pos type_decl) 
+        @@ Exp.constraint_ prettyprinter (pp_type_of_decl_newtype ~refined_param_pos type_decl) 
     else
       prettyprinter
   in
   let pp_type =
-    Ppx_deriving.strong_type_of_type @@ pp_type_of_decl ~unusable_param_pos type_decl in
+    Ppx_deriving.strong_type_of_type @@ pp_type_of_decl ~refined_param_pos type_decl in
   let show_type =
     Ppx_deriving.strong_type_of_type @@
-      show_type_of_decl ~unusable_param_pos type_decl in
+      show_type_of_decl ~refined_param_pos type_decl in
   let pp_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl) in
   let show_var =

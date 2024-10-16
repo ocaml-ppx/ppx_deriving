@@ -275,6 +275,13 @@ val poly_fun_of_type_decl : type_declaration -> expression -> expression
 (** Same as {!poly_fun_of_type_decl} but for type extension. *)
 val poly_fun_of_type_ext : type_extension -> expression -> expression
 
+(** [newtype_of_type_decl type_ expr] wraps [expr] into [fun (type N) -> expr] for every
+    type parameter ['N] present in [type_]. For example, if [type_] refers to
+    [type ('a, 'b) map], [expr] will be wrapped into [fun (type a) (type b) -> [%e expr]].
+
+    [_] parameters are ignored. *)
+val newtype_of_type_decl : type_declaration -> expression -> expression
+
 (** [poly_apply_of_type_decl type_ expr] wraps [expr] into [expr poly_N] for every
     type parameter ['N] present in [type_]. For example, if [type_] refers to
     [type ('a, 'b) map], [expr] will be wrapped into [[%e expr] poly_a poly_b].
@@ -294,8 +301,17 @@ val poly_apply_of_type_ext : type_extension -> expression -> expression
 val poly_arrow_of_type_decl : (core_type -> core_type) ->
                               type_declaration -> core_type -> core_type
 
+(** Same as {!poly_arrow_of_type_decl} but with indices for type parameters. *)
 val poly_arrow_of_type_decl_idx : (int -> core_type -> core_type) ->
                               type_declaration -> core_type -> core_type
+
+(** Same as {!poly_arrow_of_type_decl} but supplies locally abstract types instead of 
+    type variables. For example, [type ('a, 'b) map] and function 
+    [fun var -> [%type: [%t var] -> string]] wraps [typ] into 
+    [(a -> string) -> (b -> string) -> [%t typ]] (where [type a] and [type b] comes from 
+    type parameter names [type 'a] and [type 'b]). *)
+val newtype_arrow_of_type_decl : (int -> core_type -> core_type) ->
+    type_declaration -> core_type -> core_type
 
 (** Same as {!poly_arrow_of_type_decl} but for type extension. *)
 val poly_arrow_of_type_ext : (core_type -> core_type) ->
@@ -308,14 +324,9 @@ val core_type_of_type_decl : type_declaration -> core_type
 (** Same as {!core_type_of_type_decl} but for type extension. *)
 val core_type_of_type_ext : type_extension -> core_type
 
-val newtype_of_type_decl : type_declaration -> expression -> expression
-
-val newtype_arrow_of_type_decl : (int -> core_type -> core_type) ->
-    type_declaration -> core_type -> core_type
-
 (** [core_type_of_type_decl_with_newtype type_] constructs type [('a, 'b, ...) t] for
     type declaration [type (a, b, ...) t = ...]. *)
-    val core_type_of_type_decl_with_newtype : type_declaration -> core_type
+val core_type_of_type_decl_with_newtype : type_declaration -> core_type
 
 (** [instantiate bound type_] returns [typ, vars, bound'] where [typ] is a type
     instantiated from type declaration [type_], [vars] ≡ [free_vars_in_core_type typ]

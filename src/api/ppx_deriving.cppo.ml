@@ -519,13 +519,22 @@ let poly_arrow_of_type_decl fn type_decl typ =
     let name = name.txt in
     Typ.arrow Label.nolabel (fn (Typ.var name)) typ) type_decl typ
 
+let newtype_arrow_of_type_decl fn type_decl typ =
+  let len = List.length type_decl.ptype_params in
+  fold_right_type_decl (fun name (idx,typ) ->
+      let name = name.txt in
+      (idx + 1, Typ.arrow Label.nolabel (fn (len - idx - 1) (Typ.constr (lid_of_string name) [])) typ))
+    type_decl 
+    (0, typ)
+  |> snd
+
 let poly_arrow_of_type_decl_idx fn type_decl typ =
   let len = List.length type_decl.ptype_params in
   fold_right_type_decl (fun name (idx, typ) ->
     let name = name.txt in
-    (idx + 1, Typ.arrow Label.nolabel (fn (len - idx - 1) (Typ.var name)) typ)) 
+    (idx - 1, Typ.arrow Label.nolabel (fn idx (Typ.var name)) typ)) 
     type_decl
-    (0, typ)
+    (len - 1, typ)
   |> snd
 
 let poly_arrow_of_type_ext fn type_ext typ =
@@ -546,15 +555,6 @@ let newtype_of_type_decl type_decl expr =
   fold_right_type_decl (fun name expr ->
     let name = name.txt in
     Exp.newtype (str_of_string name) expr) type_decl expr
-    
-let newtype_arrow_of_type_decl fn type_decl typ =
-  let len = List.length type_decl.ptype_params in
-  fold_right_type_decl (fun name (idx,typ) ->
-      let name = name.txt in
-      (idx + 1, Typ.arrow Label.nolabel (fn (len - idx - 1) (Typ.constr (lid_of_string name) [])) typ))
-    type_decl 
-    (0, typ)
-  |> snd
 
 let core_type_of_type_decl_with_newtype { ptype_name = name; ptype_params } =
   let name = mkloc (Lident name.txt) name.loc in
