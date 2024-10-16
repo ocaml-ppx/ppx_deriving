@@ -263,6 +263,8 @@ val fold_left_type_ext : ('a -> tyvar -> 'a) -> 'a -> type_extension -> 'a
     wildcard) parameters in [type_]. *)
 val fold_right_type_ext : (tyvar -> 'a -> 'a) -> type_extension -> 'a -> 'a
 
+val type_param_names_of_type_decl : type_declaration -> string list
+
 (** [poly_fun_of_type_decl type_ expr] wraps [expr] into [fun poly_N -> ...] for every
     type parameter ['N] present in [type_]. For example, if [type_] refers to
     [type ('a, 'b) map], [expr] will be wrapped into [fun poly_a poly_b -> [%e expr]].
@@ -292,6 +294,9 @@ val poly_apply_of_type_ext : type_extension -> expression -> expression
 val poly_arrow_of_type_decl : (core_type -> core_type) ->
                               type_declaration -> core_type -> core_type
 
+val poly_arrow_of_type_decl_idx : (int -> core_type -> core_type) ->
+                              type_declaration -> core_type -> core_type
+
 (** Same as {!poly_arrow_of_type_decl} but for type extension. *)
 val poly_arrow_of_type_ext : (core_type -> core_type) ->
                               type_extension -> core_type -> core_type
@@ -302,6 +307,15 @@ val core_type_of_type_decl : type_declaration -> core_type
 
 (** Same as {!core_type_of_type_decl} but for type extension. *)
 val core_type_of_type_ext : type_extension -> core_type
+
+val newtype_of_type_decl : type_declaration -> expression -> expression
+
+val newtype_arrow_of_type_decl : (int -> core_type -> core_type) ->
+    type_declaration -> core_type -> core_type
+
+(** [core_type_of_type_decl_with_newtype type_] constructs type [('a, 'b, ...) t] for
+    type declaration [type (a, b, ...) t = ...]. *)
+    val core_type_of_type_decl_with_newtype : type_declaration -> core_type
 
 (** [instantiate bound type_] returns [typ, vars, bound'] where [typ] is a type
     instantiated from type declaration [type_], [vars] ≡ [free_vars_in_core_type typ]
