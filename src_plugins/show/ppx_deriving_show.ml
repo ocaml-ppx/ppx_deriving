@@ -94,11 +94,11 @@ let show_type_of_decl ?(refined_param_pos=[]) type_decl =
     type_decl
     [%type: [%t typ] -> Ppx_deriving_runtime.string]
 
-let sig_of_type type_decl =
+let sig_of_type ~refined_param_pos type_decl =
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl))
-              (pp_type_of_decl type_decl));
+              (pp_type_of_decl ?refined_param_pos type_decl));
    Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl))
-              (show_type_of_decl type_decl))]
+              (show_type_of_decl ?refined_param_pos type_decl))]
 
 (** [expr_of_typ typ] returns an expression that pretty-prints a value of the given type. 
     For type variables available in [type_params], it puts [poly_N] which pretty-prints 
@@ -283,7 +283,7 @@ let refined_param_pos_of_type_decl type_decl =
     | _ -> None) |> List.concat
 
 
-let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
+let str_of_type ~with_path ~refined_param_pos ~path ({ ptype_loc = loc } as type_decl) =
   let quoter = Ppx_deriving.create_quoter () in
   let path = Ppx_deriving.path_of_type_decl ~path type_decl in
   let type_params = Ppx_deriving.type_param_names_of_type_decl type_decl in
@@ -384,10 +384,15 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
                         (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl)) in
   let stringprinter = [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" [%e pp_poly_apply] x] in
   let polymorphize  = Ppx_deriving.poly_fun_of_type_decl type_decl in
-  let refined_param_pos = refined_param_pos_of_type_decl type_decl in
+  let refined_param_pos = 
+    match refined_param_pos with
+    | Some xs -> xs 
+    | None -> refined_param_pos_of_type_decl type_decl 
+  in
   let prettyprinter = polymorphize prettyprinter in
   let prettyprinter =
     if is_gadt type_decl then
+      (* for GADTs, ascribe with locally abstract types like (fun (type a) -> ... : formatter -> a t -> unit)  *)
       Ppx_deriving.newtype_of_type_decl type_decl
         @@ Exp.constraint_ prettyprinter (pp_type_of_decl_newtype ~refined_param_pos type_decl) 
     else
@@ -407,10 +412,10 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
          (Ppx_deriving.sanitize ~quoter prettyprinter);
    Vb.mk ~attrs:[no_warn_32] (Pat.constraint_ show_var show_type) (polymorphize stringprinter);]
 
-let impl_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
+let impl_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __) +> arg "refined_params" Ast_pattern.(elist (eint  __)))
 (* TODO: add arg_default to ppxlib? *)
 
-let impl_generator = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, type_decls) with_path ->
+let impl_generator = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, type_decls) with_path refined_param_pos ->
   let path =
     let code_path = Expansion_context.Deriver.code_path ctxt in
     (* Cannot use main_module_name from code_path because that contains .cppo suffix (via line directives), so it's actually not the module name. *)
@@ -432,12 +437,12 @@ let impl_generator = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, type_de
     | Some with_path -> with_path
     | None -> true (* true by default *)
   in
-  [Str.value Recursive (List.concat (List.map (str_of_type ~with_path ~path) type_decls))])
+  [Str.value Recursive (List.concat (List.map (str_of_type ~with_path ~refined_param_pos ~path) type_decls))])
 
-let intf_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
+let intf_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __) +> arg "refined_params" Ast_pattern.(elist (eint  __)))
 
-let intf_generator = Deriving.Generator.V2.make intf_args (fun ~ctxt:_ (_, type_decls) _with_path ->
-  List.concat (List.map sig_of_type type_decls))
+let intf_generator = Deriving.Generator.V2.make intf_args (fun ~ctxt:_ (_, type_decls) _with_path refined_param_pos ->
+  List.concat (List.map (sig_of_type ~refined_param_pos) type_decls))
 
 let deriving: Deriving.t =
   Deriving.add
