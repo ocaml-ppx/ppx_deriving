@@ -49,6 +49,15 @@ let fresh_type_maker type_decl =
     bound := newvar :: !bound;
     Typ.var newvar
 
+(** [pp_type_of_decl decl] returns type for [pp_xxx] where xxx is the type name. 
+    For example, for [type ('a, 'b) map] it produces 
+    [(formatter -> 'a -> unit) -> (formatter -> 'b -> unit) -> formatter -> ('a, 'b) map -> unit].
+    For GADTs, the optional parameter [refined_param_pos] specifies the index of refined 
+    parameters i.e., [0] for ['a] in [type ('a, 'b) map] and [1] for ['b].
+    If present, the type parameter is rendered as any [type _] type, to mark the type parameter is 
+    actually ignored. For example, for [type ('a, 'b) map] with [refined_param_pos=[1]], it produces
+    [(formatter -> 'a -> unit) -> (formatter -> _ -> unit) -> formatter -> ('a, 'b) map -> unit]
+    (see [_] instead of ['b] in the type for the second argument). *)
 let pp_type_of_decl ?(refined_param_pos=[]) type_decl =
   let loc = type_decl.ptype_loc in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
@@ -60,6 +69,8 @@ let pp_type_of_decl ?(refined_param_pos=[]) type_decl =
     type_decl
     [%type: Ppx_deriving_runtime.Format.formatter -> [%t typ] -> Ppx_deriving_runtime.unit]
 
+(** Same as [pp_type_of_decl] but type parameters are rendered as locally abstract types rather than
+    type variables. *)
 let pp_type_of_decl_newtype ?(refined_param_pos=[]) type_decl =
   let loc = type_decl.ptype_loc in
   let typ = Ppx_deriving.core_type_of_type_decl_with_newtype type_decl in
@@ -70,6 +81,8 @@ let pp_type_of_decl_newtype ?(refined_param_pos=[]) type_decl =
     type_decl
     [%type: Ppx_deriving_runtime.Format.formatter -> [%t typ] -> Ppx_deriving_runtime.unit]
 
+(** [show_type_of_decl decl] returns type for [show_xxx] where xxx is the type name. 
+    The optional parameter [refined_param_pos] behaves same as [pp_type_of_decl]. *)
 let show_type_of_decl ?(refined_param_pos=[]) type_decl =
   let loc = type_decl.ptype_loc in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
@@ -87,9 +100,13 @@ let sig_of_type type_decl =
    Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl))
               (show_type_of_decl type_decl))]
 
-let rec expr_of_typ ~effective_variables quoter typ =
+(** [expr_of_typ typ] returns an expression that pretty-prints a value of the given type. 
+    For type variables available in [type_params], it puts [poly_N] which pretty-prints 
+    the type parameter [N], assuming that [poly_N] is supplied by the caller. 
+    Otherwise, it is rendered as a 'degenerate' pretty printer which is never called. *)
+let rec expr_of_typ ~type_params quoter typ =
   let loc = typ.ptyp_loc in
-  let expr_of_typ = expr_of_typ ~effective_variables quoter in
+  let expr_of_typ = expr_of_typ ~type_params quoter in
   match Attribute.get ct_attr_printer typ with
   | Some printer -> [%expr [%e wrap_printer quoter printer] fmt]
   | None ->
@@ -203,13 +220,14 @@ let rec expr_of_typ ~effective_variables quoter typ =
       in
       Exp.function_ cases
     | { ptyp_desc = Ptyp_var name } -> 
-        if List.mem name effective_variables then
+        if List.mem name type_params then
           [%expr [%e evar ("poly_"^name)] fmt]
         else
-          (* We assume some 'calling convention' here: for type variables not appear in the declaration, 
-             we supply a 'degenerate' pretty printer which is never called, as we deem them 'refined' to 
-             a concrete type at some point. *)
-          [%expr (fun ()(*never type here*) -> failwith "impossible")]
+          (* We assume a 'calling convention' here: type variables not in the type parameter list will be refined
+             by the GADT taking that variable as an argument, and thus pretty printer for that type is never called.
+             For such a printer, we supply a 'degenerate' one which could not be called in any ways.
+             If this invariant breaks, type error will be reported. *)
+          [%expr (fun (_ : [`this_type_is_refined_and_no_pretty_printer_is_supplied]) -> failwith "impossible")]
     | { ptyp_desc = Ptyp_alias (typ, _) } -> expr_of_typ typ
     | { ptyp_loc } ->
       raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
@@ -241,18 +259,17 @@ let refined_param_pos_of_type_decl type_decl =
         | (_idx, {ptyp_desc=Ptyp_var var}) when List.mem var type_variables -> 
           (* The type parameter is a variable. It is likely that the constructor does not refine the variable.
              However, there are cases that even if the constructor does not refine the type parameter,
-             the constructor's argument type does. In that case, the type parameter should be considered refined as well.
-             To express that the type parameter is refined, the programmer can change the type parameter in the return type
-             to a type that is not same as the one in the declaration.
-             For example, 
+             the constructor's argument type does. To express that the type parameter is refined in such cases, 
+             we introduce a convention that the refined type parameter will have different name from the one in the return type of
+             some constructor. For example
                type 'a term = Var : string * 'a typ -> 'a term | ...
-             Here, when the programmer knows that the parameter 'a in type 'a type is refined, there should be a way to express that.
-             To express that, the programmer change the return type of the constructor to be different from the declaration, say 'v,
+             Here, if the programmer knows that the parameter 'a in type 'a type is refined, the programmer change the return type 
+             of the constructor to be different from the declaration, say 'v:
                type 'a term = Var : string * 'v typ -> 'v term | ...
              So that poly_a is never called to print the type.
 
              Note that, there are cases that the constructor itself does not refine the paramter but its declaration is GADT-ish:
-             existential variables.
+             use of existential variables.
              If one needs existential type variables while a type parameter is not refined, the programmer would keep using 
              the same variable name as in the declaration, for example:
                type 'state transition = Print : 'v term * 'state -> 'state transition | ...
@@ -269,11 +286,11 @@ let refined_param_pos_of_type_decl type_decl =
 let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
   let quoter = Ppx_deriving.create_quoter () in
   let path = Ppx_deriving.path_of_type_decl ~path type_decl in
-  let type_variables = Ppx_deriving.type_param_names_of_type_decl type_decl in
+  let type_params = Ppx_deriving.type_param_names_of_type_decl type_decl in
   let prettyprinter =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest ->
-      [%expr fun fmt -> [%e expr_of_typ ~effective_variables:type_variables quoter manifest]]
+      [%expr fun fmt -> [%e expr_of_typ ~type_params quoter manifest]]
     | Ptype_variant constrs, _ ->
       let cases =
         constrs |> List.map (fun ({ pcd_name = { txt = name' }; pcd_args; pcd_attributes } as constr) ->
@@ -304,7 +321,7 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
                      (app (wrap_printer quoter printer) ([%expr fmt] :: args))
           | None, Pcstr_tuple(typs) ->
             let args =
-              List.mapi (fun i typ -> app (expr_of_typ ~effective_variables:type_variables quoter typ) [evar (argn i)]) typs in
+              List.mapi (fun i typ -> app (expr_of_typ ~type_params quoter typ) [evar (argn i)]) typs in
             let printer =
               match args with
               | []   -> [%expr Ppx_deriving_runtime.Format.pp_print_string fmt [%e str constr_name]]
@@ -326,7 +343,7 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
               labels |> List.map (fun ({ pld_name = { txt = n }; _ } as pld) ->
                 [%expr
                   Ppx_deriving_runtime.Format.fprintf fmt "@[%s =@ " [%e str n];
-                  [%e expr_of_label_decl ~effective_variables:type_variables quoter pld]
+                  [%e expr_of_label_decl ~type_params quoter pld]
                     [%e evar (argl n)];
                   Ppx_deriving_runtime.Format.fprintf fmt "@]"
                 ])
@@ -348,7 +365,7 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
           let field_name = if i = 0 then expand_path ~with_path ~path name else name in
           [%expr
             Ppx_deriving_runtime.Format.fprintf fmt "@[%s =@ " [%e str field_name];
-            [%e expr_of_label_decl ~effective_variables:type_variables quoter pld]
+            [%e expr_of_label_decl ~type_params quoter pld]
               [%e Exp.field (evar "x") (mknoloc (Lident name))];
             Ppx_deriving_runtime.Format.fprintf fmt "@]"
           ])
@@ -434,7 +451,7 @@ let derive_extension =
     Ast_pattern.(ptyp __) (fun ~ctxt ->
       let loc = Expansion_context.Extension.extension_point_loc ctxt in
       Ppx_deriving.with_quoter (fun quoter typ ->
-        [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ ~effective_variables:[] quoter typ]) x]))
+        [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ ~type_params:[] quoter typ]) x]))
 let derive_transformation =
   Driver.register_transformation
     deriver
