@@ -331,7 +331,7 @@ let sanitize ?(module_=Lident "Ppx_deriving_runtime") ?(quoter=create_quoter ())
     let attrs = [attr_warning [%expr "-A"]] in
     let modname = { txt = module_; loc } in
     Exp.open_ ~loc ~attrs
-      (Opn.mk ~loc ~attrs ~override:Override (Mod.ident ~loc ~attrs modname))
+      (Opn.mk ~loc ~attrs ~override:Override (Mod.ident ~loc modname))
       expr in
   let sanitized = Expansion_helpers.Quoter.sanitize quoter body in
   (* ppxlib quoter uses Recursive, ppx_deriving's used Nonrecursive - silence warning *)
