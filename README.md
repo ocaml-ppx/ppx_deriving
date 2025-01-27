@@ -12,7 +12,7 @@ _deriving_ includes a set of useful plugins:
 - [iter][]
 - [map][iter]
 - [fold][iter]
-- [make][]
+- [make][] (`create` also exists, but it remains solely for backwards compatibility)
 - [yojson][]
 - [protobuf][]
 
@@ -22,7 +22,7 @@ Sponsored by [Evil Martians](http://evilmartians.com).
 [eq]: #plugins-eq-and-ord
 [enum]: #plugin-enum
 [iter]: #plugins-iter-map-and-fold
-[make]: #plugin-make (`create` also exists, but it remains solely for backwards compatibility)
+[make]: #plugin-make
 [yojson]: https://github.com/ocaml-ppx/ppx_deriving_yojson#usage
 [protobuf]: https://github.com/ocaml-ppx/ppx_deriving_protobuf#usage
 
