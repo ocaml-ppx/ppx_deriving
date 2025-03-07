@@ -577,7 +577,9 @@ let binop_reduce x a b =
 
 let strong_type_of_type ty =
   let free_vars = free_vars_in_core_type ty in
-  Typ.force_poly @@ Typ.poly free_vars ty
+  match free_vars with
+    | [] -> ty
+    | _ -> Typ.force_poly @@ Typ.poly free_vars ty
 
 type deriver_options =
   | Options of (string * expression) list
