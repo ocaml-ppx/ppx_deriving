@@ -464,7 +464,7 @@ let free_vars_in_core_type typ =
     | { ptyp_desc = (Ptyp_tuple xs | Ptyp_constr (_, xs)) } ->
       List.map free_in xs |> List.concat
     | { ptyp_desc = Ptyp_alias (x, name) } ->
-      [mkloc name typ.ptyp_loc]
+      [mkloc name.txt typ.ptyp_loc]
       @ free_in x
     | { ptyp_desc = Ptyp_poly (bound, x) } ->
       List.filter (fun y -> not (List.mem y bound)) (free_in x)
@@ -577,7 +577,9 @@ let binop_reduce x a b =
 
 let strong_type_of_type ty =
   let free_vars = free_vars_in_core_type ty in
-  Typ.force_poly @@ Typ.poly free_vars ty
+  match free_vars with
+    | [] -> ty
+    | _ -> Typ.force_poly @@ Typ.poly free_vars ty
 
 type deriver_options =
   | Options of (string * expression) list
