@@ -1,3 +1,16 @@
+unreleased
+----------
+
+* Update to ppxlib.0.36.0's 5.2 AST
+  #294
+  (@patricoferris)
+
+* Fix [strong_type_of_ty] so that it does not produce `Ptyp_poly ([], ty)`
+  anymore. This was causing compile errors as of OCaml 5.3 which enforces this
+  invariant.
+  #294
+  (@patricoferris)
+
 6.0.3
 -----
 
