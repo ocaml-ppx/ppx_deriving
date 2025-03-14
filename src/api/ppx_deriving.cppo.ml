@@ -501,6 +501,9 @@ let fresh_var bound =
   in
   loop 0
 
+let type_param_names_of_type_decl type_decl =
+  fold_right_type_decl (fun name tail -> name.txt :: tail) type_decl [] 
+  
 let poly_fun_of_type_decl type_decl expr =
   fold_right_type_decl (fun name expr ->
     let name = name.txt in
@@ -526,6 +529,24 @@ let poly_arrow_of_type_decl fn type_decl typ =
     let name = name.txt in
     Typ.arrow Label.nolabel (fn (Typ.var name)) typ) type_decl typ
 
+let newtype_arrow_of_type_decl fn type_decl typ =
+  let len = List.length type_decl.ptype_params in
+  fold_right_type_decl (fun name (idx,typ) ->
+      let name = name.txt in
+      (idx + 1, Typ.arrow Label.nolabel (fn (len - idx - 1) (Typ.constr (lid_of_string name) [])) typ))
+    type_decl 
+    (0, typ)
+  |> snd
+
+let poly_arrow_of_type_decl_idx fn type_decl typ =
+  let len = List.length type_decl.ptype_params in
+  fold_right_type_decl (fun name (idx, typ) ->
+    let name = name.txt in
+    (idx - 1, Typ.arrow Label.nolabel (fn idx (Typ.var name)) typ)) 
+    type_decl
+    (len - 1, typ)
+  |> snd
+
 let poly_arrow_of_type_ext fn type_ext typ =
   fold_right_type_ext (fun name typ ->
     let var =
@@ -539,6 +560,25 @@ let core_type_of_type_decl { ptype_name = name; ptype_params } =
 
 let core_type_of_type_ext { ptyext_path ; ptyext_params } =
   Typ.constr ptyext_path (List.map fst ptyext_params)
+
+let newtype_of_type_decl type_decl expr =
+  fold_right_type_decl (fun name expr ->
+    let name = name.txt in
+    Exp.newtype (str_of_string name) expr) type_decl expr
+
+let core_type_of_type_decl_with_newtype { ptype_name = name; ptype_params } =
+  let name = mkloc (Lident name.txt) name.loc in
+  let newtype_params = 
+    ptype_params |>
+      List.map (function
+        | ({ ptyp_desc = Ptyp_var varname } as param, _) ->
+          let varname = mkloc (Longident.parse varname) param.ptyp_loc in
+          Typ.constr varname []
+        | ({ ptyp_desc = Ptyp_any} as anytyp, _) -> 
+          anytyp
+        | _ -> raise (Invalid_argument "Ppx_deriving.core_type_of_type_decl_with_newtype"))
+  in
+  Typ.constr name newtype_params
 
 let instantiate bound type_decl =
   let vars, bound =
