@@ -1,5 +1,5 @@
-unreleased
-----------
+6.1.0
+-----
 
 * Update to ppxlib.0.36.0's 5.2 AST
   #294
