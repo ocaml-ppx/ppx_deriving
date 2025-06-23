@@ -349,7 +349,7 @@ let path_of_type_decl ~path type_decl =
   | Some { ptyp_desc = Ptyp_constr ({ txt = lid }, _) } ->
     begin match lid with
     | Lident _ -> []
-    | Ldot (lid, _) -> Ocaml_common.Longident.flatten lid
+    | Ldot (lid, _) -> Astlib.Longident.flatten lid
     | Lapply _ -> assert false
     end
   | _ -> path
@@ -608,13 +608,13 @@ let derive path pstr_loc item attributes fn arg =
           name,
           Options
             (options |> List.map (fun ({ txt }, expr) ->
-               String.concat "." (Ocaml_common.Longident.flatten txt), expr))
+               String.concat "." (Astlib.Longident.flatten txt), expr))
         | { pexp_desc = Pexp_apply ({ pexp_desc = Pexp_ident name }, _) } ->
           name, Unknown_syntax
         | { pexp_loc } ->
           raise_errorf ~loc:pexp_loc "Unrecognized [@@deriving] syntax"
       in
-      let name, loc = String.concat "_" (Ocaml_common.Longident.flatten name.txt), name.loc in
+      let name, loc = String.concat "_" (Astlib.Longident.flatten name.txt), name.loc in
       let is_optional, options =
         match options with
         | Unknown_syntax -> false, options
