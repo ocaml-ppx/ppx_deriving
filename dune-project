@@ -1,4 +1,4 @@
 (lang dune 1.0)
 
 (name ppx_deriving)
-(version 5.2.1)
+(version 6.1.1)

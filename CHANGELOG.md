@@ -1,3 +1,10 @@
+6.1.1
+-----
+
+* Add OCaml 5.4 support
+  #296
+  (@kit-ty-kate)
+
 6.1.0
 -----
 
