@@ -182,6 +182,14 @@ let test_result_result ctxt =
   assert_equal ~printer "(Test_deriving_show.I_has (Error \"err\"))"
     (show_i_has_result_result (I_has (Error "err")))
 
+let test_expr_pp ctxt =
+  let buf = Buffer.create 16 in
+  Format.fprintf (Format.formatter_of_buffer buf) "- %a -@?" [%pp: int] 42;
+  assert_equal ~printer "- 42 -" (Buffer.contents buf)
+
+let test_expr_show ctxt =
+  assert_equal ~printer "42" ([%show: int] 42)
+
 type es =
   | ESBool of (bool [@nobuiltin])
   | ESString of (string [@nobuiltin])
@@ -267,6 +275,8 @@ let suite = "Test deriving(show)" >::: [
     "test_paths"           >:: test_paths_printer;
     "test_result"          >:: test_result;
     "test_result_result"   >:: test_result_result;
+    "test_expr_pp"         >:: test_expr_pp;
+    "test_expr_show"       >:: test_expr_show;
   ]
 
 let _ = run_test_tt_main suite
