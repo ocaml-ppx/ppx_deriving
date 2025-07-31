@@ -244,6 +244,56 @@ let test_paths_printer ctxt =
   assert_equal ~printer "(Test_deriving_show.WithFull.A 1)" (WithFull.show (WithFull.A 1));
   ()
 
+type 'a gadt_simple = Int : int -> int gadt_simple | Float : float -> float gadt_simple
+[@@deriving show]
+
+let test_gadt_printer ctxt =
+  assert_equal ~printer "(Test_deriving_show.Int 1)" (show_gadt_simple (fun _ _ -> ()) (Int 1));
+  assert_equal ~printer "(Test_deriving_show.Float 1.)" (show_gadt_simple  (fun _ _ -> ()) (Float 1.))
+
+type 'a gadt_recursive = 
+  | LitInt : int -> int gadt_recursive 
+  | String : String.t -> String.t gadt_recursive
+  | Pair : 'a gadt_recursive * 'b gadt_recursive -> ('a * 'b) gadt_recursive
+[@@deriving show]
+
+let test_gadt_printer2 ctxt =
+  assert_equal ~printer "(Test_deriving_show.LitInt 1)" (show_gadt_recursive (fun _ _ -> ()) (LitInt 1));
+  assert_equal ~printer 
+    "(Test_deriving_show.Pair ((Test_deriving_show.LitInt 42),\n   (Test_deriving_show.Pair ((Test_deriving_show.String \"foobar\"),\n      (Test_deriving_show.LitInt 1)))\n   ))" 
+    (show_gadt_recursive  (fun _ _ -> ()) (Pair (LitInt 42, Pair (String "foobar", LitInt 1))))
+
+type 'a existential =
+  | Ex : 'a * 'b gadt_recursive -> 'a existential
+[@@deriving show]
+
+let test_gadt_printer3 ctxt =
+  assert_equal ~printer "(Test_deriving_show.Ex (1, (Test_deriving_show.LitInt 1)))" ([%show: int existential] (Ex (1, LitInt 1)));
+  assert_equal ~printer 
+    "(Test_deriving_show.Ex ([1; 2; 3], (Test_deriving_show.String \"foobar\")))" 
+    ([%show: int list existential] (Ex ([1;2;3], String "foobar")))
+
+type 'a t = Ex : 'v gadt_recursive -> 'v t
+[@@deriving show {refined_params = [0]}]
+  
+module Foo : sig
+  type 'a t
+  [@@deriving show {refined_params = [0]}]
+  val make : 'a gadt_recursive -> 'a t
+
+  type 'a s
+  [@@deriving show {refined_params = [0]}]
+  val make_s : 'a gadt_recursive -> 'a s
+end = struct 
+  type 'a t = Ex : 'v gadt_recursive -> 'v t
+  [@@deriving show]
+  let make x = Ex x
+
+  type 'a s = 'a gadt_recursive
+  [@@deriving show {refined_params = [0]}]
+  let make_s x = x
+end
+
 let suite = "Test deriving(show)" >::: [
     "test_alias"           >:: test_alias;
     "test_variant"         >:: test_variant;
@@ -267,6 +317,9 @@ let suite = "Test deriving(show)" >::: [
     "test_paths"           >:: test_paths_printer;
     "test_result"          >:: test_result;
     "test_result_result"   >:: test_result_result;
+    "test_gadt_printer"    >:: test_gadt_printer;
+    "test_gadt_printer2"   >:: test_gadt_printer2;
+    "test_gadt_printer3"   >:: test_gadt_printer3;
   ]
 
 let _ = run_test_tt_main suite

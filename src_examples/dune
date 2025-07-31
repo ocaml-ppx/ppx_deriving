@@ -1,7 +1,13 @@
 (executable
  (name print_test)
+ (modules print_test)
+ (preprocess (pps ppx_deriving.show)))
+
+(executable
+ (name print_gadt_test)
+ (modules print_gadt_test)
  (preprocess (pps ppx_deriving.show)))
 
 (alias
  (name examples)
- (deps print_test.exe))
+ (deps print_test.exe print_gadt_test.exe))
