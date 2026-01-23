@@ -244,6 +244,39 @@ let test_paths_printer ctxt =
   assert_equal ~printer "(Test_deriving_show.WithFull.A 1)" (WithFull.show (WithFull.A 1));
   ()
 
+(* Tests for [@@deriving pp] - derives only pp, not show *)
+type pp_only_variant = PpFoo | PpBar of int * String.t [@@deriving pp]
+type pp_only_record = { pp_f1 : int; pp_f2 : String.t } [@@deriving pp]
+type pp_only_tuple = int * String.t [@@deriving pp]
+type 'a pp_only_param = { pp_v : 'a } [@@deriving pp]
+
+let test_pp_only ctxt =
+  (* Test that pp functions are generated and work correctly *)
+  let fmt_to_string pp x =
+    Format.asprintf "%a" pp x
+  in
+  assert_equal ~printer "Test_deriving_show.PpFoo"
+    (fmt_to_string pp_pp_only_variant PpFoo);
+  assert_equal ~printer "(Test_deriving_show.PpBar (1, \"foo\"))"
+    (fmt_to_string pp_pp_only_variant (PpBar (1, "foo")));
+  assert_equal ~printer "{ Test_deriving_show.pp_f1 = 1; pp_f2 = \"bar\" }"
+    (fmt_to_string pp_pp_only_record { pp_f1 = 1; pp_f2 = "bar" });
+  assert_equal ~printer "(42, \"baz\")"
+    (fmt_to_string pp_pp_only_tuple (42, "baz"));
+  assert_equal ~printer "{ Test_deriving_show.pp_v = 99 }"
+    (fmt_to_string (pp_pp_only_param (fun fmt -> Format.fprintf fmt "%d")) { pp_v = 99 })
+
+(* Test [%derive.pp] extension *)
+let test_derive_pp_extension ctxt =
+  let pp_int_pair : Format.formatter -> (int * int) -> unit = [%derive.pp: int * int] in
+  let result = Format.asprintf "%a" pp_int_pair (1, 2) in
+  assert_equal ~printer "(1, 2)" result;
+  (* Test with a type that has pp derived *)
+  let pp_with_variant : Format.formatter -> (pp_only_variant * int) -> unit =
+    [%derive.pp: pp_only_variant * int] in
+  let result2 = Format.asprintf "%a" pp_with_variant (PpBar (3, "x"), 99) in
+  assert_equal ~printer "((Test_deriving_show.PpBar (3, \"x\")), 99)" result2
+
 let suite = "Test deriving(show)" >::: [
     "test_alias"           >:: test_alias;
     "test_variant"         >:: test_variant;
@@ -267,6 +300,8 @@ let suite = "Test deriving(show)" >::: [
     "test_paths"           >:: test_paths_printer;
     "test_result"          >:: test_result;
     "test_result_result"   >:: test_result_result;
+    "test_pp_only"         >:: test_pp_only;
+    "test_derive_pp_extension" >:: test_derive_pp_extension;
   ]
 
 let _ = run_test_tt_main suite

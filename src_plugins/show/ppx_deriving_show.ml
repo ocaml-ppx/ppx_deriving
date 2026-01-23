@@ -4,7 +4,12 @@ open Parsetree
 open Ast_helper
 open Ppx_deriving.Ast_convenience
 
-let deriver = "show"
+type kind = Pp_only | Pp_and_show
+
+let deriver_name = function
+  | Pp_only -> "pp"
+  | Pp_and_show -> "show"
+
 let raise_errorf = Ppx_deriving.raise_errorf
 
 (* The option [with_path] controls whether a full path should be displayed
@@ -58,15 +63,25 @@ let show_type_of_decl type_decl =
     type_decl
     [%type: [%t typ] -> Ppx_deriving_runtime.string]
 
-let sig_of_type type_decl =
-  [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl))
-              (pp_type_of_decl type_decl));
-   Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl))
-              (show_type_of_decl type_decl))]
+let sig_of_type ~kind type_decl =
+  let pp_sig =
+      Sig.value
+        (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl))
+                (pp_type_of_decl type_decl))
+    in
+  match kind with
+  | Pp_only -> [pp_sig]
+  | Pp_and_show ->
+    let show_sig =
+      Sig.value
+        (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl))
+                (show_type_of_decl type_decl))
+    in
+    [pp_sig; show_sig]
 
-let rec expr_of_typ quoter typ =
+let rec expr_of_typ ~kind quoter typ =
   let loc = typ.ptyp_loc in
-  let expr_of_typ = expr_of_typ quoter in
+  let expr_of_typ = expr_of_typ ~kind quoter in
   match Attribute.get ct_attr_printer typ with
   | Some printer -> [%expr [%e wrap_printer quoter printer] fmt]
   | None ->
@@ -82,7 +97,7 @@ let rec expr_of_typ quoter typ =
           [%e expr_of_typ typ] x; true) false x);
         Ppx_deriving_runtime.Format.fprintf fmt [%e str finish];]
     in
-    let typ = Ppx_deriving.remove_pervasives ~deriver typ in
+    let typ = Ppx_deriving.remove_pervasives ~deriver:(deriver_name kind) typ in
     match typ with
     | [%type: _] -> [%expr fun _ -> Ppx_deriving_runtime.Format.pp_print_string fmt "_"]
     | { ptyp_desc = Ptyp_arrow _ } ->
@@ -176,26 +191,28 @@ let rec expr_of_typ quoter typ =
                      [%expr [%e expr_of_typ typ] x]
           | _ ->
             raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
-                         deriver (Ppx_deriving.string_of_core_type typ))
+                         (deriver_name kind)
+                         (Ppx_deriving.string_of_core_type typ))
       in
       Exp.function_ cases
     | { ptyp_desc = Ptyp_var name } -> [%expr [%e evar ("poly_"^name)] fmt]
     | { ptyp_desc = Ptyp_alias (typ, _) } -> expr_of_typ typ
     | { ptyp_loc } ->
       raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
-                   deriver (Ppx_deriving.string_of_core_type typ)
+                   (deriver_name kind)
+                   (Ppx_deriving.string_of_core_type typ)
 
-and expr_of_label_decl quoter { pld_type; pld_attributes } =
+and expr_of_label_decl ~kind quoter { pld_type; pld_attributes } =
   let attrs = pld_type.ptyp_attributes @ pld_attributes in
-  expr_of_typ quoter { pld_type with ptyp_attributes = attrs }
+  expr_of_typ ~kind quoter { pld_type with ptyp_attributes = attrs }
 
-let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
+let str_of_type ~kind ~with_path ~path ({ ptype_loc = loc } as type_decl) =
   let quoter = Ppx_deriving.create_quoter () in
   let path = Ppx_deriving.path_of_type_decl ~path type_decl in
   let prettyprinter =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest ->
-      [%expr fun fmt -> [%e expr_of_typ quoter manifest]]
+      [%expr fun fmt -> [%e expr_of_typ ~kind quoter manifest]]
     | Ptype_variant constrs, _ ->
       let cases =
         constrs |> List.map (fun ({ pcd_name = { txt = name' }; pcd_args; pcd_attributes } as constr) ->
@@ -226,7 +243,7 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
                      (app (wrap_printer quoter printer) ([%expr fmt] :: args))
           | None, Pcstr_tuple(typs) ->
             let args =
-              List.mapi (fun i typ -> app (expr_of_typ quoter typ) [evar (argn i)]) typs in
+              List.mapi (fun i typ -> app (expr_of_typ ~kind quoter typ) [evar (argn i)]) typs in
             let printer =
               match args with
               | []   -> [%expr Ppx_deriving_runtime.Format.pp_print_string fmt [%e str constr_name]]
@@ -248,7 +265,7 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
               labels |> List.map (fun ({ pld_name = { txt = n }; _ } as pld) ->
                 [%expr
                   Ppx_deriving_runtime.Format.fprintf fmt "@[%s =@ " [%e str n];
-                  [%e expr_of_label_decl quoter pld]
+                  [%e expr_of_label_decl ~kind quoter pld]
                     [%e evar (argl n)];
                   Ppx_deriving_runtime.Format.fprintf fmt "@]"
                 ])
@@ -270,7 +287,7 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
           let field_name = if i = 0 then expand_path ~with_path ~path name else name in
           [%expr
             Ppx_deriving_runtime.Format.fprintf fmt "@[%s =@ " [%e str field_name];
-            [%e expr_of_label_decl quoter pld]
+            [%e expr_of_label_decl ~kind quoter pld]
               [%e Exp.field (evar "x") (mknoloc (Lident name))];
             Ppx_deriving_runtime.Format.fprintf fmt "@]"
           ])
@@ -281,9 +298,9 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
               (seq_reduce ~sep:[%expr Ppx_deriving_runtime.Format.fprintf fmt ";@ "]))];
         Ppx_deriving_runtime.Format.fprintf fmt "@ }@]"]
     | Ptype_abstract, None ->
-      raise_errorf ~loc "%s cannot be derived for fully abstract types" deriver
+      raise_errorf ~loc "%s cannot be derived for fully abstract types" (deriver_name kind)
     | Ptype_open, _        ->
-      raise_errorf ~loc "%s cannot be derived for open types" deriver
+      raise_errorf ~loc "%s cannot be derived for open types" (deriver_name kind)
   in
   let pp_poly_apply = Ppx_deriving.poly_apply_of_type_decl type_decl (evar
                         (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl)) in
@@ -299,14 +316,25 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
   let show_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl) in
   let no_warn_32 = Ppx_deriving.attr_warning [%expr "-32"] in
-  [Vb.mk (Pat.constraint_ pp_var pp_type)
-         (Ppx_deriving.sanitize ~quoter (polymorphize prettyprinter));
-   Vb.mk ~attrs:[no_warn_32] (Pat.constraint_ show_var show_type) (polymorphize stringprinter);]
+  let pp_binding =
+    Vb.mk
+      (Pat.constraint_ pp_var pp_type)
+      (Ppx_deriving.sanitize ~quoter (polymorphize prettyprinter))
+  in
+  match kind with
+  | Pp_only -> [pp_binding]
+  | Pp_and_show ->
+    let show_binding =
+      Vb.mk ~attrs:[no_warn_32]
+        (Pat.constraint_ show_var show_type)
+        (polymorphize stringprinter)
+    in
+    [pp_binding; show_binding]
 
 let impl_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
 (* TODO: add arg_default to ppxlib? *)
 
-let impl_generator = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, type_decls) with_path ->
+let impl_generator kind = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, type_decls) with_path ->
   let path =
     let code_path = Expansion_context.Deriver.code_path ctxt in
     (* Cannot use main_module_name from code_path because that contains .cppo suffix (via line directives), so it's actually not the module name. *)
@@ -328,35 +356,55 @@ let impl_generator = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, type_de
     | Some with_path -> with_path
     | None -> true (* true by default *)
   in
-  let str_of_type type_decl =
+    let str_of_type type_decl =
     Ast_helper.with_default_loc type_decl.ptype_loc @@
       fun () -> str_of_type ~with_path ~path type_decl
   in
-  [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
+  let rec_flag = match kind with
+    | Pp_only -> Nonrecursive
+    | Pp_and_show -> Recursive
+  in
+  [Str.value rec_flag (List.concat (List.map (str_of_type ~kind ~with_path ~path) type_decls))])
 
 let intf_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
 
-let intf_generator = Deriving.Generator.V2.make intf_args (fun ~ctxt:_ (_, type_decls) _with_path ->
-  let sig_of_type type_decl =
-    Ast_helper.with_default_loc type_decl.ptype_loc @@
-      fun () -> sig_of_type type_decl
-  in
-  List.concat (List.map sig_of_type type_decls))
+let intf_generator kind =
+  Deriving.Generator.V2.make intf_args (fun ~ctxt:_ (_, type_decls) _with_path ->
+    let sig_of_type type_decl =
+      Ast_helper.with_default_loc type_decl.ptype_loc @@
+        fun () -> sig_of_type type_decl
+    in
+    List.concat (List.map (sig_of_type ~kind) type_decls))
 
 let deriving: Deriving.t =
   Deriving.add
-    deriver
-    ~str_type_decl:impl_generator
-    ~sig_type_decl:intf_generator
+    "show"
+    ~str_type_decl:(impl_generator Pp_and_show)
+    ~sig_type_decl:(intf_generator Pp_and_show)
+
+let deriving_pp: Deriving.t =
+  Deriving.add
+    "pp"
+    ~str_type_decl:(impl_generator Pp_only)
+    ~sig_type_decl:(intf_generator Pp_only)
 
 (* custom extension such that "derive"-prefixed also works *)
-let derive_extension =
+let derive_show_extension =
   Extension.V3.declare "derive.show" Extension.Context.expression
     Ast_pattern.(ptyp __) (fun ~ctxt ->
       let loc = Expansion_context.Extension.extension_point_loc ctxt in
       Ppx_deriving.with_quoter (fun quoter typ ->
-        [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ quoter typ]) x]))
+        [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ ~kind:Pp_and_show quoter typ]) x]))
+
+let derive_pp_extension =
+  Extension.V3.declare "derive.pp" Extension.Context.expression
+    Ast_pattern.(ptyp __) (fun ~ctxt ->
+      let loc = Expansion_context.Extension.extension_point_loc ctxt in
+      Ppx_deriving.with_quoter (fun quoter typ ->
+        [%expr fun fmt -> [%e expr_of_typ ~kind:Pp_only quoter typ]]))
+
 let derive_transformation =
   Driver.register_transformation
-    deriver
-    ~rules:[Context_free.Rule.extension derive_extension]
+    "show"
+    ~rules:[Context_free.Rule.extension derive_show_extension;
+            Context_free.Rule.extension derive_pp_extension]
