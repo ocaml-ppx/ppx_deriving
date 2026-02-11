@@ -1,3 +1,10 @@
+Unreleased
+-----
+
+* Add location info to `create`, `eq`, `iter`, `make`, `ord`, `show`
+  #297
+  (@arvidj)
+
 6.1.1
 -----
 

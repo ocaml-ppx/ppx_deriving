@@ -232,9 +232,17 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
          (Ppx_deriving.sanitize ~quoter (eta_expand (polymorphize comparator)))]
 
 let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  let str_of_type type_decl =
+    Ast_helper.with_default_loc type_decl.ptype_loc @@
+      fun () -> str_of_type type_decl
+  in
   [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
 
 let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  let sig_of_type type_decl =
+    Ast_helper.with_default_loc type_decl.ptype_loc @@
+      fun () -> sig_of_type type_decl
+  in
   List.concat (List.map sig_of_type type_decls))
 
 let deriving: Deriving.t =

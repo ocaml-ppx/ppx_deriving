@@ -195,6 +195,10 @@ let partition_result l =
   List.rev errors, List.rev oks
 
 let impl_generator =
+  let str_of_type type_decl =
+    Ast_helper.with_default_loc type_decl.ptype_loc @@
+      fun () -> str_of_type type_decl
+  in
   Deriving.Generator.V2.make_noarg (fun ~ctxt (_, type_decls) ->
       match partition_result (List.map str_of_type type_decls) with
       | _, (_::_ as vbs) -> [Str.value Nonrecursive vbs]
@@ -204,6 +208,10 @@ let impl_generator =
           errors)
 
 let intf_generator =
+  let sig_of_type type_decl =
+    Ast_helper.with_default_loc type_decl.ptype_loc @@
+      fun () -> sig_of_type type_decl
+  in
   Deriving.Generator.V2.make_noarg (fun ~ctxt (_, type_decls) ->
       match partition_result (List.map sig_of_type type_decls) with
       | _, (_::_ as vds) -> vds
