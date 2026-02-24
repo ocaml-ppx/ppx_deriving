@@ -44,6 +44,7 @@ type deriver = {
 
 (** [register deriver] registers [deriver] according to its [name] field. *)
 val register : deriver -> unit
+[@@deprecated]
 
 (** [add_register_hook hook] adds [hook] to be executed whenever a new deriver
     is registered. *)
