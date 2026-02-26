@@ -358,13 +358,13 @@ let impl_generator kind = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, ty
   in
     let str_of_type type_decl =
     Ast_helper.with_default_loc type_decl.ptype_loc @@
-      fun () -> str_of_type ~with_path ~path type_decl
+      fun () -> str_of_type ~kind ~with_path ~path type_decl
   in
   let rec_flag = match kind with
     | Pp_only -> Nonrecursive
     | Pp_and_show -> Recursive
   in
-  [Str.value rec_flag (List.concat (List.map (str_of_type ~kind ~with_path ~path) type_decls))])
+  [Str.value rec_flag (List.concat (List.map str_of_type type_decls))])
 
 let intf_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
 
@@ -372,11 +372,11 @@ let intf_generator kind =
   Deriving.Generator.V2.make intf_args (fun ~ctxt:_ (_, type_decls) _with_path ->
     let sig_of_type type_decl =
       Ast_helper.with_default_loc type_decl.ptype_loc @@
-        fun () -> sig_of_type type_decl
+        fun () -> sig_of_type ~kind type_decl
     in
-    List.concat (List.map (sig_of_type ~kind) type_decls))
+    List.concat (List.map sig_of_type type_decls))
 
-let deriving: Deriving.t =
+let deriving_show: Deriving.t =
   Deriving.add
     "show"
     ~str_type_decl:(impl_generator Pp_and_show)
