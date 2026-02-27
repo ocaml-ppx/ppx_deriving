@@ -79,9 +79,9 @@ let sig_of_type ~kind type_decl =
     in
     [pp_sig; show_sig]
 
-let rec expr_of_typ ~kind quoter typ =
+let rec expr_of_typ ~deriver quoter typ =
   let loc = typ.ptyp_loc in
-  let expr_of_typ = expr_of_typ ~kind quoter in
+  let expr_of_typ = expr_of_typ ~deriver quoter in
   match Attribute.get ct_attr_printer typ with
   | Some printer -> [%expr [%e wrap_printer quoter printer] fmt]
   | None ->
@@ -97,7 +97,7 @@ let rec expr_of_typ ~kind quoter typ =
           [%e expr_of_typ typ] x; true) false x);
         Ppx_deriving_runtime.Format.fprintf fmt [%e str finish];]
     in
-    let typ = Ppx_deriving.remove_pervasives ~deriver:(deriver_name kind) typ in
+    let typ = Ppx_deriving.remove_pervasives ~deriver typ in
     match typ with
     | [%type: _] -> [%expr fun _ -> Ppx_deriving_runtime.Format.pp_print_string fmt "_"]
     | { ptyp_desc = Ptyp_arrow _ } ->
@@ -191,7 +191,7 @@ let rec expr_of_typ ~kind quoter typ =
                      [%expr [%e expr_of_typ typ] x]
           | _ ->
             raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
-                         (deriver_name kind)
+                         deriver
                          (Ppx_deriving.string_of_core_type typ))
       in
       Exp.function_ cases
@@ -199,20 +199,21 @@ let rec expr_of_typ ~kind quoter typ =
     | { ptyp_desc = Ptyp_alias (typ, _) } -> expr_of_typ typ
     | { ptyp_loc } ->
       raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
-                   (deriver_name kind)
+                   deriver
                    (Ppx_deriving.string_of_core_type typ)
 
-and expr_of_label_decl ~kind quoter { pld_type; pld_attributes } =
+and expr_of_label_decl ~deriver quoter { pld_type; pld_attributes } =
   let attrs = pld_type.ptyp_attributes @ pld_attributes in
-  expr_of_typ ~kind quoter { pld_type with ptyp_attributes = attrs }
+  expr_of_typ ~deriver quoter { pld_type with ptyp_attributes = attrs }
 
 let str_of_type ~kind ~with_path ~path ({ ptype_loc = loc } as type_decl) =
   let quoter = Ppx_deriving.create_quoter () in
   let path = Ppx_deriving.path_of_type_decl ~path type_decl in
+  let deriver = deriver_name kind in
   let prettyprinter =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest ->
-      [%expr fun fmt -> [%e expr_of_typ ~kind quoter manifest]]
+      [%expr fun fmt -> [%e expr_of_typ ~deriver quoter manifest]]
     | Ptype_variant constrs, _ ->
       let cases =
         constrs |> List.map (fun ({ pcd_name = { txt = name' }; pcd_args; pcd_attributes } as constr) ->
@@ -242,7 +243,7 @@ let str_of_type ~kind ~with_path ~path ({ ptype_loc = loc } as type_decl) =
                      (app (wrap_printer quoter printer) ([%expr fmt] :: args))
           | None, Pcstr_tuple(typs) ->
             let args =
-              List.mapi (fun i typ -> app (expr_of_typ ~kind quoter typ) [evar (argn i)]) typs in
+              List.mapi (fun i typ -> app (expr_of_typ ~deriver quoter typ) [evar (argn i)]) typs in
             let printer =
               match args with
               | []   -> [%expr Ppx_deriving_runtime.Format.pp_print_string fmt [%e str constr_name]]
@@ -264,7 +265,7 @@ let str_of_type ~kind ~with_path ~path ({ ptype_loc = loc } as type_decl) =
               labels |> List.map (fun ({ pld_name = { txt = n }; _ } as pld) ->
                 [%expr
                   Ppx_deriving_runtime.Format.fprintf fmt "@[%s =@ " [%e str n];
-                  [%e expr_of_label_decl ~kind quoter pld]
+                  [%e expr_of_label_decl ~deriver quoter pld]
                     [%e evar (argl n)];
                   Ppx_deriving_runtime.Format.fprintf fmt "@]"
                 ])
@@ -286,7 +287,7 @@ let str_of_type ~kind ~with_path ~path ({ ptype_loc = loc } as type_decl) =
           let field_name = if i = 0 then expand_path ~with_path ~path name else name in
           [%expr
             Ppx_deriving_runtime.Format.fprintf fmt "@[%s =@ " [%e str field_name];
-            [%e expr_of_label_decl ~kind quoter pld]
+            [%e expr_of_label_decl ~deriver quoter pld]
               [%e Exp.field (evar "x") (mknoloc (Lident name))];
             Ppx_deriving_runtime.Format.fprintf fmt "@]"
           ])
@@ -395,14 +396,14 @@ let derive_show_extension =
     Ast_pattern.(ptyp __) (fun ~ctxt ->
       let loc = Expansion_context.Extension.extension_point_loc ctxt in
       Ppx_deriving.with_quoter (fun quoter typ ->
-        [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ ~kind:Pp_and_show quoter typ]) x]))
+        [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ ~deriver:(deriver_name Pp_and_show) quoter typ]) x]))
 
 let derive_pp_extension =
   Extension.V3.declare "derive.pp" Extension.Context.expression
     Ast_pattern.(ptyp __) (fun ~ctxt ->
       let loc = Expansion_context.Extension.extension_point_loc ctxt in
       Ppx_deriving.with_quoter (fun quoter typ ->
-        [%expr fun fmt -> [%e expr_of_typ ~kind:Pp_only quoter typ]]))
+        [%expr fun fmt -> [%e expr_of_typ ~deriver:(deriver_name Pp_and_show) quoter typ]]))
 
 let derive_transformation =
   Driver.register_transformation
