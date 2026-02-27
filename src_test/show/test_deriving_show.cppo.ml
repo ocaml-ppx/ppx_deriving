@@ -250,6 +250,10 @@ type pp_only_record = { pp_f1 : int; pp_f2 : String.t } [@@deriving pp]
 type pp_only_tuple = int * String.t [@@deriving pp]
 type 'a pp_only_param = { pp_v : 'a } [@@deriving pp]
 
+type even = Zero | ESucc of odd
+and odd = OSucc of even
+[@@deriving pp]
+
 let test_pp_only ctxt =
   (* Test that pp functions are generated and work correctly *)
   let fmt_to_string pp x =
@@ -264,7 +268,11 @@ let test_pp_only ctxt =
   assert_equal ~printer "(42, \"baz\")"
     (fmt_to_string pp_pp_only_tuple (42, "baz"));
   assert_equal ~printer "{ Test_deriving_show.pp_v = 99 }"
-    (fmt_to_string (pp_pp_only_param (fun fmt -> Format.fprintf fmt "%d")) { pp_v = 99 })
+    (fmt_to_string (pp_pp_only_param (fun fmt -> Format.fprintf fmt "%d")) { pp_v = 99 });
+  assert_equal ~printer "Test_deriving_show.Zero"
+    (fmt_to_string pp_even Zero);
+  assert_equal ~printer "(Test_deriving_show.ESucc (Test_deriving_show.OSucc Test_deriving_show.Zero))"
+    (fmt_to_string pp_even (ESucc (OSucc Zero)))
 
 (* Test [%derive.pp] extension *)
 let test_derive_pp_extension ctxt =

@@ -219,7 +219,6 @@ let str_of_type ~kind ~with_path ~path ({ ptype_loc = loc } as type_decl) =
           let constr_name =
             expand_path ~with_path ~path name'
           in
-
           match Attribute.get constr_attr_printer constr, pcd_args with
           | Some printer, Pcstr_tuple(args) ->
             let rec range from_idx to_idx =
@@ -360,11 +359,13 @@ let impl_generator kind = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, ty
     Ast_helper.with_default_loc type_decl.ptype_loc @@
       fun () -> str_of_type ~kind ~with_path ~path type_decl
   in
-  let rec_flag = match kind with
-    | Pp_only -> Nonrecursive
-    | Pp_and_show -> Recursive
-  in
-  [Str.value rec_flag (List.concat (List.map str_of_type type_decls))])
+  let stri = Str.value Recursive (List.concat (List.map str_of_type type_decls)) in
+  let loc = Location.none in
+  [%str
+    [@@@ocaml.warning "-39"]
+    [%%i stri]
+    [@@@ocaml.warning "+39"]
+   ])
 
 let intf_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
 
