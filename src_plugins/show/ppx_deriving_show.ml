@@ -205,10 +205,9 @@ and expr_of_label_decl ~deriver quoter { pld_type; pld_attributes } =
   let attrs = pld_type.ptyp_attributes @ pld_attributes in
   expr_of_typ ~deriver quoter { pld_type with ptyp_attributes = attrs }
 
-let str_of_type ~kind ~with_path ~path ({ ptype_loc = loc } as type_decl) =
+let pp_str_of_type ~deriver ~with_path ~path ({ ptype_loc = loc } as type_decl) =
   let quoter = Ppx_deriving.create_quoter () in
   let path = Ppx_deriving.path_of_type_decl ~path type_decl in
-  let deriver = deriver_name kind in
   let prettyprinter =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest ->
@@ -297,37 +296,33 @@ let str_of_type ~kind ~with_path ~path ({ ptype_loc = loc } as type_decl) =
               (seq_reduce ~sep:[%expr Ppx_deriving_runtime.Format.fprintf fmt ";@ "]))];
         Ppx_deriving_runtime.Format.fprintf fmt "@ }@]"]
     | Ptype_abstract, None ->
-      raise_errorf ~loc "%s cannot be derived for fully abstract types" (deriver_name kind)
+      raise_errorf ~loc "%s cannot be derived for fully abstract types" (deriver_name Pp_only)
     | Ptype_open, _        ->
-      raise_errorf ~loc "%s cannot be derived for open types" (deriver_name kind)
+      raise_errorf ~loc "%s cannot be derived for open types" (deriver_name Pp_only)
   in
-  let pp_poly_apply = Ppx_deriving.poly_apply_of_type_decl type_decl (evar
-                        (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl)) in
-  let stringprinter = [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" [%e pp_poly_apply] x] in
   let polymorphize  = Ppx_deriving.poly_fun_of_type_decl type_decl in
   let pp_type =
     Ppx_deriving.strong_type_of_type @@ pp_type_of_decl type_decl in
-  let show_type =
-    Ppx_deriving.strong_type_of_type @@
-      show_type_of_decl type_decl in
   let pp_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl) in
+  [Vb.mk
+    (Pat.constraint_ pp_var pp_type)
+    (Ppx_deriving.sanitize ~quoter (polymorphize prettyprinter))]
+
+let show_str_of_type type_decl =
+  let loc = type_decl.ptype_loc in
+  let polymorphize  = Ppx_deriving.poly_fun_of_type_decl type_decl in
+  let pp_poly_apply = Ppx_deriving.poly_apply_of_type_decl type_decl (evar
+                        (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl)) in
+  let stringprinter = [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" [%e pp_poly_apply] x] in
+  let show_type =
+    Ppx_deriving.strong_type_of_type @@ show_type_of_decl type_decl in
   let show_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl) in
   let no_warn_32 = Ppx_deriving.attr_warning [%expr "-32"] in
-  let pp_binding =
-    Vb.mk
-      (Pat.constraint_ pp_var pp_type)
-      (Ppx_deriving.sanitize ~quoter (polymorphize prettyprinter))
-  in
-  let show_binding =
-    Vb.mk ~attrs:[no_warn_32]
-      (Pat.constraint_ show_var show_type)
-      (polymorphize stringprinter)
-  in
-  match kind with
-  | Pp_only -> [pp_binding]
-  | Pp_and_show -> [pp_binding; show_binding]
+  [Vb.mk ~attrs:[no_warn_32]
+    (Pat.constraint_ show_var show_type)
+    (polymorphize stringprinter)]
 
 let impl_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
 (* TODO: add arg_default to ppxlib? *)
@@ -356,7 +351,11 @@ let impl_generator kind = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, ty
   in
     let str_of_type type_decl =
     Ast_helper.with_default_loc type_decl.ptype_loc @@
-      fun () -> str_of_type ~kind ~with_path ~path type_decl
+      fun () ->
+        let pp = pp_str_of_type ~deriver:(deriver_name kind) ~with_path ~path type_decl in
+        match kind with
+        | Pp_only -> pp
+        | Pp_and_show -> pp @ show_str_of_type type_decl
   in
   let stri = Str.value Recursive (List.concat (List.map str_of_type type_decls)) in
   let loc = Location.none in
