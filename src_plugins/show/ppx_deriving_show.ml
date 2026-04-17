@@ -65,19 +65,18 @@ let show_type_of_decl type_decl =
 
 let sig_of_type ~kind type_decl =
   let pp_sig =
-      Sig.value
-        (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl))
-                (pp_type_of_decl type_decl))
-    in
+    Sig.value
+      (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "pp") type_decl))
+              (pp_type_of_decl type_decl))
+  in
+  let show_sig =
+    Sig.value
+      (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl))
+              (show_type_of_decl type_decl))
+  in
   match kind with
   | Pp_only -> [pp_sig]
-  | Pp_and_show ->
-    let show_sig =
-      Sig.value
-        (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl))
-                (show_type_of_decl type_decl))
-    in
-    [pp_sig; show_sig]
+  | Pp_and_show -> [pp_sig; show_sig]
 
 let rec expr_of_typ ~deriver quoter typ =
   let loc = typ.ptyp_loc in
@@ -321,15 +320,14 @@ let str_of_type ~kind ~with_path ~path ({ ptype_loc = loc } as type_decl) =
       (Pat.constraint_ pp_var pp_type)
       (Ppx_deriving.sanitize ~quoter (polymorphize prettyprinter))
   in
+  let show_binding =
+    Vb.mk ~attrs:[no_warn_32]
+      (Pat.constraint_ show_var show_type)
+      (polymorphize stringprinter)
+  in
   match kind with
   | Pp_only -> [pp_binding]
-  | Pp_and_show ->
-    let show_binding =
-      Vb.mk ~attrs:[no_warn_32]
-        (Pat.constraint_ show_var show_type)
-        (polymorphize stringprinter)
-    in
-    [pp_binding; show_binding]
+  | Pp_and_show -> [pp_binding; show_binding]
 
 let impl_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
 (* TODO: add arg_default to ppxlib? *)
