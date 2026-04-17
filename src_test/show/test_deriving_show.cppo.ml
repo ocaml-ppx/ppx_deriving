@@ -284,6 +284,17 @@ let test_derive_pp_extension ctxt =
     [%derive.pp: pp_only_variant * int] in
   let result2 = Format.asprintf "%a" pp_with_variant (PpBar (3, "x"), 99) in
   assert_equal ~printer "((Test_deriving_show.PpBar (3, \"x\")), 99)" result2
+  
+(* Test [%derive.show] extension *)
+let test_derive_show_extension ctxt =
+  let show_int_pair : (int * int) -> Stdlib.String.t = [%derive.show: int * int] in
+  let result = show_int_pair (1, 2) in
+  assert_equal ~printer "(1, 2)" result;
+  (* Test with a type that has pp derived *)
+  let show_with_variant : (pp_only_variant * int) -> Stdlib.String.t = [%derive.show: pp_only_variant * int] in
+  let result2 = show_with_variant (PpBar (3, "x"), 99) in
+  assert_equal ~printer "((Test_deriving_show.PpBar (3, \"x\")), 99)" result2
+
 
 let suite = "Test deriving(show)" >::: [
     "test_alias"           >:: test_alias;
@@ -310,6 +321,7 @@ let suite = "Test deriving(show)" >::: [
     "test_result_result"   >:: test_result_result;
     "test_pp_only"         >:: test_pp_only;
     "test_derive_pp_extension" >:: test_derive_pp_extension;
+    "test_derive_show_extension" >:: test_derive_show_extension;
   ]
 
 let _ = run_test_tt_main suite
