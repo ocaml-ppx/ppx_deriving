@@ -376,26 +376,19 @@ let intf_generator kind =
     in
     List.concat (List.map sig_of_type type_decls))
 
-let deriving_show: Deriving.t =
-  Deriving.add
-    "show"
-    ~str_type_decl:(impl_generator Pp_and_show)
-    ~sig_type_decl:(intf_generator Pp_and_show)
-
 let deriving_pp: Deriving.t =
   Deriving.add
     "pp"
     ~str_type_decl:(impl_generator Pp_only)
     ~sig_type_decl:(intf_generator Pp_only)
 
-(* custom extension such that "derive"-prefixed also works *)
-let derive_show_extension =
-  Extension.V3.declare "derive.show" Extension.Context.expression
-    Ast_pattern.(ptyp __) (fun ~ctxt ->
-      let loc = Expansion_context.Extension.extension_point_loc ctxt in
-      Ppx_deriving.with_quoter (fun quoter typ ->
-        [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ ~deriver:(deriver_name Pp_and_show) quoter typ]) x]))
+let deriving_show: Deriving.t =
+  Deriving.add
+    "show"
+    ~str_type_decl:(impl_generator Pp_and_show)
+    ~sig_type_decl:(intf_generator Pp_and_show)
 
+(* custom extension such that "derive"-prefixed also works *)
 let derive_pp_extension =
   Extension.V3.declare "derive.pp" Extension.Context.expression
     Ast_pattern.(ptyp __) (fun ~ctxt ->
@@ -403,8 +396,15 @@ let derive_pp_extension =
       Ppx_deriving.with_quoter (fun quoter typ ->
         [%expr fun fmt -> [%e expr_of_typ ~deriver:(deriver_name Pp_and_show) quoter typ]]))
 
+let derive_show_extension =
+  Extension.V3.declare "derive.show" Extension.Context.expression
+    Ast_pattern.(ptyp __) (fun ~ctxt ->
+      let loc = Expansion_context.Extension.extension_point_loc ctxt in
+      Ppx_deriving.with_quoter (fun quoter typ ->
+        [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ ~deriver:(deriver_name Pp_and_show) quoter typ]) x]))
+
 let derive_transformation =
   Driver.register_transformation
     "show"
-    ~rules:[Context_free.Rule.extension derive_show_extension;
-            Context_free.Rule.extension derive_pp_extension]
+    ~rules:[Context_free.Rule.extension derive_pp_extension;
+            Context_free.Rule.extension derive_show_extension]
