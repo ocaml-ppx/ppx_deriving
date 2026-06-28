@@ -125,8 +125,8 @@ let test_ref2 ctxt =
   assert_equal ~printer (1) (compare_r2 (ref 1) (ref 0))
 
 type es =
-  | ESBool of bool
-  | ESString of string
+  | ESBool of (bool [@nobuiltin])
+  | ESString of (string [@nobuiltin])
 and bool =
   | Bfoo of int * ((int -> int) [@compare fun _ _ -> 0])
 and string =
