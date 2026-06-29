@@ -125,8 +125,8 @@ let test_ref2 ctxt =
   assert_equal ~printer (1) (compare_r2 (ref 1) (ref 0))
 
 type es =
-  | ESBool of bool
-  | ESString of string
+  | ESBool of (bool [@nobuiltin])
+  | ESString of (string [@nobuiltin])
 and bool =
   | Bfoo of int * ((int -> int) [@compare fun _ _ -> 0])
 and string =
@@ -135,11 +135,15 @@ and string =
 
 let test_std_shadowing ctxt =
   let e1 = ESBool (Bfoo (1, (+) 1)) in
+  let e1' = ESBool (Bfoo (1, (+) 2)) in
   let e2 = ESString (Sfoo ("lalala", (+) 3)) in
+  let e2' = ESString (Sfoo ("lalala", (+) 4)) in
   assert_equal ~printer (-1) (compare_es e1 e2);
   assert_equal ~printer (1) (compare_es e2 e1);
   assert_equal ~printer 0 (compare_es e1 e1);
-  assert_equal ~printer 0 (compare_es e2 e2)
+  assert_equal ~printer 0 (compare_es e2 e2);
+  assert_equal ~printer 0 (compare_es e1 e1');
+  assert_equal ~printer 0 (compare_es e2 e2')
 
 type poly_app = float poly_abs
 and 'a poly_abs = 'a
