@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "6.1.1"
+version: "6.1.2"
 maintainer: "whitequark <whitequark@whitequark.org>"
 authors: [ "whitequark <whitequark@whitequark.org>" ]
 license: "MIT"

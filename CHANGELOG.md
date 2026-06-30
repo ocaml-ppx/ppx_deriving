@@ -1,9 +1,13 @@
-Unreleased
+6.1.2
 -----
 
 * Add location info to `create`, `eq`, `iter`, `make`, `ord`, `show`
   #297
   (@arvidj)
+
+* Fix ord incorrectly quoting polymorphic comparison for builtins
+  #305
+  (@sim642)
 
 6.1.1
 -----
