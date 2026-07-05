@@ -502,24 +502,28 @@ let fresh_var bound =
   loop 0
 
 let poly_fun_of_type_decl type_decl expr =
+  let loc = !Ast_helper.default_loc in
   fold_right_type_decl (fun name expr ->
     let name = name.txt in
-    Exp.fun_ Label.nolabel None (pvar ("poly_"^name)) expr) type_decl expr
+    Ast_builder.Default.pexp_fun ~loc Label.nolabel None (pvar ("poly_"^name)) expr) type_decl expr
 
 let poly_fun_of_type_ext type_ext expr =
+  let loc = !Ast_helper.default_loc in
   fold_right_type_ext (fun name expr ->
     let name = name.txt in
-    Exp.fun_ Label.nolabel None (pvar ("poly_"^name)) expr) type_ext expr
+    Ast_builder.Default.pexp_fun ~loc Label.nolabel None (pvar ("poly_"^name)) expr) type_ext expr
 
 let poly_apply_of_type_decl type_decl expr =
+  let loc = !Ast_helper.default_loc in
   fold_left_type_decl (fun expr name ->
     let name = name.txt in
-    Exp.apply expr [Label.nolabel, evar ("poly_"^name)]) expr type_decl
+    Ast_builder.Default.pexp_apply ~loc expr [Label.nolabel, evar ("poly_"^name)]) expr type_decl
 
 let poly_apply_of_type_ext type_ext expr =
+  let loc = !Ast_helper.default_loc in
   fold_left_type_ext (fun expr name ->
     let name = name.txt in
-    Exp.apply expr [Label.nolabel, evar ("poly_"^name)]) expr type_ext
+    Ast_builder.Default.pexp_apply ~loc expr [Label.nolabel, evar ("poly_"^name)]) expr type_ext
 
 let poly_arrow_of_type_decl fn type_decl typ =
   fold_right_type_decl (fun name typ ->
