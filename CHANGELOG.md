@@ -1,3 +1,10 @@
+Unreleased
+-----
+
+* Coalesce syntactic arity in `poly_{fun,apply}_of_type_*`
+  #306
+  (@sim642)
+
 6.1.2
 -----
 
