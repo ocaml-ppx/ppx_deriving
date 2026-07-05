@@ -194,12 +194,13 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
          (Pat.constraint_ eq_var out_type)
          (Ppx_deriving.sanitize ~quoter (eta_expand (polymorphize comparator)))]
 
-let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (rec_flag, type_decls) ->
   let str_of_type type_decl =
     Ast_helper.with_default_loc type_decl.ptype_loc @@
       fun () -> str_of_type type_decl
   in
-  [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
+  let rec_flag = really_recursive rec_flag type_decls in
+  [Str.value rec_flag (List.concat (List.map str_of_type type_decls))])
 
 let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
   let sig_of_type type_decl =

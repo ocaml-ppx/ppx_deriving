@@ -332,6 +332,7 @@ let impl_generator = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, type_de
     Ast_helper.with_default_loc type_decl.ptype_loc @@
       fun () -> str_of_type ~with_path ~path type_decl
   in
+  (* TODO: use really_recursive; needs splitting pp and show to different value definitions *)
   [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
 
 let intf_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
