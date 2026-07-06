@@ -5,6 +5,10 @@ Unreleased
   #306
   (@sim642)
 
+* Remove unnecessary cppo usage
+  #308, #309
+  (@sim642)
+
 6.1.2
 -----
 
