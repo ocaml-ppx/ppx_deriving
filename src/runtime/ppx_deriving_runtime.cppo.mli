@@ -22,7 +22,6 @@ type nonrec bytes = bytes
 (** {2 Predefined modules}
     {3 Operations on predefined types} *)
 
-#if OCAML_VERSION >= (4, 07, 0)
 include module type of struct
   include Stdlib
 end
@@ -40,53 +39,3 @@ module Result : sig
     | Ok of 'a
     | Error of 'b
 end
-#else
-module Pervasives = Pervasives
-
-module Stdlib = Pervasives
-
-include module type of struct
-  include Pervasives
-end
-
-module Char = Char
-module String = String
-module Printexc = Printexc
-module Array = Array
-module List = List
-module Nativeint = Nativeint
-module Int32 = Int32
-module Int64 = Int64
-module Lazy = Lazy
-module Bytes = Bytes
-
-module Hashtbl = Hashtbl
-module Queue = Queue
-module Stack = Stack
-module Set = Set
-module Map = Map
-module Weak = Weak
-
-module Printf = Printf
-module Format = Format
-module Buffer = Buffer
-
-module Result : sig
-  type ('a, 'b) t = ('a, 'b) result =
-    | Ok of 'a
-    | Error of 'b
-
-  (* we also expose Result.result for backward-compatibility *)
-  type nonrec ('a, 'b) result = ('a, 'b) result =
-    | Ok of 'a
-    | Error of 'b
-end
-
-module Option : sig
-  type 'a t = 'a option
-
-  val get : 'a t -> 'a
-
-  val to_result : none:'e -> 'a option -> ('a, 'e) result
-end
-#endif

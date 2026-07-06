@@ -14,7 +14,6 @@ type nonrec int64 = int64
 type nonrec 'a lazy_t = 'a lazy_t
 type nonrec bytes = bytes
 
-#if OCAML_VERSION >= (4, 07, 0)
 (* We require 4.08 while 4.07 already has a Stdlib module.
    In 4.07, the type equalities on Stdlib.Pervasives
    are not strong enough for the 'include Stdlib'
@@ -33,53 +32,3 @@ module Result = struct
     | Ok of 'a
     | Error of 'b
 end
-#else
-module Pervasives = Pervasives
-module Stdlib = Pervasives
-
-module Char = Char
-module String = String
-module Printexc = Printexc
-module Array = Array
-module List = List
-module Nativeint = Nativeint
-module Int32 = Int32
-module Int64 = Int64
-module Lazy = Lazy
-module Bytes = Bytes
-
-module Hashtbl = Hashtbl
-module Queue = Queue
-module Stack = Stack
-module Set = Set
-module Map = Map
-module Weak = Weak
-
-module Printf = Printf
-module Format = Format
-module Buffer = Buffer
-module Result = struct
-  type ('a, 'b) t = ('a, 'b) result =
-    | Ok of 'a
-    | Error of 'b
-
-  type nonrec ('a, 'b) result = ('a, 'b) result =
-    | Ok of 'a
-    | Error of 'b
-end
-module Option = struct
-  type 'a t = 'a option
-
-  let get o =
-    match o with
-    | None -> invalid_arg "get"
-    | Some x -> x
-
-  let to_result ~none o =
-    match o with
-    | None -> Error none
-    | Some x -> Ok x
-end
-
-include Pervasives
-#endif
