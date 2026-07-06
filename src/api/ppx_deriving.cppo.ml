@@ -171,7 +171,6 @@ let lookup name =
 let raise_errorf ?sub ?loc fmt =
   let module Location = Ocaml_common.Location in
   let raise_msg str =
-#if OCAML_VERSION >= (4, 08, 0)
     let sub =
       let msg_of_error err =
 #if OCAML_VERSION >= (5, 3, 0)
@@ -187,7 +186,6 @@ let raise_errorf ?sub ?loc fmt =
 #endif
       in
       Option.map (List.map msg_of_error) sub in
-#endif
     let err = Location.error ?sub ?loc str in
     raise (Location.Error err) in
   Printf.ksprintf raise_msg fmt
