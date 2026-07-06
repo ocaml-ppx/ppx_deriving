@@ -1,8 +1,3 @@
-(rule
- (deps test_runtime.cppo.ml)
- (targets test_runtime.ml)
- (action (run %{bin:cppo} -V OCAML:%{ocaml_version} %{deps} -o %{targets})))
-
 (test
  (name test_runtime)
  (libraries ounit2 ppx_deriving.runtime)
