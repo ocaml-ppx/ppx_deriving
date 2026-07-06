@@ -1,5 +1,7 @@
 (** Public API of [ppx_deriving] executable. *)
 
+[@@@ocaml.deprecated "The ppx_deriving API is deprecated in favour of ppxlib"]
+
 open Ppxlib
 
 type tyvar = string Location.loc
