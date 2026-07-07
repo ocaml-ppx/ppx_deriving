@@ -134,8 +134,9 @@ let sig_of_type type_decl =
   [Sig.value ~loc (Val.mk (mkloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl) loc)
               (polymorphize [%type: [%t acc] -> [%t typ] -> [%t acc]]))]
 
-let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
-  [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
+let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (rec_flag, type_decls) ->
+  let rec_flag = really_recursive rec_flag type_decls in
+  [Str.value rec_flag (List.concat (List.map str_of_type type_decls))])
 
 let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
   List.concat (List.map sig_of_type type_decls))

@@ -299,14 +299,14 @@ let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
   let show_var =
     pvar (Ppx_deriving.mangle_type_decl (`Prefix "show") type_decl) in
   let no_warn_32 = Ppx_deriving.attr_warning [%expr "-32"] in
-  [Vb.mk (Pat.constraint_ pp_var pp_type)
-         (Ppx_deriving.sanitize ~quoter (polymorphize prettyprinter));
-   Vb.mk ~attrs:[no_warn_32] (Pat.constraint_ show_var show_type) (polymorphize stringprinter);]
+  (Vb.mk (Pat.constraint_ pp_var pp_type)
+         (Ppx_deriving.sanitize ~quoter (polymorphize prettyprinter)),
+   Vb.mk ~attrs:[no_warn_32] (Pat.constraint_ show_var show_type) (polymorphize stringprinter))
 
 let impl_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
 (* TODO: add arg_default to ppxlib? *)
 
-let impl_generator = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, type_decls) with_path ->
+let impl_generator = Deriving.Generator.V2.make impl_args (fun ~ctxt (rec_flag, type_decls) with_path ->
   let path =
     let code_path = Expansion_context.Deriver.code_path ctxt in
     (* Cannot use main_module_name from code_path because that contains .cppo suffix (via line directives), so it's actually not the module name. *)
@@ -332,7 +332,10 @@ let impl_generator = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, type_de
     Ast_helper.with_default_loc type_decl.ptype_loc @@
       fun () -> str_of_type ~with_path ~path type_decl
   in
-  [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
+  let (pps, shows) = List.split (List.map str_of_type type_decls) in
+  let rec_flag = really_recursive rec_flag type_decls in
+  [Str.value rec_flag pps;
+   Str.value Nonrecursive shows])
 
 let intf_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
 
