@@ -9,6 +9,10 @@ Unreleased
   #306
   (@sim642)
 
+* Remove now-unnecessary unused-rec-flag suppression from `sanitize`
+  #311
+  (@sim642)
+
 * Remove unnecessary cppo usage
   #308, #309
   (@sim642)
