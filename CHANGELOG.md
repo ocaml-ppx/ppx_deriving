@@ -13,6 +13,10 @@ Unreleased
   #311
   (@sim642)
 
+* Fix misplaced suppression attribute in `sanitize`
+  #283
+  (@samwgoldman)
+
 * Remove unnecessary cppo usage
   #308, #309
   (@sim642)
