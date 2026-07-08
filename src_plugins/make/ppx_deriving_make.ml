@@ -196,7 +196,7 @@ let partition_result l =
 
 let impl_generator =
   let str_of_type type_decl =
-    Ast_helper.with_default_loc type_decl.ptype_loc @@
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
       fun () -> str_of_type type_decl
   in
   Deriving.Generator.V2.make_noarg (fun ~ctxt (_, type_decls) ->
@@ -209,7 +209,7 @@ let impl_generator =
 
 let intf_generator =
   let sig_of_type type_decl =
-    Ast_helper.with_default_loc type_decl.ptype_loc @@
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
       fun () -> sig_of_type type_decl
   in
   Deriving.Generator.V2.make_noarg (fun ~ctxt (_, type_decls) ->
