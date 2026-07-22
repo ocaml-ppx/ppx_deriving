@@ -9,6 +9,10 @@ Unreleased
   #306
   (@sim642)
 
+* Mark locations as `loc_ghost`
+  #313
+  (@fantazio)
+
 * Remove now-unnecessary unused-rec-flag suppression from `sanitize`
   #311
   (@sim642)
