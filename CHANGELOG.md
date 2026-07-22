@@ -9,9 +9,13 @@ Unreleased
   #306
   (@sim642)
 
+* Add default locations to `eq`, `ord` and `show` extensions
+  #312
+  (@sim642)
+
 * Mark locations as `loc_ghost`
-  #313
-  (@fantazio)
+  #313, #312
+  (@fantazio, @sim642)
 
 * Remove now-unnecessary unused-rec-flag suppression from `sanitize`
   #311
