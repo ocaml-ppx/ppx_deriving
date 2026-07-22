@@ -357,7 +357,7 @@ let show_expr_of_typ quoter typ =
 let derive_extension =
   Extension.V3.declare "derive.show" Extension.Context.expression
     Ast_pattern.(ptyp __) (fun ~ctxt typ ->
-      Ast_helper.with_default_loc typ.ptyp_loc @@
+      Ast_helper.with_default_loc {typ.ptyp_loc with loc_ghost = true} @@
         fun () -> Ppx_deriving.with_quoter show_expr_of_typ typ)
 let derive_transformation =
   Driver.register_transformation
