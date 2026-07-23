@@ -13,6 +13,10 @@ Unreleased
   #312
   (@sim642)
 
+* Fix double printing of submessage locations (used by `enum`)
+  #310, #315
+  (@gasche)
+
 * Mark locations as `loc_ghost`
   #313, #312
   (@fantazio, @sim642)
