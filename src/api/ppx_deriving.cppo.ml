@@ -171,21 +171,26 @@ let lookup name =
 let raise_errorf ?sub ?loc fmt =
   let module Location = Ocaml_common.Location in
   let raise_msg str =
-    let sub =
-      let msg_of_error err =
 #if OCAML_VERSION >= (5, 3, 0)
-        let loc = err.Location.main.loc in
-        let print_report fmt x =
-          Ocaml_common.Format_doc.deprecated_printer
-            (fun fmt -> Location.print_report fmt x) fmt
-        in
-        Location.msg ~loc "%a" print_report err
+    let collect_subs err acc =
+      err.Location.main ::
+      err.Location.sub @
+      match err.Location.footnote with
+      | None -> acc
+      | Some doc -> Location.mknoloc doc :: acc
+    in
+    let sub = Option.map (fun sub -> List.fold_right collect_subs sub []) sub in
 #else
-        { txt = (fun fmt -> Location.print_report fmt err);
-          loc = err.Location.main.loc }
-#endif
+    let msg_of_error err =
+      let msg fmt =
+        let printer = !Location.report_printer () in
+        printer.pp_main_txt printer err fmt err.Location.main.txt;
+        printer.pp_submsgs printer err fmt err.Location.sub;
       in
-      Option.map (List.map msg_of_error) sub in
+      { txt = msg; loc = err.Location.main.loc }
+    in
+    let sub = Option.map (List.map msg_of_error) sub in
+#endif
     let err = Location.error ?sub ?loc str in
     raise (Location.Error err) in
   Printf.ksprintf raise_msg fmt
