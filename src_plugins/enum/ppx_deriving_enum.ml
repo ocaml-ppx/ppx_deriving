@@ -49,24 +49,63 @@ let mappings_of_type type_decl =
           | Rtag (name, true, []) ->
             map acc mappings rtag_attr_value row_field name
           | Rtag _ -> error_arguments loc
-)
+      )
         (0, []) constrs
     | _ -> raise_errorf ~loc:type_decl.ptype_loc
                         "%s can be derived only for variants" deriver
   in
-  let rec check_dup mappings =
-    match mappings with
-    | (a, { txt=atxt; loc=aloc }) :: (b, { txt=btxt; loc=bloc }) :: _ when a = b ->
-      let sigil = match kind with `Regular -> "" | `Polymorphic -> "`" in
-      let sub =
-        [Ocaml_common.Location.errorf
-          ~loc:bloc "Same as for %s%s" sigil btxt] in
-      raise_errorf ~sub ~loc:aloc
-                   "%s: duplicate value %d for constructor %s%s" deriver a sigil atxt
-    | _ :: rest -> check_dup rest
-    | [] -> ()
+  let mappings =
+    (* Put the mappings in source order. *)
+    List.rev mappings in
+  let () =
+    (* Check for duplicate mappings. Consider for example:
+         type t =
+         | A [@value 1]
+         | B [@value 1]
+         | C [@value 1]
+         [@@deriving enum]
+
+       We generate an error that looks as follows (the ">" indicate
+       quoted source with locations), with sub-errors/sub-lcoations:
+
+       > type t = [...]
+       Error: enum: duplicate value 1 for constructors A, B, C.
+
+       > | A [@value 1]
+       Error: declaration of A
+
+       > | B [@value 1]
+       Error: declaration of B
+
+       > | C [@value 1]
+       Error: declaration of C
+    *)
+    let rev_dom = ref [] in
+    let groups = Hashtbl.create 42 in
+    List.rev mappings |> List.iter (fun (v, constr) ->
+      if not (Hashtbl.mem groups v) then
+        rev_dom := v :: !rev_dom;
+      Hashtbl.add groups v constr;
+    );
+    let dom = List.rev !rev_dom in
+    dom |> List.iter (fun v ->
+      match Hashtbl.find_all groups v with
+      | [] -> assert false
+      | [constr] -> ()
+      | (_ :: _) as conflict_constrs ->
+        let sigil = match kind with `Regular -> "" | `Polymorphic -> "`" in
+        let sub =
+          conflict_constrs |> List.map (fun {txt; loc} ->
+            Ocaml_common.Location.errorf ~loc "Declaration of %s%s" sigil txt
+          )
+        in
+        raise_errorf ~sub ~loc:type_decl.ptype_loc
+          "%s: duplicate value %d for constructors %s."
+          deriver v
+          (String.concat ", "
+             (List.map (fun c -> sigil ^ c.txt) conflict_constrs))
+    );
   in
-  mappings |> List.stable_sort (fun (a,_) (b,_) -> compare a b) |> check_dup;
   kind, mappings
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
