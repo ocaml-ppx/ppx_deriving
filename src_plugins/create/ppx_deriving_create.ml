@@ -35,6 +35,7 @@ let find_main labels =
     (None, []) labels
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let quoter = Ppx_deriving.create_quoter () in
   let creator =
     match type_decl.ptype_kind with
@@ -50,7 +51,7 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
         | None ->
           Exp.fun_ Label.nolabel None (punit ()) (record fields)
       in
-      List.fold_left (fun accum ({ pld_name = { txt = name }; pld_type; pld_attributes } as label) ->
+      List.fold_left (fun accum ({ pld_name = { txt = name }; pld_type; pld_attributes } as label) -> (* TODO: use loc of label name like in sig_of_type? *)
         match get_label_attribute attr_default label with
         | Some default -> Exp.fun_ (Label.optional name) (Some (Ppx_deriving.quote ~quoter default))
                                    (pvar name) accum
@@ -82,6 +83,7 @@ let wrap_predef_option typ =
   typ
 
 let sig_of_type ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let typ =
     match type_decl.ptype_kind with
@@ -95,6 +97,7 @@ let sig_of_type ({ ptype_loc = loc } as type_decl) =
           Typ.arrow Label.nolabel (tconstr "unit" []) typ
       in
       List.fold_left (fun accum ({ pld_name = { txt = name; loc }; pld_type; pld_attributes } as label) ->
+        let loc = {loc with loc_ghost = true} in
         match get_label_attribute attr_default label with
         | Some _ -> Typ.arrow (Label.optional name) (wrap_predef_option pld_type) accum
         | None ->
