@@ -58,7 +58,7 @@ and expr_of_label_decl quoter { pld_type; pld_attributes } =
   expr_of_typ quoter { pld_type with ptyp_attributes = attrs }
 
 and expr_of_typ quoter typ =
-  let loc = typ.ptyp_loc in
+  let loc = {typ.ptyp_loc with loc_ghost = true} in
   let expr_of_typ = expr_of_typ quoter in
   match Attribute.get ct_attr_compare typ with
   | Some fn -> Ppx_deriving.quote ~quoter fn
@@ -164,7 +164,7 @@ and expr_of_typ quoter typ =
                    deriver (Ppx_deriving.string_of_core_type typ)
 
 let core_type_of_decl type_decl =
-  let loc = type_decl.ptype_loc in
+  let loc = {type_decl.ptype_loc with loc_ghost = true} in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
           (fun var -> [%type: [%t var] -> [%t var] -> Ppx_deriving_runtime.int]) type_decl in
@@ -175,6 +175,7 @@ let sig_of_type type_decl =
              (core_type_of_decl type_decl))]
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let quoter = Ppx_deriving.create_quoter () in
   let comparator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with

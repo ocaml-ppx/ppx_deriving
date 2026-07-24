@@ -45,7 +45,7 @@ let rec exprn quoter typs =
 
 and exprl quoter typs =
   typs |> List.map (fun ({ pld_name = { txt = n }; pld_loc; _ } as pld) ->
-    with_default_loc pld_loc @@ fun () ->
+    with_default_loc {pld_loc with loc_ghost = true} @@ fun () ->
     app (expr_of_label_decl quoter pld)
       [evar (argl `lhs n); evar (argl `rhs n)])
 
@@ -139,6 +139,7 @@ and expr_of_typ quoter typ =
                    deriver (Ppx_deriving.string_of_core_type typ)
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let quoter = Ppx_deriving.create_quoter () in
   let comparator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
@@ -146,7 +147,7 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
     | Ptype_variant constrs, _ ->
       let cases =
         (constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args; pcd_loc } ->
-          with_default_loc pcd_loc @@ fun () ->
+          with_default_loc {pcd_loc with loc_ghost = true} @@ fun () ->
           match pcd_args with
           | Pcstr_tuple(typs) ->
             exprn quoter typs |>
@@ -165,7 +166,7 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
     | Ptype_record labels, _ ->
       let exprs =
         labels |> List.map (fun ({ pld_loc; pld_name = { txt = name }; _ } as pld) ->
-          with_default_loc pld_loc @@ fun () ->
+          with_default_loc {pld_loc with loc_ghost = true} @@ fun () ->
           (* combine attributes of type and label *)
           let field obj = Exp.field obj (mknoloc (Lident name)) in
           app (expr_of_label_decl quoter pld)

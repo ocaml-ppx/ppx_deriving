@@ -53,6 +53,7 @@ let is_optional ({ pld_name = { txt = name }; pld_type; _ } as label) =
 
 let add_str_label_arg ~quoter ~loc accum
     ({pld_name = {txt = name}; pld_type; _} as label) =
+  let loc = {loc with loc_ghost = true} in
   match get_label_attribute attr_default label with
   | Some default ->
     Exp.fun_ (Label.optional name) (Some (Ppx_deriving.quote ~quoter default))
@@ -118,7 +119,8 @@ let wrap_predef_option typ =
   typ
 
 let add_sig_label_arg accum
-    ({pld_name = {txt = name; loc}; pld_type; _} as label) = 
+    ({pld_name = {txt = name; loc}; pld_type; _} as label) =
+  let loc = {loc with loc_ghost = true} in
   match get_label_attribute attr_default label with
   | Some _ ->
     Typ.arrow (Label.optional name) (wrap_predef_option pld_type) accum
