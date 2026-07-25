@@ -22,7 +22,7 @@ let reduce_acc a b =
   [%expr let acc = [%e a] in [%e b]]
 
 let rec expr_of_typ typ =
-  let loc = typ.ptyp_loc in
+  let loc = {typ.ptyp_loc with loc_ghost = true} in
   let typ = Ppx_deriving.remove_pervasives ~deriver typ in
   match typ with
   | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun acc _ -> acc]
@@ -84,6 +84,7 @@ and expr_of_label_decl { pld_type; pld_attributes } =
   expr_of_typ { pld_type with ptyp_attributes = attrs }
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let mapper =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest -> expr_of_typ manifest
@@ -122,7 +123,7 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
          (polymorphize mapper)]
 
 let sig_of_type type_decl =
-  let loc = type_decl.ptype_loc in
+  let loc = {type_decl.ptype_loc with loc_ghost = true} in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let vars =
     (List.map (fun tyvar -> tyvar.txt))

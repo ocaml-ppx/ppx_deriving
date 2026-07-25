@@ -80,6 +80,7 @@ and expr_of_label_decl { pld_type; pld_attributes } =
   expr_of_typ { pld_type with ptyp_attributes = attrs }
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let iterator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest -> expr_of_typ manifest
