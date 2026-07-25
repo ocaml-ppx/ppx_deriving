@@ -35,6 +35,7 @@ let find_main labels =
     (None, []) labels
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let quoter = Ppx_deriving.create_quoter () in
   let creator =
     match type_decl.ptype_kind with
@@ -50,7 +51,7 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
         | None ->
           Exp.fun_ Label.nolabel None (punit ()) (record fields)
       in
-      List.fold_left (fun accum ({ pld_name = { txt = name }; pld_type; pld_attributes } as label) ->
+      List.fold_left (fun accum ({ pld_name = { txt = name }; pld_type; pld_attributes } as label) -> (* TODO: use loc of label name like in sig_of_type? *)
         match get_label_attribute attr_default label with
         | Some default -> Exp.fun_ (Label.optional name) (Some (Ppx_deriving.quote ~quoter default))
                                    (pvar name) accum
@@ -82,6 +83,7 @@ let wrap_predef_option typ =
   typ
 
 let sig_of_type ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let typ =
     match type_decl.ptype_kind with
@@ -95,6 +97,7 @@ let sig_of_type ({ ptype_loc = loc } as type_decl) =
           Typ.arrow Label.nolabel (tconstr "unit" []) typ
       in
       List.fold_left (fun accum ({ pld_name = { txt = name; loc }; pld_type; pld_attributes } as label) ->
+        let loc = {loc with loc_ghost = true} in
         match get_label_attribute attr_default label with
         | Some _ -> Typ.arrow (Label.optional name) (wrap_predef_option pld_type) accum
         | None ->
@@ -120,9 +123,17 @@ let sig_of_type ({ ptype_loc = loc } as type_decl) =
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl)) typ)]
 
 let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  let str_of_type type_decl =
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
+      fun () -> str_of_type type_decl
+  in
   [Str.value Nonrecursive (List.concat (List.map str_of_type type_decls))])
 
 let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  let sig_of_type type_decl =
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
+      fun () -> sig_of_type type_decl
+  in
   List.concat (List.map sig_of_type type_decls))
 
 let deriving: Deriving.t =

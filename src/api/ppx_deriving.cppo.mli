@@ -326,7 +326,8 @@ val seq_reduce : ?sep:expression -> expression -> expression -> expression
 val binop_reduce : expression -> expression -> expression -> expression
 
 (** [strong_type_of_type ty] transform a type ty to
-    [freevars . ty], giving a strong polymorphic type *)
+    [freevars . ty], giving a strong polymorphic type unless there
+    are no free variables in which case [ty] is unchanged. *)
 val strong_type_of_type: core_type -> core_type
 
 (** The mapper for the currently loaded deriving plugins. It is useful for

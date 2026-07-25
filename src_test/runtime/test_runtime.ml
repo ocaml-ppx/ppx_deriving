@@ -23,17 +23,13 @@ let test_result_qualified
   =
   (x : ('a, 'b) result)
 
-#if OCAML_VERSION >= (4, 06, 0)
 let test_result_included
   (x : ('a, 'b) result)
   =
   (x : ('a, 'b) result)
-#endif
 
-#if OCAML_VERSION >= (4, 07, 0)
 let test_result_in_stdlib
   (x : ('a, 'b) Stdlib.result)
   =
   (x : ('a, 'b) result)
-#endif
 

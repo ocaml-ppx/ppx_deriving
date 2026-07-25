@@ -171,12 +171,25 @@ let lookup name =
 let raise_errorf ?sub ?loc fmt =
   let module Location = Ocaml_common.Location in
   let raise_msg str =
-#if OCAML_VERSION >= (4, 08, 0)
-    let sub =
-      let msg_of_error err =
-        { txt = (fun fmt -> Location.print_report fmt err);
-          loc = err.Location.main.loc } in
-      Option.map (List.map msg_of_error) sub in
+#if OCAML_VERSION >= (5, 3, 0)
+    let collect_subs err acc =
+      err.Location.main ::
+      err.Location.sub @
+      match err.Location.footnote with
+      | None -> acc
+      | Some doc -> Location.mknoloc doc :: acc
+    in
+    let sub = Option.map (fun sub -> List.fold_right collect_subs sub []) sub in
+#else
+    let msg_of_error err =
+      let msg fmt =
+        let printer = !Location.report_printer () in
+        printer.pp_main_txt printer err fmt err.Location.main.txt;
+        printer.pp_submsgs printer err fmt err.Location.sub;
+      in
+      { txt = msg; loc = err.Location.main.loc }
+    in
+    let sub = Option.map (List.map msg_of_error) sub in
 #endif
     let err = Location.error ?sub ?loc str in
     raise (Location.Error err) in
@@ -321,11 +334,9 @@ let sanitize ?(module_=Lident "Ppx_deriving_runtime") ?(quoter=create_quoter ())
     let attrs = [attr_warning [%expr "-A"]] in
     let modname = { txt = module_; loc } in
     Exp.open_ ~loc ~attrs
-      (Opn.mk ~loc ~attrs ~override:Override (Mod.ident ~loc ~attrs modname))
+      (Opn.mk ~loc ~attrs ~override:Override (Mod.ident ~loc modname))
       expr in
-  let sanitized = Expansion_helpers.Quoter.sanitize quoter body in
-  (* ppxlib quoter uses Recursive, ppx_deriving's used Nonrecursive - silence warning *)
-  { sanitized with pexp_attributes = attr_warning [%expr "-39"] :: sanitized.pexp_attributes}
+  Expansion_helpers.Quoter.sanitize quoter body
 
 let with_quoter fn a =
   let quoter = create_quoter () in
@@ -339,7 +350,7 @@ let path_of_type_decl ~path type_decl =
   | Some { ptyp_desc = Ptyp_constr ({ txt = lid }, _) } ->
     begin match lid with
     | Lident _ -> []
-    | Ldot (lid, _) -> Ocaml_common.Longident.flatten lid
+    | Ldot (lid, _) -> Astlib.Longident.flatten lid
     | Lapply _ -> assert false
     end
   | _ -> path
@@ -454,7 +465,7 @@ let free_vars_in_core_type typ =
     | { ptyp_desc = (Ptyp_tuple xs | Ptyp_constr (_, xs)) } ->
       List.map free_in xs |> List.concat
     | { ptyp_desc = Ptyp_alias (x, name) } ->
-      [mkloc name typ.ptyp_loc]
+      [mkloc name.txt typ.ptyp_loc]
       @ free_in x
     | { ptyp_desc = Ptyp_poly (bound, x) } ->
       List.filter (fun y -> not (List.mem y bound)) (free_in x)
@@ -492,24 +503,28 @@ let fresh_var bound =
   loop 0
 
 let poly_fun_of_type_decl type_decl expr =
+  let loc = !Ast_helper.default_loc in
   fold_right_type_decl (fun name expr ->
     let name = name.txt in
-    Exp.fun_ Label.nolabel None (pvar ("poly_"^name)) expr) type_decl expr
+    Ast_builder.Default.pexp_fun ~loc Label.nolabel None (pvar ("poly_"^name)) expr) type_decl expr
 
 let poly_fun_of_type_ext type_ext expr =
+  let loc = !Ast_helper.default_loc in
   fold_right_type_ext (fun name expr ->
     let name = name.txt in
-    Exp.fun_ Label.nolabel None (pvar ("poly_"^name)) expr) type_ext expr
+    Ast_builder.Default.pexp_fun ~loc Label.nolabel None (pvar ("poly_"^name)) expr) type_ext expr
 
 let poly_apply_of_type_decl type_decl expr =
+  let loc = !Ast_helper.default_loc in
   fold_left_type_decl (fun expr name ->
     let name = name.txt in
-    Exp.apply expr [Label.nolabel, evar ("poly_"^name)]) expr type_decl
+    Ast_builder.Default.pexp_apply ~loc expr [Label.nolabel, evar ("poly_"^name)]) expr type_decl
 
 let poly_apply_of_type_ext type_ext expr =
+  let loc = !Ast_helper.default_loc in
   fold_left_type_ext (fun expr name ->
     let name = name.txt in
-    Exp.apply expr [Label.nolabel, evar ("poly_"^name)]) expr type_ext
+    Ast_builder.Default.pexp_apply ~loc expr [Label.nolabel, evar ("poly_"^name)]) expr type_ext
 
 let poly_arrow_of_type_decl fn type_decl typ =
   fold_right_type_decl (fun name typ ->
@@ -567,7 +582,9 @@ let binop_reduce x a b =
 
 let strong_type_of_type ty =
   let free_vars = free_vars_in_core_type ty in
-  Typ.force_poly @@ Typ.poly free_vars ty
+  match free_vars with
+    | [] -> ty
+    | _ -> Typ.force_poly @@ Typ.poly free_vars ty
 
 type deriver_options =
   | Options of (string * expression) list
@@ -596,13 +613,13 @@ let derive path pstr_loc item attributes fn arg =
           name,
           Options
             (options |> List.map (fun ({ txt }, expr) ->
-               String.concat "." (Ocaml_common.Longident.flatten txt), expr))
+               String.concat "." (Astlib.Longident.flatten txt), expr))
         | { pexp_desc = Pexp_apply ({ pexp_desc = Pexp_ident name }, _) } ->
           name, Unknown_syntax
         | { pexp_loc } ->
           raise_errorf ~loc:pexp_loc "Unrecognized [@@deriving] syntax"
       in
-      let name, loc = String.concat "_" (Ocaml_common.Longident.flatten name.txt), name.loc in
+      let name, loc = String.concat "_" (Astlib.Longident.flatten name.txt), name.loc in
       let is_optional, options =
         match options with
         | Unknown_syntax -> false, options

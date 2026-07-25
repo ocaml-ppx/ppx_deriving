@@ -53,6 +53,7 @@ let is_optional ({ pld_name = { txt = name }; pld_type; _ } as label) =
 
 let add_str_label_arg ~quoter ~loc accum
     ({pld_name = {txt = name}; pld_type; _} as label) =
+  let loc = {loc with loc_ghost = true} in
   match get_label_attribute attr_default label with
   | Some default ->
     Exp.fun_ (Label.optional name) (Some (Ppx_deriving.quote ~quoter default))
@@ -118,7 +119,8 @@ let wrap_predef_option typ =
   typ
 
 let add_sig_label_arg accum
-    ({pld_name = {txt = name; loc}; pld_type; _} as label) = 
+    ({pld_name = {txt = name; loc}; pld_type; _} as label) =
+  let loc = {loc with loc_ghost = true} in
   match get_label_attribute attr_default label with
   | Some _ ->
     Typ.arrow (Label.optional name) (wrap_predef_option pld_type) accum
@@ -195,6 +197,10 @@ let partition_result l =
   List.rev errors, List.rev oks
 
 let impl_generator =
+  let str_of_type type_decl =
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
+      fun () -> str_of_type type_decl
+  in
   Deriving.Generator.V2.make_noarg (fun ~ctxt (_, type_decls) ->
       match partition_result (List.map str_of_type type_decls) with
       | _, (_::_ as vbs) -> [Str.value Nonrecursive vbs]
@@ -204,6 +210,10 @@ let impl_generator =
           errors)
 
 let intf_generator =
+  let sig_of_type type_decl =
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
+      fun () -> sig_of_type type_decl
+  in
   Deriving.Generator.V2.make_noarg (fun ~ctxt (_, type_decls) ->
       match partition_result (List.map sig_of_type type_decls) with
       | _, (_::_ as vds) -> vds

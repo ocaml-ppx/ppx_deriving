@@ -70,7 +70,7 @@ let rec expr_of_typ typ =
     Exp.function_ cases
   | { ptyp_desc = Ptyp_var name } -> [%expr ([%e evar ("poly_"^name)] : [%t Typ.var name] -> unit)]
   | { ptyp_desc = Ptyp_alias (typ, name) } ->
-    [%expr fun x -> [%e evar ("poly_"^name)] x; [%e expr_of_typ typ] x]
+    [%expr fun x -> [%e evar ("poly_"^name.txt)] x; [%e expr_of_typ typ] x]
   | { ptyp_loc } ->
     raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
                  deriver (Ppx_deriving.string_of_core_type typ)
@@ -80,6 +80,7 @@ and expr_of_label_decl { pld_type; pld_attributes } =
   expr_of_typ { pld_type with ptyp_attributes = attrs }
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let iterator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest -> expr_of_typ manifest
@@ -128,9 +129,17 @@ let sig_of_type type_decl =
               (polymorphize [%type: [%t typ] -> Ppx_deriving_runtime.unit]))]
 
 let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  let str_of_type type_decl =
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
+      fun () -> str_of_type type_decl
+  in
   [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
 
 let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  let sig_of_type type_decl =
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
+      fun () -> sig_of_type type_decl
+  in
   List.concat (List.map sig_of_type type_decls))
 
 let deriving: Deriving.t =

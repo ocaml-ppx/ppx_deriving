@@ -45,7 +45,7 @@ let rec exprn quoter typs =
 
 and exprl quoter typs =
   typs |> List.map (fun ({ pld_name = { txt = n }; pld_loc; _ } as pld) ->
-    with_default_loc pld_loc @@ fun () ->
+    with_default_loc {pld_loc with loc_ghost = true} @@ fun () ->
     app (expr_of_label_decl quoter pld)
       [evar (argl `lhs n); evar (argl `rhs n)])
 
@@ -139,6 +139,7 @@ and expr_of_typ quoter typ =
                    deriver (Ppx_deriving.string_of_core_type typ)
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let quoter = Ppx_deriving.create_quoter () in
   let comparator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
@@ -146,7 +147,7 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
     | Ptype_variant constrs, _ ->
       let cases =
         (constrs |> List.map (fun { pcd_name = { txt = name }; pcd_args; pcd_loc } ->
-          with_default_loc pcd_loc @@ fun () ->
+          with_default_loc {pcd_loc with loc_ghost = true} @@ fun () ->
           match pcd_args with
           | Pcstr_tuple(typs) ->
             exprn quoter typs |>
@@ -165,7 +166,7 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
     | Ptype_record labels, _ ->
       let exprs =
         labels |> List.map (fun ({ pld_loc; pld_name = { txt = name }; _ } as pld) ->
-          with_default_loc pld_loc @@ fun () ->
+          with_default_loc {pld_loc with loc_ghost = true} @@ fun () ->
           (* combine attributes of type and label *)
           let field obj = Exp.field obj (mknoloc (Lident name)) in
           app (expr_of_label_decl quoter pld)
@@ -182,7 +183,7 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
     (* Ensure expr is statically constructive by eta-expanding non-funs.
        See https://github.com/ocaml-ppx/ppx_deriving/pull/252. *)
     match expr with
-    | { pexp_desc = Pexp_fun _; _ } -> expr
+    | { pexp_desc = Pexp_function (_ :: _, _, _); _ } -> expr
     | _ -> [%expr fun x -> [%e expr] x]
   in
   let out_type =
@@ -195,9 +196,17 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
          (Ppx_deriving.sanitize ~quoter (eta_expand (polymorphize comparator)))]
 
 let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  let str_of_type type_decl =
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
+      fun () -> str_of_type type_decl
+  in
   [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
 
 let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+  let sig_of_type type_decl =
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
+      fun () -> sig_of_type type_decl
+  in
   List.concat (List.map sig_of_type type_decls))
 
 let deriving: Deriving.t =
@@ -209,7 +218,9 @@ let deriving: Deriving.t =
 (* custom extension such that "derive"-prefixed also works *)
 let derive_extension =
   Extension.V3.declare "derive.eq" Extension.Context.expression
-    Ast_pattern.(ptyp __) (fun ~ctxt:_ -> Ppx_deriving.with_quoter expr_of_typ)
+    Ast_pattern.(ptyp __) (fun ~ctxt typ ->
+      Ast_helper.with_default_loc {typ.ptyp_loc with loc_ghost = true} @@
+        fun () -> Ppx_deriving.with_quoter expr_of_typ typ)
 let derive_transformation =
   Driver.register_transformation
     deriver
