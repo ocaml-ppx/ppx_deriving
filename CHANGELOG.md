@@ -1,4 +1,4 @@
-Unreleased
+6.1.3
 -----
 
 * Fix fold plugin for polymorphic variants
@@ -8,6 +8,18 @@ Unreleased
 * Coalesce syntactic arity in `poly_{fun,apply}_of_type_*`
   #306
   (@sim642)
+
+* Add default locations to `eq`, `ord` and `show` extensions
+  #312
+  (@sim642)
+
+* Fix double printing of submessage locations (used by `enum`)
+  #310, #315
+  (@gasche)
+
+* Mark locations as `loc_ghost`
+  #313, #312, #316
+  (@fantazio, @sim642)
 
 * Remove now-unnecessary unused-rec-flag suppression from `sanitize`
   #311

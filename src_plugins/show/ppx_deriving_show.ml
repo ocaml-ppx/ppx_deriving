@@ -43,7 +43,7 @@ let wrap_printer quoter printer =
     [%expr (let fprintf = Ppx_deriving_runtime.Format.fprintf in [%e printer]) [@ocaml.warning "-26"]]
 
 let pp_type_of_decl type_decl =
-  let loc = type_decl.ptype_loc in
+  let loc = {type_decl.ptype_loc with loc_ghost = true} in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
     (fun var -> [%type: Ppx_deriving_runtime.Format.formatter -> [%t var] -> Ppx_deriving_runtime.unit])
@@ -51,7 +51,7 @@ let pp_type_of_decl type_decl =
     [%type: Ppx_deriving_runtime.Format.formatter -> [%t typ] -> Ppx_deriving_runtime.unit]
 
 let show_type_of_decl type_decl =
-  let loc = type_decl.ptype_loc in
+  let loc = {type_decl.ptype_loc with loc_ghost = true} in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   Ppx_deriving.poly_arrow_of_type_decl
     (fun var -> [%type: Ppx_deriving_runtime.Format.formatter -> [%t var] -> Ppx_deriving_runtime.unit])
@@ -65,7 +65,7 @@ let sig_of_type type_decl =
               (show_type_of_decl type_decl))]
 
 let rec expr_of_typ quoter typ =
-  let loc = typ.ptyp_loc in
+  let loc = {typ.ptyp_loc with loc_ghost = true} in
   let expr_of_typ = expr_of_typ quoter in
   match Attribute.get ct_attr_printer typ with
   | Some printer -> [%expr [%e wrap_printer quoter printer] fmt]
@@ -190,6 +190,7 @@ and expr_of_label_decl quoter { pld_type; pld_attributes } =
   expr_of_typ quoter { pld_type with ptyp_attributes = attrs }
 
 let str_of_type ~with_path ~path ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let quoter = Ppx_deriving.create_quoter () in
   let path = Ppx_deriving.path_of_type_decl ~path type_decl in
   let prettyprinter =
@@ -329,7 +330,7 @@ let impl_generator = Deriving.Generator.V2.make impl_args (fun ~ctxt (_, type_de
     | None -> true (* true by default *)
   in
   let str_of_type type_decl =
-    Ast_helper.with_default_loc type_decl.ptype_loc @@
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
       fun () -> str_of_type ~with_path ~path type_decl
   in
   [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
@@ -338,7 +339,7 @@ let intf_args = Deriving.Args.(empty +> arg "with_path" (Ast_pattern.ebool __))
 
 let intf_generator = Deriving.Generator.V2.make intf_args (fun ~ctxt:_ (_, type_decls) _with_path ->
   let sig_of_type type_decl =
-    Ast_helper.with_default_loc type_decl.ptype_loc @@
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
       fun () -> sig_of_type type_decl
   in
   List.concat (List.map sig_of_type type_decls))
@@ -349,13 +350,16 @@ let deriving: Deriving.t =
     ~str_type_decl:impl_generator
     ~sig_type_decl:intf_generator
 
+let show_expr_of_typ quoter typ =
+  let loc = !Ast_helper.default_loc in
+  [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ quoter typ]) x]
+
 (* custom extension such that "derive"-prefixed also works *)
 let derive_extension =
   Extension.V3.declare "derive.show" Extension.Context.expression
-    Ast_pattern.(ptyp __) (fun ~ctxt ->
-      let loc = Expansion_context.Extension.extension_point_loc ctxt in
-      Ppx_deriving.with_quoter (fun quoter typ ->
-        [%expr fun x -> Ppx_deriving_runtime.Format.asprintf "%a" (fun fmt -> [%e expr_of_typ quoter typ]) x]))
+    Ast_pattern.(ptyp __) (fun ~ctxt typ ->
+      Ast_helper.with_default_loc {typ.ptyp_loc with loc_ghost = true} @@
+        fun () -> Ppx_deriving.with_quoter show_expr_of_typ typ)
 let derive_transformation =
   Driver.register_transformation
     deriver

@@ -96,6 +96,7 @@ let mappings_of_type type_decl =
         let sigil = match kind with `Regular -> "" | `Polymorphic -> "`" in
         let sub =
           conflict_constrs |> List.map (fun {txt; loc} ->
+            (* NB! do not use loc_ghost for submessage because newer compilers will hide it *)
             Ocaml_common.Location.errorf ~loc "Declaration of %s%s" sigil txt
           )
         in
@@ -108,7 +109,7 @@ let mappings_of_type type_decl =
   in
   kind, mappings
 
-let str_of_type ({ ptype_loc = loc } as type_decl) =
+let str_of_type ({ ptype_loc = _ } as type_decl) =
   let kind, mappings = mappings_of_type type_decl in
   let patt name =
     match kind with
@@ -137,7 +138,7 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
          (Exp.function_ from_enum_cases)]
 
 let sig_of_type type_decl =
-  let loc = type_decl.ptype_loc in
+  let loc = {type_decl.ptype_loc with loc_ghost = true} in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "min") type_decl))
              [%type: Ppx_deriving_runtime.int]);
