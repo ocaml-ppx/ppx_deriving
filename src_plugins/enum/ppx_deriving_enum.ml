@@ -78,7 +78,7 @@ let mappings_of_type type_decl =
          Declaration of C
     *)
     let rev_dom = ref [] in
-    let groups = Hashtbl.create 42 in
+    let groups = Hashtbl.create (List.length mappings) in
     mappings |> List.iter (fun (v, constr) ->
       if not (Hashtbl.mem groups v) then
         rev_dom := v :: !rev_dom;
