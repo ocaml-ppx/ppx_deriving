@@ -54,9 +54,6 @@ let mappings_of_type type_decl =
     | _ -> raise_errorf ~loc:type_decl.ptype_loc
                         "%s can be derived only for variants" deriver
   in
-  let mappings =
-    (* Put the mappings in source order. *)
-    List.rev mappings in
   let () =
     (* Check for duplicate mappings. Consider for example:
          type t =
@@ -82,7 +79,7 @@ let mappings_of_type type_decl =
     *)
     let rev_dom = ref [] in
     let groups = Hashtbl.create 42 in
-    List.rev mappings |> List.iter (fun (v, constr) ->
+    mappings |> List.iter (fun (v, constr) ->
       if not (Hashtbl.mem groups v) then
         rev_dom := v :: !rev_dom;
       Hashtbl.add groups v constr;
@@ -107,7 +104,7 @@ let mappings_of_type type_decl =
              (List.map (fun c -> sigil ^ c.txt) conflict_constrs))
     );
   in
-  kind, mappings
+  kind, List.rev mappings (* Put the mappings in source order. *)
 
 let str_of_type ({ ptype_loc = _ } as type_decl) =
   let kind, mappings = mappings_of_type type_decl in
