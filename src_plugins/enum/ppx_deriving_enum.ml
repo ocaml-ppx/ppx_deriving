@@ -66,19 +66,19 @@ let mappings_of_type type_decl =
          [@@deriving enum]
 
        We generate an error that looks as follows (the ">" indicate
-       quoted source with locations), with sub-errors/sub-lcoations:
+       quoted source with locations), with sub-errors/sub-locations:
 
        > type t = [...]
        Error: enum: duplicate value 1 for constructors A, B, C.
 
        > | A [@value 1]
-       Error: declaration of A
+         Declaration of A
 
        > | B [@value 1]
-       Error: declaration of B
+         Declaration of B
 
        > | C [@value 1]
-       Error: declaration of C
+         Declaration of C
     *)
     let rev_dom = ref [] in
     let groups = Hashtbl.create 42 in
