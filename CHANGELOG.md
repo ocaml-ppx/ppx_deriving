@@ -1,4 +1,4 @@
-Unreleased
+6.1.3
 -----
 
 * Fix fold plugin for polymorphic variants
