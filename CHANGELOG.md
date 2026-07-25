@@ -18,7 +18,7 @@ Unreleased
   (@gasche)
 
 * Mark locations as `loc_ghost`
-  #313, #312
+  #313, #312, #316
   (@fantazio, @sim642)
 
 * Remove now-unnecessary unused-rec-flag suppression from `sanitize`
