@@ -398,7 +398,7 @@ let deriving_show: Deriving.t =
 
 let pp_expr_of_typ quoter typ =
   let loc = !Ast_helper.default_loc in
-  [%expr fun fmt -> [%e expr_of_typ ~deriver:(deriver_name Pp_and_show) quoter typ]]
+  [%expr fun fmt -> [%e expr_of_typ ~deriver:(deriver_name Pp_only) quoter typ]]
 
 let show_expr_of_typ quoter typ =
   let loc = !Ast_helper.default_loc in
