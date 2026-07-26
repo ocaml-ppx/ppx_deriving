@@ -9,6 +9,10 @@ Unreleased
   #314
   (@gasche)
 
+* Use `Ppxlib.really_recursive` for plugin implementations
+  #307
+  (@sim642)
+
 6.1.3
 -----
 
