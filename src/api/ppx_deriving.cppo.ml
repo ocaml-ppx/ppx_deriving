@@ -171,22 +171,25 @@ let lookup name =
 let raise_errorf ?sub ?loc fmt =
   let module Location = Ocaml_common.Location in
   let raise_msg str =
-#if OCAML_VERSION >= (4, 08, 0)
-    let sub =
-      let msg_of_error err =
 #if OCAML_VERSION >= (5, 3, 0)
-        let loc = err.Location.main.loc in
-        let print_report fmt x =
-          Ocaml_common.Format_doc.deprecated_printer
-            (fun fmt -> Location.print_report fmt x) fmt
-        in
-        Location.msg ~loc "%a" print_report err
+    let collect_subs err acc =
+      err.Location.main ::
+      err.Location.sub @
+      match err.Location.footnote with
+      | None -> acc
+      | Some doc -> Location.mknoloc doc :: acc
+    in
+    let sub = Option.map (fun sub -> List.fold_right collect_subs sub []) sub in
 #else
-        { txt = (fun fmt -> Location.print_report fmt err);
-          loc = err.Location.main.loc }
-#endif
+    let msg_of_error err =
+      let msg fmt =
+        let printer = !Location.report_printer () in
+        printer.pp_main_txt printer err fmt err.Location.main.txt;
+        printer.pp_submsgs printer err fmt err.Location.sub;
       in
-      Option.map (List.map msg_of_error) sub in
+      { txt = msg; loc = err.Location.main.loc }
+    in
+    let sub = Option.map (List.map msg_of_error) sub in
 #endif
     let err = Location.error ?sub ?loc str in
     raise (Location.Error err) in
@@ -331,11 +334,9 @@ let sanitize ?(module_=Lident "Ppx_deriving_runtime") ?(quoter=create_quoter ())
     let attrs = [attr_warning [%expr "-A"]] in
     let modname = { txt = module_; loc } in
     Exp.open_ ~loc ~attrs
-      (Opn.mk ~loc ~attrs ~override:Override (Mod.ident ~loc ~attrs modname))
+      (Opn.mk ~loc ~attrs ~override:Override (Mod.ident ~loc modname))
       expr in
-  let sanitized = Expansion_helpers.Quoter.sanitize quoter body in
-  (* ppxlib quoter uses Recursive, ppx_deriving's used Nonrecursive - silence warning *)
-  { sanitized with pexp_attributes = attr_warning [%expr "-39"] :: sanitized.pexp_attributes}
+  Expansion_helpers.Quoter.sanitize quoter body
 
 let with_quoter fn a =
   let quoter = create_quoter () in
@@ -502,24 +503,28 @@ let fresh_var bound =
   loop 0
 
 let poly_fun_of_type_decl type_decl expr =
+  let loc = !Ast_helper.default_loc in
   fold_right_type_decl (fun name expr ->
     let name = name.txt in
-    Exp.fun_ Label.nolabel None (pvar ("poly_"^name)) expr) type_decl expr
+    Ast_builder.Default.pexp_fun ~loc Label.nolabel None (pvar ("poly_"^name)) expr) type_decl expr
 
 let poly_fun_of_type_ext type_ext expr =
+  let loc = !Ast_helper.default_loc in
   fold_right_type_ext (fun name expr ->
     let name = name.txt in
-    Exp.fun_ Label.nolabel None (pvar ("poly_"^name)) expr) type_ext expr
+    Ast_builder.Default.pexp_fun ~loc Label.nolabel None (pvar ("poly_"^name)) expr) type_ext expr
 
 let poly_apply_of_type_decl type_decl expr =
+  let loc = !Ast_helper.default_loc in
   fold_left_type_decl (fun expr name ->
     let name = name.txt in
-    Exp.apply expr [Label.nolabel, evar ("poly_"^name)]) expr type_decl
+    Ast_builder.Default.pexp_apply ~loc expr [Label.nolabel, evar ("poly_"^name)]) expr type_decl
 
 let poly_apply_of_type_ext type_ext expr =
+  let loc = !Ast_helper.default_loc in
   fold_left_type_ext (fun expr name ->
     let name = name.txt in
-    Exp.apply expr [Label.nolabel, evar ("poly_"^name)]) expr type_ext
+    Ast_builder.Default.pexp_apply ~loc expr [Label.nolabel, evar ("poly_"^name)]) expr type_ext
 
 let poly_arrow_of_type_decl fn type_decl typ =
   fold_right_type_decl (fun name typ ->

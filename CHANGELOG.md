@@ -1,9 +1,63 @@
 Unreleased
+----------
+
+* Add `show` `@printer` support for polymorphic variants
+  #286
+  (@sim642, @ghuysmans)
+
+* Improve `enum` error for `@value` conflicts
+  #314
+  (@gasche)
+
+* Use `Ppxlib.really_recursive` for plugin implementations
+  #307
+  (@sim642)
+
+6.1.3
+-----
+
+* Fix fold plugin for polymorphic variants
+  #256
+  (@danielmercier)
+
+* Coalesce syntactic arity in `poly_{fun,apply}_of_type_*`
+  #306
+  (@sim642)
+
+* Add default locations to `eq`, `ord` and `show` extensions
+  #312
+  (@sim642)
+
+* Fix double printing of submessage locations (used by `enum`)
+  #310, #315
+  (@gasche)
+
+* Mark locations as `loc_ghost`
+  #313, #312, #316
+  (@fantazio, @sim642)
+
+* Remove now-unnecessary unused-rec-flag suppression from `sanitize`
+  #311
+  (@sim642)
+
+* Fix misplaced suppression attribute in `sanitize`
+  #283
+  (@samwgoldman)
+
+* Remove unnecessary cppo usage
+  #308, #309
+  (@sim642)
+
+6.1.2
 -----
 
 * Add location info to `create`, `eq`, `iter`, `make`, `ord`, `show`
   #297
   (@arvidj)
+
+* Fix ord incorrectly quoting polymorphic comparison for builtins
+  #305
+  (@sim642)
 
 6.1.1
 -----

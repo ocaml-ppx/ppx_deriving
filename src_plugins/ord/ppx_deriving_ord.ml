@@ -58,7 +58,7 @@ and expr_of_label_decl quoter { pld_type; pld_attributes } =
   expr_of_typ quoter { pld_type with ptyp_attributes = attrs }
 
 and expr_of_typ quoter typ =
-  let loc = typ.ptyp_loc in
+  let loc = {typ.ptyp_loc with loc_ghost = true} in
   let expr_of_typ = expr_of_typ quoter in
   match Attribute.get ct_attr_compare typ with
   | Some fn -> Ppx_deriving.quote ~quoter fn
@@ -77,8 +77,7 @@ and expr_of_typ quoter typ =
               | [%type: int64] | [%type: Int64.t] | [%type: nativeint]
               | [%type: Nativeint.t] | [%type: float] | [%type: bool]
               | [%type: char] | [%type: string] | [%type: bytes]) ->
-        let compare_fn = [%expr fun (a:[%t typ]) b -> Ppx_deriving_runtime.compare a b] in
-        Ppx_deriving.quote ~quoter compare_fn
+        [%expr fun (a:[%t typ]) b -> Ppx_deriving_runtime.compare a b]
       | true, [%type: [%t? typ] ref] ->
         [%expr fun a b -> [%e expr_of_typ typ] !a !b]
       | true, [%type: [%t? typ] list]  ->
@@ -165,7 +164,7 @@ and expr_of_typ quoter typ =
                    deriver (Ppx_deriving.string_of_core_type typ)
 
 let core_type_of_decl type_decl =
-  let loc = type_decl.ptype_loc in
+  let loc = {type_decl.ptype_loc with loc_ghost = true} in
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let polymorphize = Ppx_deriving.poly_arrow_of_type_decl
           (fun var -> [%type: [%t var] -> [%t var] -> Ppx_deriving_runtime.int]) type_decl in
@@ -176,6 +175,7 @@ let sig_of_type type_decl =
              (core_type_of_decl type_decl))]
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let quoter = Ppx_deriving.create_quoter () in
   let comparator =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
@@ -231,16 +231,17 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
          (Pat.constraint_ out_var out_type)
          (Ppx_deriving.sanitize ~quoter (eta_expand (polymorphize comparator)))]
 
-let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
+let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (rec_flag, type_decls) ->
   let str_of_type type_decl =
-    Ast_helper.with_default_loc type_decl.ptype_loc @@
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
       fun () -> str_of_type type_decl
   in
-  [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
+  let rec_flag = really_recursive rec_flag type_decls in
+  [Str.value rec_flag (List.concat (List.map str_of_type type_decls))])
 
 let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
   let sig_of_type type_decl =
-    Ast_helper.with_default_loc type_decl.ptype_loc @@
+    Ast_helper.with_default_loc {type_decl.ptype_loc with loc_ghost = true} @@
       fun () -> sig_of_type type_decl
   in
   List.concat (List.map sig_of_type type_decls))
@@ -254,7 +255,9 @@ let deriving: Deriving.t =
 (* custom extension such that "derive"-prefixed also works *)
 let derive_extension =
   Extension.V3.declare "derive.ord" Extension.Context.expression
-    Ast_pattern.(ptyp __) (fun ~ctxt:_ -> Ppx_deriving.with_quoter expr_of_typ)
+    Ast_pattern.(ptyp __) (fun ~ctxt typ ->
+      Ast_helper.with_default_loc {typ.ptyp_loc with loc_ghost = true} @@
+        fun () -> Ppx_deriving.with_quoter expr_of_typ typ)
 let derive_transformation =
   Driver.register_transformation
     deriver

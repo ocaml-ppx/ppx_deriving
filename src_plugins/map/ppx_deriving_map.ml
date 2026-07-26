@@ -19,7 +19,7 @@ let pconstrrec name fields = pconstr name [precord ~closed:Closed fields]
 let  constrrec name fields =  constr name [ record                fields]
 
 let rec expr_of_typ ?decl typ =
-  let loc = typ.ptyp_loc in
+  let loc = {typ.ptyp_loc with loc_ghost = true} in
   let typ = Ppx_deriving.remove_pervasives ~deriver typ in
   match typ with
   | _ when Ppx_deriving.free_vars_in_core_type typ = [] -> [%expr fun x -> x]
@@ -86,6 +86,7 @@ and expr_of_label_decl ?decl { pld_type; pld_attributes } =
   expr_of_typ ?decl { pld_type with ptyp_attributes = attrs }
 
 let str_of_type ({ ptype_loc = loc } as type_decl) =
+  let loc = {loc with loc_ghost = true} in
   let mapper =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest -> expr_of_typ ~decl:type_decl manifest
@@ -124,7 +125,7 @@ let str_of_type ({ ptype_loc = loc } as type_decl) =
          (polymorphize mapper)]
 
 let sig_of_type type_decl =
-  let loc = type_decl.ptype_loc in
+  let loc = {type_decl.ptype_loc with loc_ghost = true} in
   let typ_arg, var_arg, bound = Ppx_deriving.instantiate []    type_decl in
   let typ_ret, var_ret, _     = Ppx_deriving.instantiate bound type_decl in
   let arrow = Typ.arrow Label.nolabel in
@@ -133,8 +134,9 @@ let sig_of_type type_decl =
   let typ = List.fold_right arrow poly_fns (arrow typ_arg typ_ret) in
   [Sig.value (Val.mk (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix deriver) type_decl)) typ)]
 
-let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
-  [Str.value Recursive (List.concat (List.map str_of_type type_decls))])
+let impl_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (rec_flag, type_decls) ->
+  let rec_flag = really_recursive rec_flag type_decls in
+  [Str.value rec_flag (List.concat (List.map str_of_type type_decls))])
 
 let intf_generator = Deriving.Generator.V2.make_noarg (fun ~ctxt:_ (_, type_decls) ->
   List.concat (List.map sig_of_type type_decls))
