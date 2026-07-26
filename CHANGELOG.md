@@ -1,3 +1,10 @@
+Unreleased
+----------
+
+* Add `show` `@printer` support for polymorphic variants
+  #286
+  (@sim642, @ghuysmans)
+
 6.1.3
 -----
 

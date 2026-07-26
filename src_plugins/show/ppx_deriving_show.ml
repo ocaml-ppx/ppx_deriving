@@ -23,6 +23,7 @@ let attr_printer context = Attribute.declare "deriving.show.printer" context
   Ast_pattern.(single_expr_payload __) (fun e -> e)
 let ct_attr_printer = attr_printer Attribute.Context.core_type
 let constr_attr_printer = attr_printer Attribute.Context.constructor_declaration
+let rtag_attr_printer = attr_printer Attribute.Context.rtag
 
 let ct_attr_polyprinter = Attribute.declare "deriving.show.polyprinter" Attribute.Context.core_type
   Ast_pattern.(single_expr_payload __) (fun e -> e)
@@ -160,21 +161,29 @@ let rec expr_of_typ quoter typ =
     | { ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc } ->
       let cases =
         fields |> List.map (fun field ->
-          match field.prf_desc with
-          | Rtag(label, true (*empty*), []) ->
+          match Attribute.get rtag_attr_printer field, field.prf_desc with
+          | Some printer, Rtag(label, true (*empty*), []) ->
+            let label = label.txt in
+            Exp.case (Pat.variant label None)
+                     [%expr [%e wrap_printer quoter printer] fmt ()]
+          | None, Rtag(label, true (*empty*), []) ->
             let label = label.txt in
             Exp.case (Pat.variant label None)
                      [%expr Ppx_deriving_runtime.Format.pp_print_string fmt [%e str ("`" ^ label)]]
-          | Rtag(label, false, [typ]) ->
+          | Some printer, Rtag(label, false, [typ]) ->
+            let label = label.txt in
+            Exp.case (Pat.variant label (Some [%pat? x]))
+                     [%expr [%e wrap_printer quoter printer] fmt x]
+          | None, Rtag(label, false, [typ]) ->
             let label = label.txt in
             Exp.case (Pat.variant label (Some [%pat? x]))
                      [%expr Ppx_deriving_runtime.Format.fprintf fmt [%e str ("`" ^ label ^ " (@[<hov>")];
                             [%e expr_of_typ typ] x;
                             Ppx_deriving_runtime.Format.fprintf fmt "@])"]
-          | Rinherit({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
+          | _, Rinherit({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
             Exp.case [%pat? [%p Pat.type_ tname] as x]
                      [%expr [%e expr_of_typ typ] x]
-          | _ ->
+          | _, _ ->
             raise_errorf ~loc:ptyp_loc "%s cannot be derived for %s"
                          deriver (Ppx_deriving.string_of_core_type typ))
       in
