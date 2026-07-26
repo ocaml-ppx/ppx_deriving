@@ -13,26 +13,26 @@ let constr_attr_value = attr_value Attribute.Context.constructor_declaration
 let rtag_attr_value = attr_value Attribute.Context.rtag
 
 let mappings_of_type type_decl =
-  let map acc mappings attr_value x constr_name =
+  let map acc rev_mappings attr_value x constr_name =
     let value =
       match Attribute.get attr_value x with
       | Some idx -> idx | None -> acc
     in
-    (value + 1, (value, constr_name) :: mappings)
+    (value + 1, (value, constr_name) :: rev_mappings)
   in
-  let kind, (_, mappings) =
+  let kind, (_, rev_mappings) =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_variant constrs, _ ->
       `Regular,
-      List.fold_left (fun (acc, mappings) ({ pcd_name; pcd_args; pcd_attributes; pcd_loc } as constr) ->
+      List.fold_left (fun (acc, rev_mappings) ({ pcd_name; pcd_args; pcd_attributes; pcd_loc } as constr) ->
           if pcd_args <> Pcstr_tuple([]) then
             raise_errorf ~loc:pcd_loc
                          "%s can be derived only for argumentless constructors" deriver;
-          map acc mappings constr_attr_value constr pcd_name)
+          map acc rev_mappings constr_attr_value constr pcd_name)
         (0, []) constrs
     | Ptype_abstract, Some { ptyp_desc = Ptyp_variant (constrs, Closed, None); ptyp_loc } ->
       `Polymorphic,
-      List.fold_left (fun (acc, mappings) row_field ->
+      List.fold_left (fun (acc, rev_mappings) row_field ->
           let error_inherit loc =
             raise_errorf ~loc:ptyp_loc
                          "%s cannot be derived for inherited variant cases"
@@ -47,7 +47,7 @@ let mappings_of_type type_decl =
           match row_field.prf_desc with
           | Rinherit _ -> error_inherit loc
           | Rtag (name, true, []) ->
-            map acc mappings rtag_attr_value row_field name
+            map acc rev_mappings rtag_attr_value row_field name
           | Rtag _ -> error_arguments loc
       )
         (0, []) constrs
@@ -78,8 +78,9 @@ let mappings_of_type type_decl =
          Declaration of C
     *)
     let rev_dom = ref [] in
-    let groups = Hashtbl.create (List.length mappings) in
-    mappings |> List.iter (fun (v, constr) ->
+    let groups = Hashtbl.create (List.length rev_mappings) in
+    (* Iteration order from last to first ensures that each group is in source order in errors. *)
+    rev_mappings |> List.iter (fun (v, constr) ->
       if not (Hashtbl.mem groups v) then
         rev_dom := v :: !rev_dom;
       Hashtbl.add groups v constr;
@@ -104,7 +105,7 @@ let mappings_of_type type_decl =
              (List.map (fun c -> sigil ^ c.txt) conflict_constrs))
     );
   in
-  kind, List.rev mappings (* Put the mappings in source order. *)
+  kind, List.rev rev_mappings (* Put the mappings in source order. *)
 
 let str_of_type ({ ptype_loc = _ } as type_decl) =
   let kind, mappings = mappings_of_type type_decl in
