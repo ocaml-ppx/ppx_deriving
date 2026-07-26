@@ -1,5 +1,9 @@
-Unreleased
-----------
+6.2.0 (unreleased)
+------------------
+
+* Add `pp` deriver and extension to `show`
+  #293, #300, #301
+  (@giltho)
 
 * Add `show` `@printer` support for polymorphic variants
   #286
