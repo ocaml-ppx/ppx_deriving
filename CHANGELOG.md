@@ -5,6 +5,10 @@ Unreleased
   #286
   (@sim642, @ghuysmans)
 
+* Improve `enum` error for `@value` conflicts
+  #314
+  (@gasche)
+
 6.1.3
 -----
 
