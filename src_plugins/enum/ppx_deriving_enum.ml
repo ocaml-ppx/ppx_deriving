@@ -13,26 +13,26 @@ let constr_attr_value = attr_value Attribute.Context.constructor_declaration
 let rtag_attr_value = attr_value Attribute.Context.rtag
 
 let mappings_of_type type_decl =
-  let map acc mappings attr_value x constr_name =
+  let map acc rev_mappings attr_value x constr_name =
     let value =
       match Attribute.get attr_value x with
       | Some idx -> idx | None -> acc
     in
-    (value + 1, (value, constr_name) :: mappings)
+    (value + 1, (value, constr_name) :: rev_mappings)
   in
-  let kind, (_, mappings) =
+  let kind, (_, rev_mappings) =
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_variant constrs, _ ->
       `Regular,
-      List.fold_left (fun (acc, mappings) ({ pcd_name; pcd_args; pcd_attributes; pcd_loc } as constr) ->
+      List.fold_left (fun (acc, rev_mappings) ({ pcd_name; pcd_args; pcd_attributes; pcd_loc } as constr) ->
           if pcd_args <> Pcstr_tuple([]) then
             raise_errorf ~loc:pcd_loc
                          "%s can be derived only for argumentless constructors" deriver;
-          map acc mappings constr_attr_value constr pcd_name)
+          map acc rev_mappings constr_attr_value constr pcd_name)
         (0, []) constrs
     | Ptype_abstract, Some { ptyp_desc = Ptyp_variant (constrs, Closed, None); ptyp_loc } ->
       `Polymorphic,
-      List.fold_left (fun (acc, mappings) row_field ->
+      List.fold_left (fun (acc, rev_mappings) row_field ->
           let error_inherit loc =
             raise_errorf ~loc:ptyp_loc
                          "%s cannot be derived for inherited variant cases"
@@ -47,27 +47,65 @@ let mappings_of_type type_decl =
           match row_field.prf_desc with
           | Rinherit _ -> error_inherit loc
           | Rtag (name, true, []) ->
-            map acc mappings rtag_attr_value row_field name
+            map acc rev_mappings rtag_attr_value row_field name
           | Rtag _ -> error_arguments loc
-)
+      )
         (0, []) constrs
     | _ -> raise_errorf ~loc:type_decl.ptype_loc
                         "%s can be derived only for variants" deriver
   in
-  let rec check_dup mappings =
-    match mappings with
-    | (a, { txt=atxt; loc=aloc }) :: (b, { txt=btxt; loc=bloc }) :: _ when a = b ->
-      let sigil = match kind with `Regular -> "" | `Polymorphic -> "`" in
-      let sub =
-        [Ocaml_common.Location.errorf
-          ~loc:bloc "Same as for %s%s" sigil btxt] in (* NB! do not use loc_ghost for submessage because newer compilers will hide it *)
-      raise_errorf ~sub ~loc:aloc
-                   "%s: duplicate value %d for constructor %s%s" deriver a sigil atxt
-    | _ :: rest -> check_dup rest
-    | [] -> ()
+  let () =
+    (* Check for duplicate mappings. Consider for example:
+         type t =
+         | A [@value 1]
+         | B [@value 1]
+         | C [@value 1]
+         [@@deriving enum]
+
+       We generate an error that looks as follows (the ">" indicate
+       quoted source with locations), with sub-errors/sub-locations:
+
+       > type t = [...]
+       Error: enum: duplicate value 1 for constructors A, B, C.
+
+       > | A [@value 1]
+         Declaration of A
+
+       > | B [@value 1]
+         Declaration of B
+
+       > | C [@value 1]
+         Declaration of C
+    *)
+    let rev_dom = ref [] in
+    let groups = Hashtbl.create (List.length rev_mappings) in
+    (* Iteration order from last to first ensures that each group is in source order in errors. *)
+    rev_mappings |> List.iter (fun (v, constr) ->
+      if not (Hashtbl.mem groups v) then
+        rev_dom := v :: !rev_dom;
+      Hashtbl.add groups v constr;
+    );
+    let dom = List.rev !rev_dom in
+    dom |> List.iter (fun v ->
+      match Hashtbl.find_all groups v with
+      | [] -> assert false
+      | [constr] -> ()
+      | (_ :: _) as conflict_constrs ->
+        let sigil = match kind with `Regular -> "" | `Polymorphic -> "`" in
+        let sub =
+          conflict_constrs |> List.map (fun {txt; loc} ->
+            (* NB! do not use loc_ghost for submessage because newer compilers will hide it *)
+            Ocaml_common.Location.errorf ~loc "Declaration of %s%s" sigil txt
+          )
+        in
+        raise_errorf ~sub ~loc:type_decl.ptype_loc
+          "%s: duplicate value %d for constructors %s."
+          deriver v
+          (String.concat ", "
+             (List.map (fun c -> sigil ^ c.txt) conflict_constrs))
+    );
   in
-  mappings |> List.stable_sort (fun (a,_) (b,_) -> compare a b) |> check_dup;
-  kind, mappings
+  kind, List.rev rev_mappings (* Put the mappings in source order. *)
 
 let str_of_type ({ ptype_loc = _ } as type_decl) =
   let kind, mappings = mappings_of_type type_decl in
