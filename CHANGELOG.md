@@ -1,5 +1,5 @@
-6.2.0 (unreleased)
-------------------
+6.2.0
+-----
 
 * Add `pp` deriver and extension to `show`
   #293, #300, #301
